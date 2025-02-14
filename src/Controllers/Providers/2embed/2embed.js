@@ -28,31 +28,27 @@ export async function getTwoEmbed(params) {
 
         return {
             provider: "Two Embed",
-            headers: {Referer: REF_URL},
             sources: [
                 {
-                    link: streamUrl,
-                    description: "Two Embed",
-                    type: "embed",
-                    lang: "en"
+                    provider: "Two Embed",
+                    files: [
+                        {
+                            file: streamUrl,
+                            type: "embed",
+                            quality: "unknown",
+                            lang: "en"
+                        }
+                    ],
+                    headers: {
+                        Referer: REF_URL,
+                        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+                        Origin: REF_URL
+                    }
                 }
             ],
             subtitles: []
         };
-       
-        
     } catch (error) {
-        return new Error(`[two_embed] Failed to load sources: ${error}`);
-    }
-}
-
-async function extractStreamWish(url, refUrl, sourceName) {
-    try {
-        const response = await axios.get(url, { headers: { Referer: refUrl } });
-        const $ = cheerio.load(response.data);
-
-        return [{ link: url, description: sourceName, headers: { Referer: refUrl } }];
-    } catch (error) {
-        return new Error("Failed to extract stream");
+        return { provider: "Two Embed", sources: [], subtitles: [] };
     }
 }
