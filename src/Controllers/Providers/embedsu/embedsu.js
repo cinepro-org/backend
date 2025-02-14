@@ -1,4 +1,5 @@
 import fetch from 'node-fetch';
+import { languageMap } from '../../../utils/languages.js';
 
 export async function getEmbedsu(tmdb_id, s, e) {
   const DOMAIN = "https://embed.su";
@@ -27,6 +28,9 @@ export async function getEmbedsu(tmdb_id, s, e) {
 
     if (!secondDecode || secondDecode.length === 0) return;
 
+    const sources = [];
+    const subtitles = [];
+
     for (const item of secondDecode) {
       if (item.name.toLowerCase() !== "viper") continue;
 
@@ -41,7 +45,7 @@ export async function getEmbedsu(tmdb_id, s, e) {
 
       const tracks = dataDirect.subtitles.map(sub => ({
         url: sub.file,
-        lang: sub.label.match(/^([A-z]+)/i)?.[1] || ""
+        lang: languageMap[sub.label.split(' ')[0]] || sub.label
       })).filter(track => track.lang);
 
       const requestDirectSize = await fetch(dataDirect.source, { headers, method: "GET" });
@@ -50,24 +54,43 @@ export async function getEmbedsu(tmdb_id, s, e) {
       const patternSize = parseRequest.split('\n').filter(item => item.includes('/proxy/'));
 
       const directQuality = patternSize.map(patternItem => {
-        const sizeQuality = Number(patternItem.match(/\/([0-9]+)\//i)?.[1]) || 1080;
+        const sizeQuality = getSizeQuality(patternItem);
         let dURL = `${DOMAIN}${patternItem}`;
         dURL = dURL.replace("embed.su/api/proxy/viper/", "").replace(".png", ".m3u8");
-        return { url: dURL };
+        return { file: dURL, type: 'hls', quality: `${sizeQuality}p`, lang: 'en' };
       });
 
       if (!directQuality.length) continue;
 
-      directQuality.sort((a, b) => b.quality - a.quality);
-
-      return {
+      sources.push({
         provider: "EmbedSu",
-        
-      };
+        files: directQuality,
+        headers: {
+          "Referer": DOMAIN,
+          "User-Agent": headers['User-Agent'],
+          "Origin": DOMAIN
+        }
+      });
+
+      subtitles.push(...tracks);
     }
+
+    return {
+      provider: "EmbedSu",
+      sources,
+      subtitles
+    };
   } catch (e) {
-    return { headers: {}, sources: '', subtitles: '' };
+    return { provider: "EmbedSu", sources: [], subtitles: [] };
   }
+}
+
+function getSizeQuality(url) {
+  const parts = url.split('/');
+  const base64Part = parts[parts.length - 2];
+  const decodedPart = atob(base64Part);
+  const sizeQuality = Number(decodedPart) || 1080;
+  return sizeQuality;
 }
 
 async function stringAtob(input) {

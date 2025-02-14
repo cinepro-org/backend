@@ -59,11 +59,11 @@ Both routes return a JSON object with the following structure:
 
 - hls: is a .m3u8 file that can be played with a player that supports HLS (like video.js or hls.js)
 - mp4: is a .mp4 file that can be played with a player that supports mp4 (like video.js)
-- embed: is a url that can be embedded in an iframe to play the media. Important: Since you are embedding the media, you do NOT have control of what stuff the iframe is loading. (Ads, tracking, etc. might appear).
+- embed: is an url that can be embedded in an iframe to play the media. Important: Since you are embedding the media, you do NOT have control of what stuff the iframe is loading. (Ads, tracking, etc. might appear).
 
 ##### Language
 
-All language values follow the ISO 639-1:2002 standard. You can find more information [here](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes).
+All languages values follow the ISO 639-1:2002 standard. You can find more information [here](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes).
 
 ### Example
 
