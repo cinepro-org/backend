@@ -61,11 +61,8 @@ export async function getEmbedsu(tmdb_id, s, e) {
       directQuality.sort((a, b) => b.quality - a.quality);
 
       return {
-        embedsu: {
-          headers,
-          sources: directQuality,
-          subtitles: tracks
-        }
+        provider: "EmbedSu",
+        
       };
     }
   } catch (e) {

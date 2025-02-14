@@ -1,8 +1,8 @@
 const fetch = (await import('node-fetch')).default;
 const { load } = await import('cheerio');
 
-const nepuBase = 'https://rar.to';
-const nepuReferer = 'https://rar.to/';
+const nepuBase = 'https://nepu.to';
+const nepuReferer = 'https://nepu.to/';
 
 export function normalizeTitle(title) {
     let titleTrimmed = title.trim().toLowerCase();
@@ -25,9 +25,7 @@ export function compareMedia(media, title, releaseYear) {
     return compareTitle(media.title, title) && isSameYear;
 }
 
-
-
-async function getNepu(media) {
+export async function getNepu(media) {
     const searchResultRequest = await fetch(`${nepuBase}/ajax/posts?q=${media.title}`, {
         method: 'GET',
         headers: {
@@ -35,7 +33,7 @@ async function getNepu(media) {
         },
     });
 
-    const searchResult = await searchResultRequest.json();
+    const searchResult = await searchResultRequest.text();
 
     const show = searchResult.data.find((item) => {
         if (!item) return false;
@@ -49,7 +47,7 @@ async function getNepu(media) {
     });
 
     if (!show) throw new Error('No watchable item found');
-    
+
     let videoUrl = nepuBase + show.url;
 
     if (media.type === 'show') {
@@ -83,13 +81,20 @@ async function getNepu(media) {
 
     if (!streamUrl?.[1]) throw new Error('No stream found.');
 
-    return nepuBase + streamUrl[1];
+    return {
+        embeds: [],
+        stream: [
+            {
+                id: 'primary',
+                captions: [],
+                playlist: nepuBase + streamUrl[1],
+                type: 'hls',
+                headers: {
+                    Origin: nepuBase,
+                    Referer: nepuReferer,
+                },
+                flags: [],
+            },
+        ],
+    };
 }
-
-console.log(await getNepu({
-    "type": "movie",
-    "title": "The Dark Knight",
-    "releaseYear": 2008,
-    "tmdbId": "155",
-    "imdbId": "tt0468569"
-}));

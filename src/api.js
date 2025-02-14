@@ -1,11 +1,11 @@
 import {
     makeProviders,
     makeStandardFetcher,
-    nepuScraper,
     targets
-} from './providers/all_(vidsrcicu)/movie-web-providers.js';
-import { getEmbedsu } from './providers/embedsu/embedsu.js';
-import {getNepu} from "./providers/nepu/nepu.js";
+} from './Controllers/Providers/all_(vidsrcicu)/movie-web-providers.js';
+import { getEmbedsu } from './Controllers/Providers/embedsu/embedsu.js';
+import { getNepu } from "./Controllers/Providers/nepu/nepu.js";
+import { getTwoEmbed } from "./Controllers/Providers/2embed/2embed.js";
 
 const providers = makeProviders({
     fetcher: makeStandardFetcher(fetch),
@@ -46,31 +46,46 @@ export async function getMovie(media) {
     const id = media.tmdbId;
     
     let embedsu;
+    let twoEmbed;
+    /*
     let vidSrcIcu;
     let nepu;
+     */
     
     try {
         embedsu = await getEmbedsu(id);
-        vidSrcIcu = await providers.runAll({media});
+        /*
+        try {
+            // the used library is not working properly. It is outdated and tbh i have no clue what is going on. 
+            // the requests should not fail here.
+            vidSrcIcu = await providers.runSourceScraper({media});
+        } catch (e) {
+            console.log(e);
+        }
         nepu = await getNepu(media);
+        */
+        twoEmbed = await getTwoEmbed(media);
     } catch (e) {
-        console.log(e);
+        console.error(e);
     }
     
     const sources = [];
 
-    if (!embedsu instanceof Error) sources.push(embedsu);
+    if (embedsu && !(embedsu instanceof Error)) sources.push(embedsu.embedsu);
+    if (twoEmbed && !(twoEmbed instanceof Error)) sources.push(twoEmbed);
+    /*
     if ((!vidSrcIcu instanceof Error) || vidSrcIcu !== null) sources.push({VidSrcIcu: vidSrcIcu});
     if ((!nepu instanceof Error) || nepu !== null) sources.push({nepu});
-    
-    let data = formatResponse({sources});
+    */
+    /* let data = formatResponse({sources});
 
     if (data.length === 0) {
         return new Error('No sources found :(');
     }
+     */
     
     return {
-        data
+        sources
     };
 }
 
@@ -101,15 +116,15 @@ export async function getTv(media, s, e) {
         return new Error('No sources found :(');
     }
     
-    let data = formatResponse({sources});
+    //let data = formatResponse({sources});
     
     return {
-        data
+        sources 
     };
     
 }
 
-function formatResponse(data) {
+/*function formatResponse(data) {
     const sources = [];
     const subtitles = [];
 
@@ -221,7 +236,7 @@ function formatResponse(data) {
             const embedSources = source.embedsu.sources.map(file => ({
                 file: file.url,
                 type: file.url.split('.').pop() === 'm3u8' ? 'hls' : file.url.split('.').pop(),
-                quality: atob(file.url.split('/').slice(-2, -1)[0]) + "px",
+                quality: atob(file.url.split('/').slice(-2, -1)[0]) + "p",
                 lang: "en"
             }));
 
@@ -306,4 +321,4 @@ function formatResponse(data) {
         sources,
         subtitles
     };
-}
+}*/

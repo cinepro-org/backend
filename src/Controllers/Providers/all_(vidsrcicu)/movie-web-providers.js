@@ -390,7 +390,7 @@ async function comboScraper$b(ctx) {
         }
     };
     const res = await ctx.fetcher("/status", { baseUrl: baseUrl$d });
-    if (((_a = res.providers) == null ? void 0 : _a.length) === 0) throw new NotFoundError("No providers available");
+    if (((_a = res.providers) == null ? void 0 : _a.length) === 0) throw new NotFoundError("No ContentProviders available");
     const embeds = res.providers.map((provider) => {
         return {
             embedId: provider,
@@ -3673,7 +3673,7 @@ async function comboScraper$4(ctx) {
         }
     };
     const res = await ctx.fetcher("https://api.nsbx.ru/status");
-    if (((_a = res.providers) == null ? void 0 : _a.length) === 0) throw new NotFoundError("No providers available");
+    if (((_a = res.providers) == null ? void 0 : _a.length) === 0) throw new NotFoundError("No ContentProviders available");
     if (!res.endpoint) throw new Error("No endpoint returned");
     const embeds = res.providers.map((provider) => {
         return {
