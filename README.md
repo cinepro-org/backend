@@ -34,7 +34,7 @@ Both routes return a JSON object with the following structure:
         "files": [
             {
                 "file": "fileUrl",          // is the url to the file (most of the time a .m3u8 file)
-                "type": "fileType",         // is the type of the file (hls, mp4 or embed). More information below.
+                "type": "fileType",         // is the type of the file (hls, mp4, embed or direct). More information below.
                 "quality": "fileQuality",   // is the quality of the file (varies from provider to provider). Can also be unknown.
                 "lang": "fileLanguage"      // is the language of the media file (en, fr...). Can also be unknown. More information below.
             }
@@ -59,7 +59,8 @@ Both routes return a JSON object with the following structure:
 
 - hls: is a .m3u8 file that can be played with a player that supports HLS (like video.js or hls.js)
 - mp4: is a .mp4 file that can be played with a player that supports mp4 (like video.js)
-- embed: is an url that can be embedded in an iframe to play the media. Important: Since you are embedding the media, you do NOT have control of what stuff the iframe is loading. (Ads, tracking, etc. might appear).
+- embed: is an url that can be embedded in an iframe to play the media. Important: Since you are embedding the media, you do NOT have control of what stuff the iframe is loading. (Ads, tracking, etc. might appear/happen). It can also be that embedding is restricted to certain domains. That is a ~pain in the ass~, but you can't do anything about it.
+- direct: is an url that you can open and watch the media directly in your browser. Most of the time without ads.
 
 ##### Language
 

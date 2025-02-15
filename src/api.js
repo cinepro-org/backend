@@ -1,16 +1,8 @@
-import {
-    makeProviders,
-    makeStandardFetcher,
-    targets
-} from './Controllers/Providers/all_(vidsrcicu)/movie-web-providers.js';
 import { getEmbedsu } from './Controllers/Providers/embedsu/embedsu.js';
 import { getNepu } from "./Controllers/Providers/nepu/nepu.js";
 import { getTwoEmbed } from "./Controllers/Providers/2embed/2embed.js";
-
-const providers = makeProviders({
-    fetcher: makeStandardFetcher(fetch),
-    target: targets.ANY // check out https://movie-web.github.io/providers/essentials/targets
-})
+import { getVidSrc } from "./Controllers/Providers/VidSrc/vidsrc.js";
+import {getAutoembed} from "./Controllers/Providers/AutoEmbed/autoembed.js";
 
 /*
 * 
@@ -47,11 +39,16 @@ export async function getMovie(media) {
     let embedsu;
     let twoEmbed;
     let nepu;
+    let vidsrcICU;
+    let vidsrc;
+    let autoembed;
 
     try {
         try {embedsu = await getEmbedsu(id);} catch (e) {console.log(e)}
         try {twoEmbed = await getTwoEmbed(media);} catch (e) {console.log(e)}
         try {nepu = await getNepu(media);} catch (e) {console.log(e)}
+        try {vidsrc = await getVidSrc(media);} catch (e) {console.log(e)}
+        try {autoembed = await getAutoembed(media);} catch (e) {console.log(e)}
     } catch (e) {
         console.error(e);
     }
@@ -73,6 +70,15 @@ export async function getMovie(media) {
         sources.push(...nepu.sources);
         subtitles.push(...nepu.subtitles);
     }
+    
+    if (vidsrc && !(vidsrc instanceof Error)) {
+        sources.push(vidsrc);
+    }
+    
+    if (autoembed && !(autoembed instanceof Error)) {
+        sources.push(...autoembed.sources);
+        subtitles.push(...autoembed.subtitles);
+    }
 
     if (sources.length === 0) {
         return new Error('No sources found :(');
@@ -92,11 +98,16 @@ export async function getTv(media, s, e) {
     let embedsu;
     let twoEmbed;
     let nepu;
+    let vidsrcICU;
+    let vidsrc;
+    let autoembed;
 
     try {
         try {embedsu = await getEmbedsu(id, season, episode);} catch (e) {console.log(e)}
         try {twoEmbed = await getTwoEmbed({ tmdbId: id, type: "tv", season, episode });} catch (e) {console.log(e)}
         try {nepu = await getNepu(media, season, episode);} catch (e) {console.log(e)}
+        try {vidsrc = await getVidSrc(media, season, episode);} catch (e) {console.log(e)}
+        try {autoembed = await getAutoembed(media);} catch (e) {console.log(e)}
     } catch (e) {
         console.log(e);
     }
@@ -117,6 +128,15 @@ export async function getTv(media, s, e) {
     if (nepu && !(nepu instanceof Error)) {
         sources.push(...nepu.sources);
         subtitles.push(...nepu.subtitles);
+    }
+    
+    if (vidsrc && !(vidsrc instanceof Error)) {
+        sources.push(vidsrc);
+    }
+    
+    if (autoembed && !(autoembed instanceof Error)) {
+        sources.push(...autoembed.sources);
+        subtitles.push(...autoembed.subtitles);
     }
 
     if (sources.length === 0) {
