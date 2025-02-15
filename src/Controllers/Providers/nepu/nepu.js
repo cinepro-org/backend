@@ -82,7 +82,6 @@ export async function getNepu(media) {
     if (!streamUrl?.[1]) throw new Error('No stream found.');
 
     return {
-        embeds: [],
         stream: [
             {
                 id: 'primary',
