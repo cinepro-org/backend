@@ -34,6 +34,8 @@ export async function getNepu(media) {
     });
 
     const searchResult = await searchResultRequest.text();
+    
+    if (searchResult.data === undefined) throw new Error('No search results found');
 
     const show = searchResult.data.find((item) => {
         if (!item) return false;

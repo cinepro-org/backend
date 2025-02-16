@@ -3,6 +3,7 @@ import { getNepu } from "./Controllers/Providers/nepu/nepu.js";
 import { getTwoEmbed } from "./Controllers/Providers/2embed/2embed.js";
 import { getVidSrc } from "./Controllers/Providers/VidSrc/vidsrc.js";
 import {getAutoembed} from "./Controllers/Providers/AutoEmbed/autoembed.js";
+import {getPrimewire} from "./Controllers/Providers/primewire/primewire.js";
 
 /*
 * 
@@ -42,6 +43,7 @@ export async function getMovie(media) {
     let vidsrcICU;
     let vidsrc;
     let autoembed;
+    let primewire;
 
     try {
         try {embedsu = await getEmbedsu(id);} catch (e) {console.log(e)}
@@ -49,6 +51,7 @@ export async function getMovie(media) {
         try {nepu = await getNepu(media);} catch (e) {console.log(e)}
         try {vidsrc = await getVidSrc(media);} catch (e) {console.log(e)}
         try {autoembed = await getAutoembed(media);} catch (e) {console.log(e)}
+        try {primewire = await getPrimewire(media);} catch (e) {console.log(e)}
     } catch (e) {
         console.error(e);
     }
@@ -79,14 +82,29 @@ export async function getMovie(media) {
         sources.push(...autoembed.sources);
         subtitles.push(...autoembed.subtitles);
     }
+    
+    if (primewire && !(primewire instanceof Error)) {
+        sources.push(...primewire.sources);
+    }
 
     if (sources.length === 0) {
         return new Error('No sources found :(');
     }
-
+    
+    // make sure that there are no duplicate subtitles
+    const subtitleUrls = new Set();
+    const uniqueSubtitles = [];
+    
+    subtitles.forEach(sub => {
+        if (!subtitleUrls.has(sub.url)) {
+            subtitleUrls.add(sub.url);
+            uniqueSubtitles.push(sub);
+        }
+    });
+    
     return {
         sources,
-        subtitles
+        subtitles: uniqueSubtitles
     };
 }
 
@@ -101,6 +119,7 @@ export async function getTv(media, s, e) {
     let vidsrcICU;
     let vidsrc;
     let autoembed;
+    let primewire;
 
     try {
         try {embedsu = await getEmbedsu(id, season, episode);} catch (e) {console.log(e)}
@@ -108,6 +127,7 @@ export async function getTv(media, s, e) {
         try {nepu = await getNepu(media, season, episode);} catch (e) {console.log(e)}
         try {vidsrc = await getVidSrc(media, season, episode);} catch (e) {console.log(e)}
         try {autoembed = await getAutoembed(media);} catch (e) {console.log(e)}
+        try {primewire = await getPrimewire(media, season, episode);} catch (e) {console.log(e)}
     } catch (e) {
         console.log(e);
     }
@@ -137,6 +157,10 @@ export async function getTv(media, s, e) {
     if (autoembed && !(autoembed instanceof Error)) {
         sources.push(...autoembed.sources);
         subtitles.push(...autoembed.subtitles);
+    }
+    
+    if (primewire && !(primewire instanceof Error)) {
+        sources.push(...primewire.sources);
     }
 
     if (sources.length === 0) {
