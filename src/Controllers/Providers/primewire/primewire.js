@@ -13,14 +13,13 @@ export async function getPrimewire(info) {
 
     const link = await lookupPage(info);
     const servers = await loadServers(link);
-    
-    // theoretically, we could go further and get the direct link. (download link: servers + "?download" and then somehow imitate button click.)
-    
+    const embeddableServers = await Promise.all(servers.map(server => getEmbedLink(server)));
+
     return {
         provider: "primewire",
-        sources: servers.map(server => ({
+        sources: embeddableServers.map(embedLink => ({
             provider: "primewire",
-            files: [{ file: server, type: "embed", quality: "unknown", lang: "en" }],
+            files: [{ file: embedLink, type: "embed", quality: "unknown", lang: "en" }],
         })),
         subtitles: []
     };
@@ -70,4 +69,12 @@ async function loadServers(link) {
 
 function sha1Hex(str) {
     return crypto.createHash('sha1').update(str).digest('hex');
+}
+
+async function getEmbedLink(server) {
+    let website = await fetch(server);
+    website = await website.text();
+    let $ = cheerio.load(website);
+    return $("textarea").text().match(/src="(.+?)"/)[1];
+
 }
