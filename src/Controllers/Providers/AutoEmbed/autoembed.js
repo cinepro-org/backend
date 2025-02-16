@@ -14,7 +14,6 @@ export async function getAutoembed(media) {
     }
 
     try {
-        console.log('fetching url', url);
         const response = await fetch(url, {
             headers: {
                 'Referer': 'https://autoembed.cc/'
