@@ -1,6 +1,7 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
 import fetch from "node-fetch";
+import { resolve_streamwish } from "../../../utils/resolvers/streamwish.js";
 
 const URL = "https://www.2embed.cc";
 const PLAYER_URL = "https://uqloads.xyz";
@@ -26,11 +27,13 @@ export async function getTwoEmbed(params) {
             return new Error("No stream wish id found");
         }
 
-        streamUrl = `${PLAYER_URL}/e/${match.groups.id}`;
-        
+        streamUrl = await resolve_streamwish(`${PLAYER_URL}/e/${match.groups.id}`);
+
         if (!streamUrl) {
             return new Error("No stream found");
         }
+
+        const qual = await getquality(streamUrl, `${PLAYER_URL}/e/${match.groups.id}`);
 
         return {
             provider: "Two Embed",
@@ -40,8 +43,8 @@ export async function getTwoEmbed(params) {
                     files: [
                         {
                             file: streamUrl,
-                            type: "embed",
-                            quality: "unknown",
+                            type: "hls",
+                            quality: qual,
                             lang: "en"
                         }
                     ]
@@ -51,5 +54,26 @@ export async function getTwoEmbed(params) {
         };
     } catch (error) {
         return new Error(error);
+    }
+}
+
+async function getquality(url, referer) {
+    const response = await fetch(url, {
+        headers: {
+            "Referer": referer
+        }
+    });
+
+    if (!response.ok) {
+        return 'unknown';
+    }
+
+    const data = await response.text();
+    const regex = /RESOLUTION=\d.*x(.*?),F/;
+    const m3udata = data.match(regex);
+    if (m3udata) {
+        return `${m3udata[1]}p`
+    } else {
+        return 'unknown';
     }
 }
