@@ -38,12 +38,7 @@ export async function getTwoEmbed(params) {
                             quality: "unknown",
                             lang: "en"
                         }
-                    ],
-                    headers: {
-                        Referer: REF_URL,
-                        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-                        Origin: REF_URL
-                    }
+                    ]
                 }
             ],
             subtitles: []
