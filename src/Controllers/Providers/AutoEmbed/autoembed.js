@@ -20,6 +20,9 @@ export async function getAutoembed(media) {
                 'Referer': 'https://autoembed.cc/'
             }
         });
+        if (!response.ok) {
+            return new Error(response.statusText);
+        }
         const data = await response.json();
         if (data.error) {
             return new Error("No stream wish id found");

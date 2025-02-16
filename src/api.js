@@ -4,6 +4,7 @@ import { getTwoEmbed } from "./Controllers/Providers/2embed/2embed.js";
 import { getVidSrc } from "./Controllers/Providers/VidSrc/vidsrc.js";
 import {getAutoembed} from "./Controllers/Providers/AutoEmbed/autoembed.js";
 import {getPrimewire} from "./Controllers/Providers/primewire/primewire.js";
+import {getBstrsrIn} from "./Controllers/Providers/bstsrsin/bstsrsin.js";
 
 /*
 * 
@@ -120,14 +121,16 @@ export async function getTv(media, s, e) {
     let vidsrc;
     let autoembed;
     let primewire;
+    let bstsrsin;
 
     try {
         try {embedsu = await getEmbedsu(id, season, episode);} catch (e) {console.log(e)}
-        try {twoEmbed = await getTwoEmbed({ tmdbId: id, type: "tv", season, episode });} catch (e) {console.log(e)}
+        try {twoEmbed = await getTwoEmbed(media);} catch (e) {console.log(e)}
         try {nepu = await getNepu(media, season, episode);} catch (e) {console.log(e)}
         try {vidsrc = await getVidSrc(media, season, episode);} catch (e) {console.log(e)}
         try {autoembed = await getAutoembed(media);} catch (e) {console.log(e)}
         try {primewire = await getPrimewire(media, season, episode);} catch (e) {console.log(e)}
+        try {bstsrsin = await getBstrsrIn(media);} catch (e) {console.log(e)}
     } catch (e) {
         console.log(e);
     }
@@ -161,6 +164,10 @@ export async function getTv(media, s, e) {
     
     if (primewire && !(primewire instanceof Error)) {
         sources.push(...primewire.sources);
+    }
+    
+    if (bstsrsin && !(bstsrsin instanceof Error)) {
+        sources.push(...bstsrsin.sources);
     }
 
     if (sources.length === 0) {

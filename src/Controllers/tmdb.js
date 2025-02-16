@@ -31,14 +31,18 @@ export async function getTvFromTmdb(tmdb_id, season, episode) {
         if (new Date(data.air_date) > new Date().getTime()) {
             return new Error("Not released yet");
         }
+        let secondData = await fetch(`https://api.themoviedb.org/3/tv/${tmdb_id}?api_key=${apiKey}`);
+        secondData = await secondData.json();
+        let title = secondData.name;
         let info = {
             type: "tv",
-            title: data.name,
+            title: title,
             releaseYear: data.air_date.split("-")[0],
             tmdbId: tmdb_id,
             imdbId: data.imdb_id,
             season: season,
-            episode: episode
+            episode: episode,
+            episodeName: data.name
         }
         return info;
     } catch (e) {
