@@ -12,6 +12,7 @@ export async function getEmbedsu(tmdb_id, s, e) {
   try {
     const urlSearch = s && e ? `${DOMAIN}/embed/tv/${tmdb_id}/${s}/${e}` : `${DOMAIN}/embed/movie/${tmdb_id}`;
     const htmlSearch = await fetch(urlSearch, { method: 'GET', headers });
+    if (!htmlSearch.ok) return new Error(htmlSearch.statusText);
     const textSearch = await htmlSearch.text();
 
     const hashEncodeMatch = textSearch.match(/JSON\.parse\(atob\(\`([^\`]+)/i);

@@ -1,5 +1,6 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
+import fetch from "node-fetch";
 
 const URL = "https://www.2embed.cc";
 const PLAYER_URL = "https://uqloads.xyz";
@@ -19,12 +20,17 @@ export async function getTwoEmbed(params) {
             }
         });
 
+        let streamUrl;
         const match = response.data.match(/swish\?id=(?<id>[\w\d]+)/);
         if (!match || !match.groups || !match.groups.id) {
             return new Error("No stream wish id found");
         }
 
-        const streamUrl = `${PLAYER_URL}/e/${match.groups.id}`;
+        streamUrl = `${PLAYER_URL}/e/${match.groups.id}`;
+        
+        if (!streamUrl) {
+            return new Error("No stream found");
+        }
 
         return {
             provider: "Two Embed",
@@ -44,6 +50,6 @@ export async function getTwoEmbed(params) {
             subtitles: []
         };
     } catch (error) {
-        return { provider: "Two Embed", sources: [], subtitles: [] };
+        return new Error(error);
     }
 }

@@ -32,6 +32,7 @@ export async function getNepu(media) {
             'Referer': nepuReferer,
         },
     });
+    if (!searchResultRequest.ok) throw new Error(searchResultRequest.statusText);
 
     const searchResult = await searchResultRequest.text();
     
