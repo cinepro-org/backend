@@ -1,4 +1,3 @@
-import {dbneg} from "./decoder.js";
 const URL = "https://bstsrs.in/";
 
 export async function getBstrsrIn(media) {
