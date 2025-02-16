@@ -2,6 +2,7 @@ import express from "express";
 import { getMovie, getTv } from './src/api.js';
 import { getMovieFromTmdb, getTvFromTmdb } from './src/Controllers/tmdb.js';
 import { MongoClient } from "mongodb";
+import cors from "cors";
 
 const PORT = process.env.PORT;
 const app = express()
@@ -15,6 +16,8 @@ try {
     console.error(e);
 }
 let db = client.db("CineProDB");
+
+app.use(cors());
 
 app.get('/', (req, res) => {
     res.status(200).json({
@@ -59,8 +62,8 @@ app.get('/movie/:tmdbId', async (req, res) => {
 });
 
 app.get('/tv/:tmdbId', async (req, res) => {
-    if (req.params.tmdbId !== parseInt(req.params.tmdbId) && req.query.s !== parseInt(req.query.s) && req.query.e !== parseInt(req.query.e)) {
-        res.status(405).json({ error: 'Invalid tv id or season or episode number (contained more than only numbers)', hint: 'Check the documentation again to see how to use this endpoint' });
+    if (!req.params.tmdbId || isNaN(parseInt(req.params.tmdbId)) || !req.query.s || isNaN(parseInt(req.query.s)) || !req.query.e || isNaN(parseInt(req.query.e))) {
+        res.status(405).json({ error: 'Invalid tv id, season, or episode number (must be numbers)', hint: 'Check the documentation again to see how to use this endpoint' });
         return;
     }
     
