@@ -1,5 +1,5 @@
-import {generateVRF} from "./vrfgen.js";
-import {languageMap} from "../../../utils/languages.js";
+import { generateVRF } from "./vrfGen.js";
+import { languageMap } from "../../../utils/languages.js";
 
 const DOMAIN = "https://vidsrc.cc/api/";
 
@@ -19,7 +19,7 @@ export async function getVidSrcCC(media) {
         'Referer': origin,
         'Origin': origin,
     };
-    let firstResponse = await fetch(firstUrl, {headers});
+    let firstResponse = await fetch(firstUrl, { headers });
     if (firstResponse.status !== 200) {
         return new Error("Failed to fetch first response");
     }
@@ -33,7 +33,7 @@ export async function getVidSrcCC(media) {
 
     for (let hash of hashes) {
         let secondUrl = `${DOMAIN}source/${hash}?opensubtitles=true`;
-        let secondResponse = await fetch(secondUrl, {headers});
+        let secondResponse = await fetch(secondUrl, { headers });
         if (!secondResponse.ok) {
             return new Error("Failed to fetch second response");
         }
@@ -54,18 +54,22 @@ export async function getVidSrcCC(media) {
         });
     });
 
-    // @inside4ndroid could you please split the m3u8 file and get the quality from it? :) thanks
-
     // gather all the files
     let files = [];
-    vidsrcCCSources.forEach(source => {
-        files.push({
-            file: source.source,
-            type: "hls",
-            quality: "get me from m3u8 :)",
-            lang: "en"
-        });
-    });
+    for (let source of vidsrcCCSources) {
+        const sources = await parseM3U8(source.source);
+
+        if (sources.length > 0) {
+            sources.forEach(src => {
+                files.push({
+                    file: src.url,
+                    type: "hls",
+                    quality: src.quality || "unknown",
+                    lang: "en"
+                });
+            });
+        }
+    }
 
     return {
         provider: "VidSrcCC",
@@ -78,5 +82,41 @@ export async function getVidSrcCC(media) {
         ],
         subtitles
     };
+}
 
+async function parseM3U8(m3u8Url) {
+    const response = await fetch(m3u8Url, {
+        headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36"
+        }
+    });
+
+    if (!response.ok) {
+        return [];
+    }
+
+    const m3u8Content = await response.text();
+
+    const lines = m3u8Content.split('\n');
+    const sources = [];
+    let currentSource = {};
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+
+        if (line.startsWith('#EXT-X-STREAM-INF:')) {
+            const resolutionMatch = line.match(/RESOLUTION=(\d+x\d+)/);
+            if (resolutionMatch) {
+                const resolution = resolutionMatch[1];
+                const quality = resolution.split('x')[1];
+                currentSource.quality = quality + "p";
+            }
+        } else if (line.startsWith('http') || (line.includes('.m3u8') && !line.startsWith('#'))) {
+            currentSource.url = line;
+            sources.push(currentSource);
+            currentSource = {};
+        }
+    }
+
+    return sources;
 }
