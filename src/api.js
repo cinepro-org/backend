@@ -54,8 +54,12 @@ export async function getMovie(media) {
     }
     
     if (autoembed && !(autoembed instanceof Error)) {
-        sources.push(...autoembed.sources);
-        subtitles.push(...autoembed.subtitles);
+        if (autoembed.sources[0].files.length > 0) {
+            sources.push(...autoembed.sources);
+        }
+        if (autoembed.subtitles.length > 0) {
+            subtitles.push(...autoembed.subtitles);
+            }
     }
     
     if (primewire && !(primewire instanceof Error)) {
@@ -76,7 +80,7 @@ export async function getMovie(media) {
     const uniqueSubtitles = [];
     
     subtitles.forEach(sub => {
-        if (!subtitleUrls.has(sub.url)) {
+        if (sub.url && !subtitleUrls.has(sub.url)) {
             subtitleUrls.add(sub.url);
             uniqueSubtitles.push(sub);
         }
