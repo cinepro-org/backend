@@ -1,5 +1,5 @@
 const fetch = (await import('node-fetch')).default;
-const { load } = await import('cheerio');
+const {load} = await import('cheerio');
 
 const nepuBase = 'https://nepu.to';
 const nepuReferer = 'https://nepu.to/';
@@ -35,7 +35,7 @@ export async function getNepu(media) {
     if (!searchResultRequest.ok) throw new Error(searchResultRequest.statusText);
 
     const searchResult = await searchResultRequest.text();
-    
+
     if (searchResult.data === undefined) throw new Error('No search results found');
 
     const show = searchResult.data.find((item) => {
@@ -76,7 +76,7 @@ export async function getNepu(media) {
             'Referer': nepuReferer,
             'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: new URLSearchParams({ id: embedId }),
+        body: new URLSearchParams({id: embedId}),
     });
 
     const playerPage = await playerPageRequest.text();

@@ -1,9 +1,9 @@
 // Credit where it's due: https://github.com/Dungeon69/vidsrc_wasm
-import { webcrypto } from "crypto";
-import { readFileSync } from "fs";
+import {webcrypto} from "crypto";
+import {readFileSync} from "fs";
 import * as path from "path";
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import {fileURLToPath} from 'url';
+import {dirname} from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -50,14 +50,14 @@ const fakeWindow = {
         webdriver: false,
         userAgent: userAgent,
     },
-    document: { cookie: "" },
+    document: {cookie: ""},
     location: {
         href: "",
         origin: "",
     },
     crypto: webcrypto,
     msCrypto: webcrypto,
-    performance: { timeOrigin: Date.now() },
+    performance: {timeOrigin: Date.now()},
     TextEncoder: globalThis.TextEncoder,
     TextDecoder: globalThis.TextDecoder,
 };
@@ -76,6 +76,7 @@ function handleError(f, args) {
         wasm.__wbindgen_exn_store(idx);
     }
 }
+
 const cachedTextEncoder = new TextEncoder();
 const cachedTextDecoder = new TextDecoder("utf-8", {
     ignoreBOM: true,
@@ -95,6 +96,7 @@ function getStringFromWasm0(ptr, len) {
     ptr = ptr >>> 0;
     return cachedTextDecoder.decode(getUint8Memory0().subarray(ptr, ptr + len));
 }
+
 let WASM_VECTOR_LEN = 0;
 
 function passStringToWasm0(arg, malloc, realloc) {
@@ -262,6 +264,7 @@ async function initWasm(wasmModule) {
 
     return wasm;
 }
+
 function encrypted(id) {
     const t = passStringToWasm0(
         id,

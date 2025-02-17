@@ -1,5 +1,5 @@
 import fetch from "node-fetch";
-import { languageMap } from "../../../utils/languages.js";
+import {languageMap} from "../../../utils/languages.js";
 
 export async function getAutoembed(media) {
     const id = media.tmdbId;
@@ -37,7 +37,7 @@ export async function getAutoembed(media) {
         let vietnameseM3u8Response;
         let vietnameseM3u8Content;
         let vietnameseQuality;
-        
+
         try {
             vietnameseM3u8 = await getVietnameseUrl(media);
             vietnameseM3u8Response = await fetch(vietnameseM3u8);
@@ -74,7 +74,7 @@ export async function getAutoembed(media) {
                 "Origin": "https://autoembed.cc/"
             }
         }];
-        
+
         const subs = mapSubtitles(data.subtitles);
 
         return {
