@@ -1,10 +1,9 @@
 import axios from "axios";
 import fetch from "node-fetch";
-import { resolve } from "../../../utils/checkresolve.js";
+import {resolve} from "../../../utils/checkresolve.js";
 
 const URL = "https://www.2embed.cc";
 const PLAYER_URL = "https://uqloads.xyz";
-const REF_URL = "https://streamsrcs.2embed.cc/";
 
 export async function getTwoEmbed(params) {
     const tmdbId = params.tmdbId;

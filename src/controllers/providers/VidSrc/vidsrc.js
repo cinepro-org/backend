@@ -12,7 +12,7 @@ export async function getVidSrc(params) {
         `${URL}/embed/movie/${id}`;
 
     const iframeHtml1 = (await axios.get(url)).data;
-    
+
     // maybe important for later
     let firstServerHash = iframeHtml1.match(/<div class="server" data-hash="([^"]+)">CloudStream Pro<\/div>/)[1];
     let secondServerHash = iframeHtml1.match(/<div class="server" data-hash="([^"]+)">2Embed<\/div>/)[1];
@@ -22,8 +22,10 @@ export async function getVidSrc(params) {
     if (!secondUrl) throw new Error("No second iframe found");
     secondUrl = "https://" + secondUrl.substring(2);
 
-    let iframeHtml2 = (await axios.get(secondUrl, { headers: { Referer: url, Origin: secondUrl } })).data;
+    let iframeHtml2 = (await axios.get(secondUrl, {headers: {Referer: url, Origin: secondUrl}})).data;
 
+    
+    // TODO: Finish this function
     // only works till here. It returns something strange, I think it is a cloudflare background challenge: 
     /*
     * <!DOCTYPE html>
@@ -96,8 +98,7 @@ export async function getVidSrc(params) {
 </html>
 
     * */
-    
-    
+
     // the following stuff I found from here: https://github.com/strumok-app/suppliers/blob/main/src/suppliers/tmdb/extractors/vidsrc_net.rs (translated to js with chatgpt)
     // the repo mentioned above is the only one on github that mentioned edgedeliverynetwork.com (the domain of the hosted videos) (the rest is outdated)
     /*const thirdUrlPath = extractRegex(iframeHtml2, /src: '(?<url>\/prorcp\/[^']+)'/);

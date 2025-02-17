@@ -1,3 +1,4 @@
+
 export const languageMap = {
     "Abkhazian": "ab",
     "Afar": "aa",

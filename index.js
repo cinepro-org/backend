@@ -1,6 +1,6 @@
 import express from "express";
 import { getMovie, getTv } from './src/api.js';
-import { getMovieFromTmdb, getTvFromTmdb } from './src/Controllers/tmdb.js';
+import { getMovieFromTmdb, getTvFromTmdb } from './src/controllers/tmdb.js';
 // import { MongoClient } from "mongodb";
 import cors from "cors";
 

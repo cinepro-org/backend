@@ -30,7 +30,7 @@ export async function getPrimewire(info) {
             type: embedLink.type,
             quality: embedLink.quality || "unknown",
             lang: "en",
-            ...(embedLink.headers && { headers: embedLink.headers })
+            ...(embedLink.headers && {headers: embedLink.headers})
         }));
 
     return {
@@ -51,7 +51,7 @@ async function lookupPage(info) {
 
     let $;
     try {
-        const response = await axios.get(`${URL}/filter`, { params: { s: imdbId, ds } });
+        const response = await axios.get(`${URL}/filter`, {params: {s: imdbId, ds}});
         $ = cheerio.load(response.data);
     } catch (error) {
         console.error(`[primewire] Error fetching data for imdbId: ${imdbId}`);
@@ -75,9 +75,9 @@ async function loadServers(link) {
     website = await website.text();
     let urls = [];
     for (const match of website.matchAll(/data-wp-menu="(.+?)"/g)) {
-        urls.push({ url: `https://primewire.tf/links/go/${match[1]}`, idx: match[1] });
+        urls.push({url: `https://primewire.tf/links/go/${match[1]}`, idx: match[1]});
     }
-    
+
     let embeds = [];
     for (const item of urls) {
         let response = await axios.get(item.url);
@@ -98,7 +98,7 @@ async function doStuffWithMixdrop(server) {
         return {videoLink: server, quality: "unknown", type: "embed"};
     }
     // TODO: can get the quality later
-    
+
     return {
         videoLink: data.url,
         quality: "unknown",
@@ -146,7 +146,7 @@ const getMixdropVideoViaInternalId = async (id) => {
 
 async function getStreamtapeUrl(url) {
     try {
-        
+
         let hostname = url.match(/https?:\/\/([^\/]+)/)[1];
         const response = await fetch(url);
 

@@ -1,4 +1,4 @@
-import {generateVRF} from "./vrfGen.js";
+import {generateVRF} from "./vrfgen.js";
 import {languageMap} from "../../../utils/languages.js";
 
 const DOMAIN = "https://vidsrc.cc/api/";
@@ -28,9 +28,9 @@ export async function getVidSrcCC(media) {
     firstData.data.forEach(server => {
         hashes.push(server.hash);
     });
-    
+
     let vidsrcCCSources = [];
-    
+
     for (let hash of hashes) {
         let secondUrl = `${DOMAIN}source/${hash}?opensubtitles=true`;
         let secondResponse = await fetch(secondUrl, {headers});
@@ -42,7 +42,7 @@ export async function getVidSrcCC(media) {
             vidsrcCCSources.push(secondData.data);
         }
     }
-    
+
     // gather all the subtitles
     let subtitles = [];
     vidsrcCCSources.forEach(source => {
@@ -53,9 +53,9 @@ export async function getVidSrcCC(media) {
             });
         });
     });
-    
+
     // @inside4ndroid could you please split the m3u8 file and get the quality from it? :) thanks
-    
+
     // gather all the files
     let files = [];
     vidsrcCCSources.forEach(source => {
@@ -66,7 +66,7 @@ export async function getVidSrcCC(media) {
             lang: "en"
         });
     });
-    
+
     return {
         provider: "VidSrcCC",
         sources: [
@@ -78,5 +78,5 @@ export async function getVidSrcCC(media) {
         ],
         subtitles
     };
-    
+
 }

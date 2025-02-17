@@ -24,10 +24,12 @@ export default class JsUnpacker {
                 let count = 0;
                 try {
                     radix = parseInt(radixStr);
-                } catch (e) {}
+                } catch (e) {
+                }
                 try {
                     count = parseInt(countStr);
-                } catch (e) {}
+                } catch (e) {
+                }
 
                 if (symtab.length !== count) {
                     throw new Error("Unknown p.a.c.k.e.r. encoding");
