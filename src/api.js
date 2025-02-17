@@ -5,35 +5,7 @@ import { getVidSrc } from "./Controllers/Providers/VidSrc/vidsrc.js";
 import {getAutoembed} from "./Controllers/Providers/AutoEmbed/autoembed.js";
 import {getPrimewire} from "./Controllers/Providers/primewire/primewire.js";
 import {getBstrsrIn} from "./Controllers/Providers/bstsrsin/bstsrsin.js";
-
-/*
-* 
-* Response should follow this format:
-* 
-let response = {
-    sources: [{
-        "provider": "providerName",
-        "files": [
-            {
-                "file": "fileUrl",
-                "type": "fileType",
-                "quality": "fileQuality",
-                "lang": "fileLanguage"
-            }
-        ],
-        "headers": {
-            "Referer": "refererUrl",
-            "User-Agent": "userAgent",
-            "Accept": "accept"
-        }
-    }],
-    subtitles: [{
-        "url": "subtitleUrl",
-        "lang": "subtitleLanguage",
-        "friendlyName": "subtitleFriendlyName"
-    }]
-} 
-*/
+import {getVidSrcCC} from "./Controllers/Providers/vidsrcCC/VidSrcCC.js";
 
 export async function getMovie(media) {
     const id = media.tmdbId;
@@ -45,6 +17,7 @@ export async function getMovie(media) {
     let vidsrc;
     let autoembed;
     let primewire;
+    let vidsrcCC;
 
     try {
         try {embedsu = await getEmbedsu(id);} catch (e) {console.log(e)}
@@ -53,6 +26,7 @@ export async function getMovie(media) {
         try {vidsrc = await getVidSrc(media);} catch (e) {console.log(e)}
         try {autoembed = await getAutoembed(media);} catch (e) {console.log(e)}
         try {primewire = await getPrimewire(media);} catch (e) {console.log(e)}
+        try {vidsrcCC = await getVidSrcCC(media);} catch (e) {console.log(e)}
     } catch (e) {
         console.error(e);
     }
@@ -87,6 +61,11 @@ export async function getMovie(media) {
     if (primewire && !(primewire instanceof Error)) {
         sources.push(...primewire.sources);
     }
+    
+    if (vidsrcCC && !(vidsrcCC instanceof Error)) {
+        sources.push(...vidsrcCC.sources);
+        subtitles.push(...vidsrcCC.subtitles);
+    }
 
     if (sources.length === 0) {
         return new Error('No sources found :(');
@@ -120,8 +99,8 @@ export async function getTv(media, s, e) {
     let vidsrcICU;
     let vidsrc;
     let autoembed;
-    let primewire;
     let bstsrsin;
+    let vidsrcCC;
 
     try {
         try {embedsu = await getEmbedsu(id, season, episode);} catch (e) {console.log(e)}
@@ -129,8 +108,8 @@ export async function getTv(media, s, e) {
         try {nepu = await getNepu(media, season, episode);} catch (e) {console.log(e)}
         try {vidsrc = await getVidSrc(media, season, episode);} catch (e) {console.log(e)}
         try {autoembed = await getAutoembed(media);} catch (e) {console.log(e)}
-        try {primewire = await getPrimewire(media, season, episode);} catch (e) {console.log(e)}
         try {bstsrsin = await getBstrsrIn(media);} catch (e) {console.log(e)}
+        try {vidsrcCC = await getVidSrcCC(media);} catch (e) {console.log(e)}
     } catch (e) {
         console.log(e);
     }
@@ -162,12 +141,13 @@ export async function getTv(media, s, e) {
         subtitles.push(...autoembed.subtitles);
     }
     
-    if (primewire && !(primewire instanceof Error)) {
-        sources.push(...primewire.sources);
-    }
-    
     if (bstsrsin && !(bstsrsin instanceof Error)) {
         sources.push(...bstsrsin.sources);
+    }
+    
+    if (vidsrcCC && !(vidsrcCC instanceof Error)) {
+        sources.push(...vidsrcCC.sources);
+        subtitles.push(...vidsrcCC.subtitles);
     }
 
     if (sources.length === 0) {

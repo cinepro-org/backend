@@ -46,7 +46,7 @@ export async function getEmbedsu(tmdb_id, s, e) {
 
       const tracks = dataDirect.subtitles.map(sub => ({
         url: sub.file,
-        lang: languageMap[sub.label.split(' ')[0]] || sub.label,
+        lang: languageMap[sub.label[0]] || sub.label,
         type: sub.file.split('.').pop()
       })).filter(track => track.lang);
 
