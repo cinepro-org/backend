@@ -118,17 +118,12 @@ export async function getVidSrc(params) {
     return [{ link: decoded, description: "VidSrc.net", headers: null }];*/
     return {
         provider: "VidSrc",
-        sources: [
+        files: [
             {
-                provider: "VidSrc",
-                files: [
-                    {
-                        file: secondUrl,
-                        type: "embed",
-                        quality: "unknown",
-                        lang: "en"
-                    }
-                ]
+                file: secondUrl,
+                type: "embed",
+                quality: "unknown",
+                lang: "en"
             }
         ]
     };
