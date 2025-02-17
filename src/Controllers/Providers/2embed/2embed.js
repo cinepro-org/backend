@@ -33,21 +33,24 @@ export async function getTwoEmbed(params) {
             return new Error("No stream found");
         }
 
-        const qual = await getquality(streamUrl, `${PLAYER_URL}/e/${match.groups.id}`);
+        const sources = await parseM3U8(streamUrl, `${PLAYER_URL}/e/${match.groups.id}`);
+
+        const files = [
+            ...sources.map(source => ({
+                file: source.url,
+                type: "hls",
+                quality: source.quality,
+                lang: "en"
+            }))
+        ];
+
 
         return {
             provider: "Two Embed",
             sources: [
                 {
                     provider: "Two Embed",
-                    files: [
-                        {
-                            file: streamUrl,
-                            type: "hls",
-                            quality: qual,
-                            lang: "en"
-                        }
-                    ]
+                    files: files
                 }
             ],
             subtitles: []
@@ -57,8 +60,8 @@ export async function getTwoEmbed(params) {
     }
 }
 
-async function getquality(url, referer) {
-    const response = await fetch(url, {
+async function parseM3U8(m3u8Url, referer) {
+    const response = await fetch(m3u8Url, {
         headers: {
             "Referer": referer
         }
@@ -68,12 +71,29 @@ async function getquality(url, referer) {
         return 'unknown';
     }
 
-    const data = await response.text();
-    const regex = /RESOLUTION=\d.*x(.*?),F/;
-    const m3udata = data.match(regex);
-    if (m3udata) {
-        return `${m3udata[1]}p`
-    } else {
-        return 'unknown';
+    const m3u8Content = await response.text();
+
+    const lines = m3u8Content.split('\n');
+    const sources = [];
+    let currentSource = {};
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+
+        if (line.startsWith('#EXT-X-STREAM-INF:')) {
+            const resolutionMatch = line.match(/RESOLUTION=(\d+x\d+)/);
+            if (resolutionMatch) {
+                const resolution = resolutionMatch[1];
+                const quality = resolution.split('x')[1];
+                currentSource.quality = quality + "p";
+            }
+        } else if (line.startsWith('index')) {
+            const preuri = m3u8Url.split("master.m3u8")[0];
+            currentSource.url = `${preuri}${line}`;
+            sources.push(currentSource);
+            currentSource = {};
+        }
     }
+
+    return sources;
 }
