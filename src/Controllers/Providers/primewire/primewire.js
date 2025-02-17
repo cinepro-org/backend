@@ -15,12 +15,21 @@ export async function getPrimewire(info) {
     const servers = await loadServers(link);
     const embeddableServers = await Promise.all(servers.map(server => getEmbedLink(server)));
 
+    const files = embeddableServers.map(embedLink => ({
+        file: embedLink,
+        type: "embed",
+        quality: "unknown",
+        lang: "en"
+    }));
+
     return {
         provider: "primewire",
-        sources: embeddableServers.map(embedLink => ({
-            provider: "primewire",
-            files: [{ file: embedLink, type: "embed", quality: "unknown", lang: "en" }],
-        })),
+        sources: [
+            {
+                provider: "primewire",
+                files: files
+            }
+        ],
         subtitles: []
     };
 }
@@ -75,6 +84,41 @@ async function getEmbedLink(server) {
     let website = await fetch(server);
     website = await website.text();
     let $ = cheerio.load(website);
-    return $("textarea").text().match(/src="(.+?)"/)[1];
+    let embedLink = $("textarea").text().match(/src="(.+?)"/)[1];
+    return await /*getVideoFromEmbed(embedLink)*/ embedLink;
 
+}
+
+async function getVideoFromEmbed(embedLink) {
+    let hostname = new URL(embedLink).hostname;
+    if (hostname !== "mxdrop.to") {
+        return embedLink;
+    }
+    embedLink = embedLink.replace("mixdrop.ps/e", "mixdrop.ps/f");
+
+    let downloadLink = await fetch(embedLink, {
+        "headers": {
+            "accept": "*/*",
+            "accept-language": "en-GB,en;q=0.6",
+            "cache-control": "no-cache",
+            "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+            "pragma": "no-cache",
+            "priority": "u=1, i",
+            "sec-ch-ua": "\"(Not(A:Brand\";v=\"99\", \"Opera\";v=\"115\", \"Chromium\";v=\"133\"",
+            "sec-ch-ua-full-version-list": "\"(Not(A:Brand\";v=\"99.0.0.0\", \"Opera\";v=\"115\", \"Chromium\";v=\"133\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Windows\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "same-origin",
+            "sec-gpc": "1",
+            "x-requested-with": "XMLHttpRequest",
+            "cookie": "PHPSESSID=f59aflbfgapr6asufr1drs2ogh",
+            "Referer": embedLink,            
+            "Referrer-Policy": "strict-origin-when-cross-origin"
+
+        },
+        "body": "csrf=aabe81f7bd10a6ab3e9f99911dd8da59&token=03AFcWeA7KHZP9YWA4oSluRsK-dEKlM91hX49vm7DoRpdUakMX8j-4YG0cexvEewH0RETaK1IfbLz84052K78FqCRCZAJdX4tg0S1weTlLpOEyjPXevcip78E8vUfGVJJ48coBVrkUZ-G8DXRrF2E3fCWpshvisTGqUzRa4TOYVuh7QdZ_xn9Y6Dluge1tSfN3_ZnWHrCxCxx7Ujsy4jeaycbijDyrZ75JatZARBsyJ-nNjsL6KNGsZl3KZ0UE5Fo8Jn-KyHXvsLtPHVX4FjjB4y-vwSIX7HlgVx3qA-SWyKGaqytBw0ccw7a7kcO7ICFXReeMLL8d0E9wGsj_CjqTHlvMeQq_e3igX-Bk8XuQnZgU3RmW77uP404zuvXOeYWgrx_naTZIDkBAPR9b39xoOeqY-lc9VbrgnW88HKFNzvZPLFLkQjItRYgvdf_Tk9HPH-JdWqiNKlU6Fsnskl9Ep7nxXFFAT18oYrVhD61JKY5OraDljHiFd-N-IeUmjhN37u3A5uGk6AiU3Wv-XvMUSM1gvONGzwl8HzF5mR_ETpKlurLdZSt_2vCmg8otB7vB_kUhUJFTb4kJdXXQnxLsPjuRW7hyq9wVEf5SLy21-uzocT_RQcDEZMLmmThf-hnTxozYzUvozLR6sNPpldrFj34HgKuhj2RXjGJcdCOm4Tc3kZMNKl9eVYDHTQr8cLTunPG4TB0pKOzfppUlMHHKzmnptWNevdatH-zZDwfCUVUeMfJl2i2jhGaicG-v8eKjYRgb5tX7Lg7Wb4d1tsgHOlOLKNdL6RYcu6UmPvEGmXv35QD2hlTT6uv0jQkID-4-sZ401g3Y3nJfAa3wB43arc00Qr_Yg5fwgLJgb5oizqP5FzkU_thueTitEtiovZBbYYVRvVWRbmVsYUxL9b7_1JRGu4SAnDE-wQ&a=genticket",
+        "method": "POST"
+    });
 }
