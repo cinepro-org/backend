@@ -2,8 +2,6 @@ import axios from "axios";
 import * as cheerio from "cheerio";
 import * as crypto from "crypto";
 import fetch from "node-fetch";
-import * as url from "node:url";
-import {THROW} from "hls-parser/utils.js";
 
 const URL = "https://www.primewire.tf";
 const DS_KEY = "JyjId97F9PVqUPuMO0";
@@ -17,7 +15,7 @@ export async function getPrimewire(info) {
     const servers = await loadServers(link);
     const embeddableServers = await Promise.all(servers.map(async server => {
         if (server.includes("mixdrop") || server.includes("mxdrop")) {
-            return await getEmbedLinkForMixDrop(server);
+            return await doStuffWithMixdrop(server);
         } else if (server.includes("streamtape")) {
             return await getStreamtapeUrl(server);
         } else {
@@ -31,7 +29,8 @@ export async function getPrimewire(info) {
             file: embedLink.videoLink,
             type: embedLink.type,
             quality: embedLink.quality || "unknown",
-            lang: "en"
+            lang: "en",
+            ...(embedLink.headers && { headers: embedLink.headers })
         }));
 
     return {
@@ -92,38 +91,58 @@ function sha1Hex(str) {
     return crypto.createHash('sha1').update(str).digest('hex');
 }
 
-async function getEmbedLinkForMixDrop(server) {
-    let website = await fetch(server);
-    website = await website.text();
-    let $ = cheerio.load(website);
-    if (!$("textarea").length) {
-        return null;
+async function doStuffWithMixdrop(server) {
+    // get the internal id https://mixdrop.ps/e/internalId
+    let data = await getMixdropVideoViaInternalId(server.split("/").pop());
+    if (data instanceof Error) {
+        return {videoLink: server, quality: "unknown", type: "embed"};
     }
-    let embedLink = $("textarea").text().match(/src="(.+?)"/)[1];
-    let title = $(".title").text();
-    let quality = title.match(/.(\d+p)./)[1];
-    let videoLink = await getVideoFromEmbed(embedLink, quality);
-    return {videoLink, quality};
+    // TODO: can get the quality later
+    
+    return {
+        videoLink: data.url,
+        quality: "unknown",
+        type: "mp4",
+        headers: data.headers
+    }
 }
 
-async function getVideoFromEmbed(embedLink) {
-    // not working yet. will have to change it later. (makes a post request with "download" as body and csrf token as header :( )
-    let hostname = embedLink.match(/https?:\/\/([^\/]+)/)[1];
-    if (hostname !== "mxdrop.to") {
-        return embedLink;
-    }
-    embedLink = embedLink.replace("mixdrop.ps/e", "mixdrop.ps/f");
-    let $ = cheerio.load(await (await fetch(embedLink)).text());
-    
-    // make post request with csrf token, token (from google captcha :( ) and a=genticket
-    let csrfToken = $("meta[name=csrf]").attr("content");
-    
-    let downloadLink = await $("a.btn.btn3.download-btn").attr("href");
-    if (!downloadLink) {
-        return embedLink;
-    }
-    return downloadLink;
-}
+const getMixdropVideoViaInternalId = async (id) => {
+    const resp = await fetch("https://mixdrop.ps/e/" + id);
+    var cookie = resp.headers.get('set-cookie').split(',')[0];
+    const [csrf, evalFun] = await resp
+        .text()
+        .then((r) => [
+            r.match(/['"]csrf['"]\s*content=['"](.*?)['"]/)[1],
+            new Function('return ' + /(eval)(\(function[\s\S]*?)(<\/script>)/s.exec(r)[2].replace("eval", ""))()
+        ]);
+
+    let url = evalFun.match(/MDCore.wurl=['"](.*?)['"]/)[1];
+    let referer = evalFun.match(/MDCore.referrer=['"](.*?)['"]/)[1].trim();
+
+    const r2 = await fetch("https://mixdrop.ps/e/" + id, {
+        method: "POST",
+        body: `referrer=&adblock=0&csrf=${csrf}&a=count`,
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+            "X-Requested-With": "XMLHttpRequest",
+            cookie: cookie,
+            Referer: "https://mixdrop.ps/e/" + id,
+            "User-Agent":
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+        },
+    });
+    const json = await r2.json();
+
+    const data = {
+        url: url.startsWith("http") ? url : "http:" + url,
+        headers: {
+            cookie: cookie,
+            Referer: referer.length > 0 ? referer : "https://mixdrop.ps/",
+        },
+    };
+    return data;
+};
 
 async function getStreamtapeUrl(url) {
     try {
