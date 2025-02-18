@@ -34,10 +34,10 @@ export async function getPrimewire(info) {
         }));
 
     return {
-        provider: "primewire",
+        provider: "PrimeWire",
         sources: [
             {
-                provider: "primewire",
+                provider: "PrimeWire",
                 files: files
             }
         ],
@@ -69,7 +69,7 @@ async function lookupPage(info) {
 }
 
 async function loadServers(link) {
-    if (!link) return new Error("[primewire] No link found");
+    if (!link) return new Error("[PrimeWire] No link found");
 
     let website = await fetch(link);
     website = await website.text();
