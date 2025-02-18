@@ -1,11 +1,11 @@
-import {getEmbedsu} from './controllers/providers/embedsu/embedsu.js';
-import {getNepu} from "./controllers/providers/nepu/nepu.js";
+import {getEmbedsu} from './controllers/providers/EmbedSu/embedsu.js';
+import {getNepu} from "./controllers/providers/Nepu/nepu.js";
 import {getTwoEmbed} from "./controllers/providers/2Embed/2embed.js";
 import {getVidSrc} from "./controllers/providers/VidSrc/vidsrc.js";
 import {getAutoembed} from "./controllers/providers/AutoEmbed/autoembed.js";
-import {getPrimewire} from "./controllers/providers/primewire/primewire.js";
+import {getPrimewire} from "./controllers/providers/PrimeWire/primewire.js";
 import {getBstrsrIn} from "./controllers/providers/BstSrsIn/bstsrsin.js";
-import {getVidSrcCC} from "./controllers/providers/vidsrcCC/vidsrccc.js";
+import {getVidSrcCC} from "./controllers/providers/VidSrcCC/vidsrccc.js";
 
 export async function getMovie(media) {
     const id = media.tmdbId;
