@@ -1,6 +1,6 @@
 import express from "express";
-import { getMovie, getTv } from './src/api.js';
-import { getMovieFromTmdb, getTvFromTmdb } from './src/controllers/tmdb.js';
+import {getMovie, getTv} from './src/api.js';
+import {getMovieFromTmdb, getTvFromTmdb} from './src/controllers/tmdb.js';
 // import { MongoClient } from "mongodb";
 import cors from "cors";
 
@@ -34,14 +34,17 @@ app.get('/', (req, res) => {
 
 app.get('/movie/:tmdbId', async (req, res) => {
     if (isNaN(parseInt(req.params.tmdbId))) {
-        res.status(405).json({ error: 'Invalid movie id (contained more than only numbers)', hint: 'Check the documentation again to see how to use this endpoint' });
+        res.status(405).json({
+            error: 'Invalid movie id (contained more than only numbers)',
+            hint: 'Check the documentation again to see how to use this endpoint'
+        });
         return;
     }
-    
+
     const media = await getMovieFromTmdb(req.params.tmdbId);
-    
+
     if (media instanceof Error) {
-        res.status(405).json({ error: media.message });
+        res.status(405).json({error: media.message});
         return;
     }
 
@@ -52,9 +55,12 @@ app.get('/movie/:tmdbId', async (req, res) => {
     // }
 
     let output = await getMovie(media);
-    
+
     if (output === null || output.sources.length === 0 || output instanceof Error) {
-        res.status(404).json({ error: 'Did not find any sources for this one :(', hint: 'If you know where to find this movie and know programming feel free to join us on github: https://github.com/cinepro-org/backend to add it.' });
+        res.status(404).json({
+            error: 'Did not find any sources for this one :(',
+            hint: 'If you know where to find this movie and know programming feel free to join us on github: https://github.com/cinepro-org/backend to add it.'
+        });
     } else {
         res.status(200).json(output);
         //await db.collection("movies").insertOne({output, tmdbId: media.tmdbId});
@@ -63,27 +69,33 @@ app.get('/movie/:tmdbId', async (req, res) => {
 
 app.get('/tv/:tmdbId', async (req, res) => {
     if (!req.params.tmdbId || isNaN(parseInt(req.params.tmdbId)) || !req.query.s || isNaN(parseInt(req.query.s)) || !req.query.e || isNaN(parseInt(req.query.e))) {
-        res.status(405).json({ error: 'Invalid tv id, season, or episode number (must be numbers)', hint: 'Check the documentation again to see how to use this endpoint' });
+        res.status(405).json({
+            error: 'Invalid tv id, season, or episode number (must be numbers)',
+            hint: 'Check the documentation again to see how to use this endpoint'
+        });
         return;
     }
-    
+
     const media = await getTvFromTmdb(req.params.tmdbId, req.query.s, req.query.e);
-    
+
     if (media instanceof Error) {
-        res.status(405).json({ error: media.message });
+        res.status(405).json({error: media.message});
         return;
     }
-    
+
     // let tvInDb = await db.collection("tv").findOne({ tmdbId: media.tmdbId });
     // if (tvInDb) {
     //     res.status(200).json(tvInDb);
     //     return;
     // }
-    
+
     let output = await getTv(media, req.query.s, req.query.e);
-    
+
     if (output === null || output.sources.length === 0 || output instanceof Error) {
-        res.status(404).json({ error: 'Did not find any sources for this one :(', hint: 'If you know where to find this TV show and know programming feel free to join us on github: https://github.com/cinepro-org/backend to add it.' });
+        res.status(404).json({
+            error: 'Did not find any sources for this one :(',
+            hint: 'If you know where to find this TV show and know programming feel free to join us on github: https://github.com/cinepro-org/backend to add it.'
+        });
     } else {
         res.status(200).json(output);
         //await db.collection("tv").insertOne({output, tmdbId: media.tmdbId});
@@ -91,15 +103,21 @@ app.get('/tv/:tmdbId', async (req, res) => {
 });
 
 app.get('/movie/', (req, res) => {
-    res.status(405).json({ error: 'Movie id is required', hint: 'check the documentation again to see how to use this endpoint' });
+    res.status(405).json({
+        error: 'Movie id is required',
+        hint: 'check the documentation again to see how to use this endpoint'
+    });
 });
 
 app.get('/tv/', (req, res) => {
-    res.status(405).json({ error: 'TV id is required', hint: 'check the documentation again to see how to use this endpoint' });
+    res.status(405).json({
+        error: 'TV id is required',
+        hint: 'check the documentation again to see how to use this endpoint'
+    });
 });
 
 app.get('*', (req, res) => {
-    res.status(404).json({ error: 'Not found', hint: 'Go to /' });
+    res.status(404).json({error: 'Not found', hint: 'Go to /'});
 });
 
 app.listen(PORT, () => {

@@ -2,8 +2,8 @@
 import {webcrypto} from "crypto";
 import {readFileSync} from "fs";
 import * as path from "path";
+import {dirname} from "path";
 import {fileURLToPath} from 'url';
-import {dirname} from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -15,6 +15,10 @@ const userAgent =
 class StoragePolyfill {
     constructor() {
         this.storage = new Map();
+    }
+
+    get length() {
+        return this.storage.size;
     }
 
     setItem(key, value) {
@@ -35,10 +39,6 @@ class StoragePolyfill {
 
     clear() {
         this.storage.clear();
-    }
-
-    get length() {
-        return this.storage.size;
     }
 }
 
