@@ -26,7 +26,7 @@ const getMixdropVideoViaInternalId = async (id) => {
         },
     });
     const json = await r2.json();
-    if (!json.type.ok){
+    if (!json.type.ok) {
         return new Error();
     }
 

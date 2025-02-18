@@ -24,7 +24,7 @@ export async function getVidSrc(params) {
 
     let iframeHtml2 = (await axios.get(secondUrl, {headers: {Referer: url, Origin: secondUrl}})).data;
 
-    
+
     // TODO: Finish this function
     // only works till here. It returns something strange, I think it is a cloudflare background challenge: 
     /*

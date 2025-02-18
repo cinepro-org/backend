@@ -1,4 +1,44 @@
 export default class JsUnpacker {
+    static Unbase = class {
+        constructor(radix) {
+            this.ALPHABET_62 = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            this.ALPHABET_95 = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
+            this.alphabet = null;
+            this.dictionary = {};
+            this.radix = radix;
+
+            if (radix > 36) {
+                if (radix < 62) {
+                    this.alphabet = this.ALPHABET_62.substring(0, radix);
+                } else if (radix > 62 && radix < 95) {
+                    this.alphabet = this.ALPHABET_95.substring(0, radix);
+                } else if (radix === 62) {
+                    this.alphabet = this.ALPHABET_62;
+                } else if (radix === 95) {
+                    this.alphabet = this.ALPHABET_95;
+                }
+
+                for (let i = 0; i < this.alphabet.length; i++) {
+                    this.dictionary[this.alphabet[i]] = i;
+                }
+            }
+        }
+
+        unbase(str) {
+            let ret = 0;
+
+            if (this.alphabet === null) {
+                ret = parseInt(str, this.radix);
+            } else {
+                const tmp = str.split('').reverse().join('');
+                for (let i = 0; i < tmp.length; i++) {
+                    ret += Math.pow(this.radix, i) * this.dictionary[tmp[i]];
+                }
+            }
+            return ret;
+        }
+    };
+
     constructor(packedJS) {
         this.packedJS = packedJS;
     }
@@ -63,44 +103,4 @@ export default class JsUnpacker {
         }
         return null;
     }
-
-    static Unbase = class {
-        constructor(radix) {
-            this.ALPHABET_62 = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-            this.ALPHABET_95 = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
-            this.alphabet = null;
-            this.dictionary = {};
-            this.radix = radix;
-
-            if (radix > 36) {
-                if (radix < 62) {
-                    this.alphabet = this.ALPHABET_62.substring(0, radix);
-                } else if (radix > 62 && radix < 95) {
-                    this.alphabet = this.ALPHABET_95.substring(0, radix);
-                } else if (radix === 62) {
-                    this.alphabet = this.ALPHABET_62;
-                } else if (radix === 95) {
-                    this.alphabet = this.ALPHABET_95;
-                }
-
-                for (let i = 0; i < this.alphabet.length; i++) {
-                    this.dictionary[this.alphabet[i]] = i;
-                }
-            }
-        }
-
-        unbase(str) {
-            let ret = 0;
-
-            if (this.alphabet === null) {
-                ret = parseInt(str, this.radix);
-            } else {
-                const tmp = str.split('').reverse().join('');
-                for (let i = 0; i < tmp.length; i++) {
-                    ret += Math.pow(this.radix, i) * this.dictionary[tmp[i]];
-                }
-            }
-            return ret;
-        }
-    };
 }
