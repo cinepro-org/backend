@@ -1,10 +1,7 @@
 import {getEmbedsu} from './controllers/providers/EmbedSu/embedsu.js';
-import {getNepu} from "./controllers/providers/Nepu/nepu.js";
 import {getTwoEmbed} from "./controllers/providers/2Embed/2embed.js";
-import {getVidSrc} from "./controllers/providers/VidSrc/vidsrc.js";
 import {getAutoembed} from "./controllers/providers/AutoEmbed/autoembed.js";
 import {getPrimewire} from "./controllers/providers/PrimeWire/primewire.js";
-import {getBstrsrIn} from "./controllers/providers/BstSrsIn/bstsrsin.js";
 import {getVidSrcCC} from "./controllers/providers/VidSrcCC/vidsrccc.js";
 
 export async function getMovie(media) {
@@ -12,8 +9,6 @@ export async function getMovie(media) {
 
     let embedsu;
     let twoEmbed;
-    let nepu;
-    let vidsrc;
     let autoembed;
     let primewire;
     let vidsrcCC;
@@ -26,16 +21,6 @@ export async function getMovie(media) {
         }
         try {
             twoEmbed = await getTwoEmbed(media);
-        } catch (e) {
-            console.log(e)
-        }
-        try {
-            nepu = await getNepu(media);
-        } catch (e) {
-            console.log(e)
-        }
-        try {
-            vidsrc = await getVidSrc(media);
         } catch (e) {
             console.log(e)
         }
@@ -69,15 +54,6 @@ export async function getMovie(media) {
     if (twoEmbed && !(twoEmbed instanceof Error)) {
         sources.push(...twoEmbed.sources);
         subtitles.push(...twoEmbed.subtitles);
-    }
-
-    if (nepu && !(nepu instanceof Error)) {
-        sources.push(...nepu.sources);
-        subtitles.push(...nepu.subtitles);
-    }
-
-    if (vidsrc && !(vidsrc instanceof Error)) {
-        sources.push(vidsrc);
     }
 
     if (autoembed && !(autoembed instanceof Error)) {
@@ -126,10 +102,7 @@ export async function getTv(media, s, e) {
 
     let embedsu;
     let twoEmbed;
-    let nepu;
-    let vidsrc;
     let autoembed;
-    let bstsrsin;
     let vidsrcCC;
 
     try {
@@ -144,22 +117,7 @@ export async function getTv(media, s, e) {
             console.log(e)
         }
         try {
-            nepu = await getNepu(media, season, episode);
-        } catch (e) {
-            console.log(e)
-        }
-        try {
-            vidsrc = await getVidSrc(media, season, episode);
-        } catch (e) {
-            console.log(e)
-        }
-        try {
             autoembed = await getAutoembed(media);
-        } catch (e) {
-            console.log(e)
-        }
-        try {
-            bstsrsin = await getBstrsrIn(media);
         } catch (e) {
             console.log(e)
         }
@@ -185,22 +143,9 @@ export async function getTv(media, s, e) {
         subtitles.push(...twoEmbed.subtitles);
     }
 
-    if (nepu && !(nepu instanceof Error)) {
-        sources.push(...nepu.sources);
-        subtitles.push(...nepu.subtitles);
-    }
-
-    if (vidsrc && !(vidsrc instanceof Error)) {
-        sources.push(vidsrc);
-    }
-
     if (autoembed && !(autoembed instanceof Error)) {
         sources.push(...autoembed.sources);
         subtitles.push(...autoembed.subtitles);
-    }
-
-    if (bstsrsin && !(bstsrsin instanceof Error)) {
-        sources.push(...bstsrsin.sources);
     }
 
     if (vidsrcCC && !(vidsrcCC instanceof Error)) {

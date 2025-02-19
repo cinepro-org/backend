@@ -28,5 +28,8 @@
     "set-cookie-parser": "^2.7.1",
     "unpacker": "^1.0.1"
   },
-  "keywords": []
+  "keywords": [],
+  "devDependencies": {
+    "@types/cors": "^2.8.17"
+  }
 }
