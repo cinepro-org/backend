@@ -27,7 +27,7 @@ This route returns all the scraping information it can find for the tv show with
 
 Both routes return a JSON object with the following structure:
 
-```json
+```js
 {
     "sources": [{                             // is an array of sources for the media (each source is a provider)
         "provider": "providerName",         // is a friendly name for the provider

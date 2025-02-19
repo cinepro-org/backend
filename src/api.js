@@ -13,7 +13,6 @@ export async function getMovie(media) {
     let embedsu;
     let twoEmbed;
     let nepu;
-    let vidsrcICU;
     let vidsrc;
     let autoembed;
     let primewire;
@@ -128,7 +127,6 @@ export async function getTv(media, s, e) {
     let embedsu;
     let twoEmbed;
     let nepu;
-    let vidsrcICU;
     let vidsrc;
     let autoembed;
     let bstsrsin;
