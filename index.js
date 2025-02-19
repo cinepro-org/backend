@@ -1,21 +1,10 @@
 import express from "express";
 import {getMovie, getTv} from './src/api.js';
 import {getMovieFromTmdb, getTvFromTmdb} from './src/controllers/tmdb.js';
-// import { MongoClient } from "mongodb";
 import cors from "cors";
 
 const PORT = process.env.PORT;
 const app = express()
-// const MONGO_URI = process.env.MONGO_URI;
-
-// const client = new MongoClient(MONGO_URI);
-// try {
-//     await client.connect();
-//     console.log("Connected to the database");
-// } catch (e) {
-//     console.error(e);
-// }
-// let db = client.db("CineProDB");
 
 app.use(cors());
 
@@ -48,12 +37,6 @@ app.get('/movie/:tmdbId', async (req, res) => {
         return;
     }
 
-    // let movieInDb = await db.collection("movies").findOne({ tmdbId: media.tmdbId });
-    // if (movieInDb) {
-    //     res.status(200).json(movieInDb);
-    //     return;
-    // }
-
     let output = await getMovie(media);
 
     if (output === null || output.sources.length === 0 || output instanceof Error) {
@@ -63,7 +46,6 @@ app.get('/movie/:tmdbId', async (req, res) => {
         });
     } else {
         res.status(200).json(output);
-        //await db.collection("movies").insertOne({output, tmdbId: media.tmdbId});
     }
 });
 
@@ -83,12 +65,6 @@ app.get('/tv/:tmdbId', async (req, res) => {
         return;
     }
 
-    // let tvInDb = await db.collection("tv").findOne({ tmdbId: media.tmdbId });
-    // if (tvInDb) {
-    //     res.status(200).json(tvInDb);
-    //     return;
-    // }
-
     let output = await getTv(media, req.query.s, req.query.e);
 
     if (output === null || output.sources.length === 0 || output instanceof Error) {
@@ -98,7 +74,6 @@ app.get('/tv/:tmdbId', async (req, res) => {
         });
     } else {
         res.status(200).json(output);
-        //await db.collection("tv").insertOne({output, tmdbId: media.tmdbId});
     }
 });
 

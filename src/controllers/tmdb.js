@@ -26,7 +26,7 @@ export async function getMovieFromTmdb(tmdb_id) {
 
 export async function getTvFromTmdb(tmdb_id, season, episode) {
     try {
-        const url = `https://api.themoviedb.org/3/tv/${tmdb_id}/season/${season}/episode/${episode}?api_key=${apiKey}`;
+        const url = `https://api.themoviedb.org/3/tv/${tmdb_id}/season/${season}/episode/${episode}?api_key=${apiKey}&append_to_response=external_ids`;
         const response = await fetch(url);
         const data = await response.json();
         if (new Date(data.air_date) > new Date().getTime()) {
@@ -40,7 +40,7 @@ export async function getTvFromTmdb(tmdb_id, season, episode) {
             title: title,
             releaseYear: data.air_date.split("-")[0],
             tmdbId: tmdb_id,
-            imdbId: data.imdb_id,
+            imdbId: data.external_ids.imdb_id,
             season: season,
             episode: episode,
             episodeName: data.name
