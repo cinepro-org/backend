@@ -1,4 +1,4 @@
-import { generateVRF } from "./vrfGen.js";
+import { generateVRF } from "./vrfgen.js";
 import { languageMap } from "../../../utils/languages.js";
 
 const DOMAIN = "https://vidsrc.cc/api/";
