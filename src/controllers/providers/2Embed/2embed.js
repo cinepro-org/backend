@@ -11,6 +11,7 @@ export async function getTwoEmbed(params) {
         ? `${URL}/embedtv/${tmdbId}&s=${params.season}&e=${params.episode}`
         : `${URL}/embed/${tmdbId}`;
 
+    // TODO: Instead of returning the different qualities, return the playlist.m3u8 but still figure out what the highest quality it is.
     try {
         const response = await axios.post(url, "pls=pls", {
             headers: {
