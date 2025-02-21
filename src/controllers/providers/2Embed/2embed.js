@@ -42,15 +42,17 @@ export async function getTwoEmbed(params) {
             }))
         ];
 
-
         return {
-            provider: "Two Embed",
-            sources: [
-                {
-                    provider: "Two Embed",
-                    files: files
+            originalPlaylist: streamUrl,
+            files: files.map(file => ({
+                file: file.file,
+                type: file.type,
+                quality: file.quality,
+                lang: file.lang,
+                headers: {
+                    "Referer": url
                 }
-            ],
+            })),
             subtitles: []
         };
     } catch (error) {

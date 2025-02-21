@@ -47,40 +47,25 @@ export async function getAutoembed(media) {
             // ignore...
         }
 
-        const files = [
-            ...sources.map(source => ({
-                file: source.url,
-                type: "hls",
-                quality: source.quality,
-                lang: "en"
-            }))
-        ];
-
-        if (vietnameseM3u8) {
-            files.push({
-                file: vietnameseM3u8,
-                type: "hls",
-                quality: vietnameseQuality ? vietnameseQuality[1].split('x')[1] + "p" : "unknown",
-                lang: "vi"
-            });
-        }
-
-        const formattedSources = [{
-            provider: "AutoEmbed",
-            files: files,
-            headers: {
-                "Referer": "https://autoembed.cc/",
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36", // Example User-Agent
-                "Origin": "https://autoembed.cc/"
-            }
-        }];
-
-        const subs = mapSubtitles(data.subtitles);
+        const bestQualitySource = sources.reduce((best, current) => {
+            return parseInt(current.quality) > parseInt(best.quality) ? current : best;
+        }, { quality: "0p" });
 
         return {
-            provider: "AutoEmbed",
-            sources: formattedSources,
-            subtitles: subs
+            files: [
+                {
+                    file: m3u8Url,
+                    type: "hls",
+                    quality: bestQualitySource.quality,
+                    lang: "en",
+                    headers: {
+                        'Referer': 'https://autoembed.cc/'
+                    }
+                }
+            ],
+            subtitles: [
+                ...mapSubtitles(data.subtitles)
+            ]
         };
 
     } catch (error) {
@@ -116,7 +101,6 @@ function parseM3U8(m3u8Content) {
 function mapSubtitles(subtitles) {
     return subtitles.map(subtitle => {
         const lang = languageMap[subtitle.label.split(' ')[0]] || subtitle.label || "unknown";
-
         const fileUrl = subtitle.file;
         const fileExtension = fileUrl.split('.').pop().toLowerCase();
         const type = fileExtension === 'vtt' ? 'vtt' : 'srt';
