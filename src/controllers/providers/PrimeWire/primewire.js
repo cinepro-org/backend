@@ -32,15 +32,21 @@ export async function getPrimewire(info) {
             lang: "en",
             ...(embedLink.headers && {headers: embedLink.headers})
         }));
+    
 
     return {
-        provider: "PrimeWire",
-        sources: [
-            {
-                provider: "PrimeWire",
-                files: files
+        files: files.map(file => {
+            const result = {
+                file: file.file,
+                type: file.type,
+                quality: file.quality,
+                lang: file.lang
+            };
+            if (file.headers) {
+                result.headers = file.headers;
             }
-        ],
+            return result;
+        }),
         subtitles: []
     };
 }

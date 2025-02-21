@@ -72,15 +72,18 @@ export async function getVidSrcCC(media) {
     }
 
     return {
-        provider: "VidSrcCC",
-        sources: [
-            {
-                provider: "VidSrcCC",
-                files,
-                header: headers
-            }
-        ],
-        subtitles
+        files: files.map(file => ({
+            file: file.file,
+            type: file.type,
+            quality: file.quality,
+            lang: file.lang,
+            headers: headers
+        })),
+        subtitles: subtitles.map(subtitle => ({
+            url: subtitle.url,
+            lang: subtitle.lang,
+            type: subtitle.url.split('.').pop()
+        }))
     };
 }
 

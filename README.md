@@ -27,35 +27,32 @@ This route returns all the scraping information it can find for the tv show with
 
 Both routes return a JSON object with the following structure:
 
-```js
+```json
 {
-    "sources": [{                             // is an array of sources for the media (each source is a provider)
-        "provider": "providerName",         // is a friendly name for the provider
-        "files": [
-            {
-                "file": "fileUrl",          // is the url to the file (most of the time a .m3u8 file)
-                "type": "fileType",         // is the type of the file (hls, mp4, embed or direct). More information below.
-                "quality": "fileQuality",   // is the quality of the file (varies from provider to provider). Can also be unknown.
-                "lang": "fileLanguage"      // is the language of the media file (en, fr...). Can also be unknown. More information below.
-            }
-        ],
-        "headers": {
-            "Referer": "refererUrl",        // is the url for the referer header. This is most of the time the same as the file url. USE IT TO MAKE REQUESTS TO THE FILE URL! Won't work without it.
-            "User-Agent": "userAgent",     // is the user agent for the request. Also recommended for making requests to the file url.
-            "Origin": "originUrl"          // is the origin for the request. Also recommended for making requests to the file url.
-        }
-    }],
-    "subtitles": [{                          // is an array of subtitles for the media. This is not provider specific. It lists all subtitles for the media. Most of the time there are several subtitles.
-        "url": "subtitleUrl",              // is the url to the subtitle file
-        "lang": "subtitleLanguage",        // is the language of the subtitle file (en, fr...)
-        "type": "subtitleType"             // is the type of the subtitle file (srt, vtt...)
-    }]
+  "files": [
+    {
+      "file": "url",
+      "type": "Specify the type (refer to the /README for details)",
+      "quality": "(If possible, indicate the quality; otherwise, use 'unknown')",
+      "lang": "(Specify language using ISO standard; refer to utils/languages.js for available languages)",
+      "headers": {
+        "description": "If the request to that specific file needs headers (i.e. cookies), specify them here"
+      }
+    }
+  ], 
+  "subtitles": [
+    {
+      "url": "the url to the file",
+      "lang": "the language of the subtitle file (use ISO standard)",
+      "type": "subtitleType (srt, vtt, etc.)"
+    }
+  ]
 }
 ```
 
 #### More Information
 
-##### File Type
+##### File Types
 
 - hls: is a .m3u8 file that can be played with a player that supports HLS (like video.js or hls.js)
 - mp4: is a .mp4 file that can be played with a player that supports mp4 (like video.js)

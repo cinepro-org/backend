@@ -2,30 +2,28 @@ import express from "express";
 import {getMovie, getTv} from './src/api.js';
 import {getMovieFromTmdb, getTvFromTmdb} from './src/controllers/tmdb.js';
 import cors from "cors";
+import {strings} from './Strings.js';
 
 const PORT = process.env.PORT;
-const app = express()
+const app = express();
 
 app.use(cors());
 
 app.get('/', (req, res) => {
     res.status(200).json({
-        home: "CinePro API",
-        routes: {
-            movie: "/movie/:tmdbID",
-            tv: "/tv/:tmdbID?s=seasonNumber&e=episodeNumber"
-        },
-        information: "This project is for educational purposes only. We do not host any kind of content. We provide only the links to already available content on the internet. We do not host, upload any videos, films or media files. We are not responsible for the accuracy, compliance, copyright, legality, decency, or any other aspect of the content of other linked sites. If you have any legal issues please contact the appropriate media file owners or host sites.",
-        license: "You can use this project for personal and non-commercial use ONLY! You are not allowed to sell this project or any part of it and/or add ANY KIND of tracking or advertisement to it.",
-        source: "https://github.com/cinepro-org/backend"
+        home: strings.HOME_NAME,
+        routes: strings.ROUTES,
+        information: strings.INFORMATION,
+        license: strings.LICENSE,
+        source: strings.SOURCE
     });
 });
 
 app.get('/movie/:tmdbId', async (req, res) => {
     if (isNaN(parseInt(req.params.tmdbId))) {
         res.status(405).json({
-            error: 'Invalid movie id (contained more than only numbers)',
-            hint: 'Check the documentation again to see how to use this endpoint'
+            error: strings.INVALID_MOVIE_ID,
+            hint: strings.INVALID_MOVIE_ID_HINT
         });
         return;
     }
@@ -39,10 +37,10 @@ app.get('/movie/:tmdbId', async (req, res) => {
 
     let output = await getMovie(media);
 
-    if (output === null || output.sources.length === 0 || output instanceof Error) {
+    if (output === null || output instanceof Error) {
         res.status(404).json({
-            error: 'Did not find any sources for this one :(',
-            hint: 'If you know where to find this movie and know programming feel free to join us on github: https://github.com/cinepro-org/backend to add it.'
+            error: strings.MOVIE_NOT_FOUND,
+            hint: strings.MOVIE_NOT_FOUND_HINT
         });
     } else {
         res.status(200).json(output);
@@ -52,8 +50,8 @@ app.get('/movie/:tmdbId', async (req, res) => {
 app.get('/tv/:tmdbId', async (req, res) => {
     if (!req.params.tmdbId || isNaN(parseInt(req.params.tmdbId)) || !req.query.s || isNaN(parseInt(req.query.s)) || !req.query.e || isNaN(parseInt(req.query.e))) {
         res.status(405).json({
-            error: 'Invalid tv id, season, or episode number (must be numbers)',
-            hint: 'Check the documentation again to see how to use this endpoint'
+            error: strings.INVALID_TV_ID,
+            hint: strings.INVALID_TV_ID_HINT
         });
         return;
     }
@@ -67,10 +65,10 @@ app.get('/tv/:tmdbId', async (req, res) => {
 
     let output = await getTv(media, req.query.s, req.query.e);
 
-    if (output === null || output.sources.length === 0 || output instanceof Error) {
+    if (output === null || output instanceof Error) {
         res.status(404).json({
-            error: 'Did not find any sources for this one :(',
-            hint: 'If you know where to find this TV show and know programming feel free to join us on github: https://github.com/cinepro-org/backend to add it.'
+            error: strings.TV_NOT_FOUND,
+            hint: strings.TV_NOT_FOUND_HINT
         });
     } else {
         res.status(200).json(output);
@@ -79,15 +77,15 @@ app.get('/tv/:tmdbId', async (req, res) => {
 
 app.get('/movie/', (req, res) => {
     res.status(405).json({
-        error: 'Movie id is required',
-        hint: 'check the documentation again to see how to use this endpoint'
+        error: strings.INVALID_MOVIE_ID,
+        hint: strings.INVALID_MOVIE_ID_HINT
     });
 });
 
 app.get('/tv/', (req, res) => {
     res.status(405).json({
-        error: 'TV id is required',
-        hint: 'check the documentation again to see how to use this endpoint'
+        error: strings.INVALID_TV_ID,
+        hint: strings.INVALID_TV_ID_HINT
     });
 });
 
@@ -96,5 +94,5 @@ app.get('*', (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`Server is running on port http://localhost:${PORT}`);
 });

@@ -29,8 +29,9 @@ export async function getEmbedsu(tmdb_id, s, e) {
 
         if (!secondDecode || secondDecode.length === 0) return;
 
-        const sources = [];
-        const subtitles = [];
+        let originalPlaylist = "";
+        let bestQuality = null;
+        let tracks = [];
 
         for (const item of secondDecode) {
             if (item.name.toLowerCase() !== "viper") continue;
@@ -44,9 +45,11 @@ export async function getEmbedsu(tmdb_id, s, e) {
 
             if (!dataDirect.source) continue;
 
-            const tracks = dataDirect.subtitles.map(sub => ({
+            originalPlaylist = dataDirect.source;
+
+            tracks = dataDirect.subtitles.map(sub => ({
                 url: sub.file,
-                lang: languageMap[sub.label[0]] || sub.label,
+                lang: languageMap[sub.label.split(' ')[0]] || sub.label,
                 type: sub.file.split('.').pop()
             })).filter(track => track.lang);
 
@@ -64,26 +67,31 @@ export async function getEmbedsu(tmdb_id, s, e) {
 
             if (!directQuality.length) continue;
 
-            sources.push({
-                provider: "EmbedSu",
-                files: directQuality,
-                headers: {
-                    "Referer": DOMAIN,
-                    "User-Agent": headers['User-Agent'],
-                    "Origin": DOMAIN
-                }
-            });
+            const highestQuality = directQuality.reduce((prev, current) => {
+                return (parseInt(current.quality) > parseInt(prev.quality)) ? current : prev;
+            }, directQuality[0]);
 
-            subtitles.push(...tracks);
+            if (!bestQuality || parseInt(highestQuality.quality) > parseInt(bestQuality.quality)) {
+                bestQuality = highestQuality;
+            }
         }
 
-        return {
-            provider: "EmbedSu",
-            sources,
-            subtitles
-        };
+    return {
+        files: [{
+            file: originalPlaylist.replace("embed.su/api/proxy/viper/", ""),
+            type: "hls",
+            quality: bestQuality.quality,
+            lang: "en",
+            headers: {
+                "User-Agent": headers['User-Agent'],
+                "Referer": DOMAIN,
+                "Origin": DOMAIN
+            }
+        }],
+        subtitles: tracks
+    };
     } catch (e) {
-        return {provider: "EmbedSu", sources: [], subtitles: []};
+        return {provider: "EmbedSu", originalPlaylist: "", bestQuality: null};
     }
 }
 
