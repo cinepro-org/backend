@@ -4,6 +4,7 @@ import {getAutoembed} from "./controllers/providers/AutoEmbed/autoembed.js";
 import {getPrimewire} from "./controllers/providers/PrimeWire/primewire.js";
 import {getVidSrcCC} from "./controllers/providers/VidSrcCC/vidsrccc.js";
 import {getVidSrc} from "./controllers/providers/VidSrc/VidSrc.js";
+import {getVidSrcSu} from "./controllers/providers/VidSrcSu/VidSrcSu.js";
 
 export async function getMovie(media) {
     const id = media.tmdbId;
@@ -14,6 +15,7 @@ export async function getMovie(media) {
     let primewire;
     let vidsrcCC;
     let vidsrc;
+    let vidsrcSu;
 
     //it should continue, no matter what error occur
     try {embedsu = await getEmbedsu(id);} catch (e) {console.log(e)}
@@ -22,11 +24,12 @@ export async function getMovie(media) {
     try {primewire = await getPrimewire(media);} catch (e) {console.log(e)}
     try {vidsrcCC = await getVidSrcCC(media);} catch (e) {console.log(e)}
     try {vidsrc = await getVidSrc(media);} catch (e) {console.log(e)}
+    try {vidsrcSu = await getVidSrcSu(media);} catch (e) {console.log(e)}
 
     const files = [];
     const subtitles = [];
 
-    [embedsu, twoEmbed, autoembed, primewire, vidsrcCC, vidsrc].forEach(provider => {
+    [embedsu, twoEmbed, autoembed, primewire, vidsrcCC, vidsrc, vidsrcSu].forEach(provider => {
         if (provider && !(provider instanceof Error)) {
             files.push(...provider.files);
             subtitles.push(...provider.subtitles);
@@ -65,6 +68,7 @@ export async function getTv(media, s, e) {
     let primewire;
     let vidsrcCC;
     let vidsrc;
+    let vidsrcSu;
     
     try {embedsu = await getEmbedsu(id, season, episode);} catch (e) {console.log(e)}
     try {twoEmbed = await getTwoEmbed(media);} catch (e) {console.log(e)}
@@ -72,11 +76,12 @@ export async function getTv(media, s, e) {
     try {primewire = await getPrimewire(media);} catch (e) {console.log(e)}
     try {vidsrcCC = await getVidSrcCC(media);} catch (e) {console.log(e)}
     try {vidsrc = await getVidSrc(media);} catch (e) {console.log(e)}
+    try {vidsrcSu = await getVidSrcSu(media);} catch (e) {console.log(e)}
 
     const files = [];
     const subtitles = [];
 
-    [embedsu, twoEmbed, autoembed, primewire, vidsrcCC, vidsrc].forEach(provider => {
+    [embedsu, twoEmbed, autoembed, primewire, vidsrcCC, vidsrc, vidsrcSu].forEach(provider => {
         if (provider && !(provider instanceof Error)) {
             files.push(...provider.files);
             subtitles.push(...provider.subtitles);
