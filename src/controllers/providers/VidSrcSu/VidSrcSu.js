@@ -33,6 +33,15 @@ export async function getVidSrcSu(media) {
             type: subtitle.format
         }));
 
+        try {
+            // try to itterate the servers (if it does not work, it will return an error)
+            servers.forEach(server => {
+                // smth
+            });
+        } catch (error) {
+            return new Error(error);
+        }
+
         return { files: servers, subtitles };
     } catch (error) {
         return error;

@@ -84,13 +84,17 @@ async function loadServers(link) {
         urls.push({url: `https://primewire.tf/links/go/${match[1]}`, idx: match[1]});
     }
 
-    let embeds = [];
-    for (const item of urls) {
-        let response = await axios.get(item.url);
-        let location = "https://" + response.request.host + response.request.path;
-        embeds.push(location)
+    try {
+            let embeds = [];
+            for (const item of urls) {
+                let response = await axios.get(item.url);
+                let location = "https://" + response.request.host + response.request.path;
+                embeds.push(location)
+            }
+            return embeds;
+    } catch (error) {
+            return new Error(error);
     }
-    return embeds;
 }
 
 function sha1Hex(str) {
