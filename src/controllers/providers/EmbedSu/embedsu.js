@@ -91,7 +91,7 @@ export async function getEmbedsu(tmdb_id, s, e) {
         subtitles: tracks
     };
     } catch (e) {
-        return {provider: "EmbedSu", originalPlaylist: "", bestQuality: null};
+        return new Error(e);
     }
 }
 
