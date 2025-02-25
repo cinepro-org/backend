@@ -5,6 +5,7 @@ import {getPrimewire} from "./controllers/providers/PrimeWire/primewire.js";
 import {getVidSrcCC} from "./controllers/providers/VidSrcCC/vidsrccc.js";
 import {getVidSrc} from "./controllers/providers/VidSrc/VidSrc.js";
 import {getVidSrcSu} from "./controllers/providers/VidSrcSu/VidSrcSu.js";
+import {getVidSrcVip} from "./controllers/providers/VidSrcVip/VidSrcVip.js";
 
 export async function getMovie(media) {
     const id = media.tmdbId;
@@ -15,6 +16,7 @@ export async function getMovie(media) {
     let primewire;
     let vidsrcCC;
     let vidsrc;
+    let vidsrcVip;
     let vidsrcSu;
 
     //it should continue, no matter what error occur
@@ -25,11 +27,12 @@ export async function getMovie(media) {
     try {vidsrcCC = await getVidSrcCC(media);} catch (e) {console.log(e)}
     try {vidsrc = await getVidSrc(media);} catch (e) {console.log(e)}
     try {vidsrcSu = await getVidSrcSu(media);} catch (e) {console.log(e)}
+    try {vidsrcVip = await getVidSrcVip(media);} catch (e) {console.log(e)}
 
     const files = [];
     const subtitles = [];
 
-    [embedsu, twoEmbed, autoembed, primewire, vidsrcCC, vidsrc, vidsrcSu].forEach(provider => {
+    [embedsu, twoEmbed, autoembed, primewire, vidsrcCC, vidsrc, vidsrcSu, vidsrcVip].forEach(provider => {
         if (provider && !(provider instanceof Error)) {
             files.push(...provider.files);
             subtitles.push(...provider.subtitles);
@@ -51,8 +54,21 @@ export async function getMovie(media) {
         }
     });
 
+    // make sure that there are no duplicate files
+    const fileUrls = new Set();
+    const uniqueFiles = [];
+
+    files.forEach(file => {
+        if (file.file && !fileUrls.has(file.file)) {
+            if (file.file.includes('https://')) {
+                fileUrls.add(file.url);
+                uniqueFiles.push(file);
+            }
+        }
+    });
+
     return {
-        files,
+        files: uniqueFiles,
         subtitles: uniqueSubtitles
     };
 }
