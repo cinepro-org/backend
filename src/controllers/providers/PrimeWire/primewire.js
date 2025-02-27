@@ -19,7 +19,7 @@ export async function getPrimewire(info) {
         } else if (server.includes("streamtape")) {
             return await getStreamtapeUrl(server);
         } else {
-            return {videoLink: server, quality: "unknown", type: "embed"};
+            return {videoLink: server, type: "embed"};
         }
     }));
 
@@ -28,7 +28,6 @@ export async function getPrimewire(info) {
         .map(embedLink => ({
             file: embedLink.videoLink,
             type: embedLink.type,
-            quality: embedLink.quality || "unknown",
             lang: "en",
             ...(embedLink.headers && {headers: embedLink.headers})
         }));
@@ -39,7 +38,6 @@ export async function getPrimewire(info) {
             const result = {
                 file: file.file,
                 type: file.type,
-                quality: file.quality,
                 lang: file.lang
             };
             if (file.headers) {
@@ -105,13 +103,11 @@ async function doStuffWithMixdrop(server) {
     // get the internal id https://mixdrop.ps/e/internalId
     let data = await getMixdropVideoViaInternalId(server.split("/").pop());
     if (data instanceof Error) {
-        return {videoLink: server, quality: "unknown", type: "embed"};
+        return {videoLink: server, type: "embed"};
     }
-    // TODO: can get the quality later
 
     return {
         videoLink: data.url,
-        quality: "unknown",
         type: "mp4",
         headers: data.headers
     }
@@ -185,20 +181,13 @@ async function getStreamtapeUrl(url) {
 
         let finalUrl = fullUrlMatch[1].split(hostname)[1];
         finalUrl = `https://${hostname}${finalUrl}&token=${tokenMatch[1]}`;
-
-        const titleRegex = /<meta name="og:title" content="(.*)">/;
-        const titleMatch = html.match(titleRegex);
-        let quality = titleMatch[1].match(/.(\d+)p./)[1];
-
         return {
             videoLink: finalUrl + "&dl=1",
-            quality: quality + 'p',
             type: "direct"
         };
     } catch (error) {
         return {
             videoLink: url,
-            quality: "unknown",
             type: "embed"
         }
     }

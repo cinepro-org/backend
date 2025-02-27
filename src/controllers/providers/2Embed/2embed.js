@@ -11,7 +11,6 @@ export async function getTwoEmbed(params) {
         ? `${URL}/embedtv/${tmdbId}&s=${params.season}&e=${params.episode}`
         : `${URL}/embed/${tmdbId}`;
 
-    // TODO: Instead of returning the different qualities, return the playlist.m3u8 but still figure out what the highest quality it is.
     try {
         const response = await axios.post(url, "pls=pls", {
             headers: {
@@ -32,15 +31,12 @@ export async function getTwoEmbed(params) {
             return new Error("No stream found");
         }
 
-        const sources = await parseM3U8(streamUrl, `${PLAYER_URL}/e/${match.groups.id}`);
-
-        const files = [
-            ...sources.map(source => ({
-                file: source.url,
+        const files = [                
+            {
+                file: streamUrl,
                 type: "hls",
-                quality: source.quality,
                 lang: "en"
-            }))
+            }
         ];
 
         return {
@@ -48,53 +44,11 @@ export async function getTwoEmbed(params) {
             files: files.map(file => ({
                 file: file.file,
                 type: file.type,
-                quality: file.quality,
-                lang: file.lang,
-                headers: {
-                    "Referer": url
-                }
+                lang: file.lang
             })),
             subtitles: []
         };
     } catch (error) {
         return new Error(error);
     }
-}
-
-async function parseM3U8(m3u8Url, referer) {
-    const response = await fetch(m3u8Url, {
-        headers: {
-            "Referer": referer
-        }
-    });
-
-    if (!response.ok) {
-        return 'unknown';
-    }
-
-    const m3u8Content = await response.text();
-
-    const lines = m3u8Content.split('\n');
-    const sources = [];
-    let currentSource = {};
-
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim();
-
-        if (line.startsWith('#EXT-X-STREAM-INF:')) {
-            const resolutionMatch = line.match(/RESOLUTION=(\d+x\d+)/);
-            if (resolutionMatch) {
-                const resolution = resolutionMatch[1];
-                const quality = resolution.split('x')[1];
-                currentSource.quality = quality + "p";
-            }
-        } else if (line.startsWith('index')) {
-            const preuri = m3u8Url.split("master.m3u8")[0];
-            currentSource.url = `${preuri}${line}`;
-            sources.push(currentSource);
-            currentSource = {};
-        }
-    }
-
-    return sources;
 }

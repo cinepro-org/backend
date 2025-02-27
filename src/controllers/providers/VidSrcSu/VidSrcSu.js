@@ -20,7 +20,6 @@ export async function getVidSrcSu(media) {
         const servers = [...html.matchAll(/label: 'Server (3|4|5|7|8|9|10|12|13|15|17|18|19)', url: '(https.*)'/g)].map(match => ({
             file: match[2],
             type: "hls",
-            quality: "unknown",
             lang: "en"
         }));        
 

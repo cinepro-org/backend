@@ -122,7 +122,6 @@ export async function getVidSrc(params) {
             {
                 file: secondUrl,
                 type: "embed",
-                quality: "unknown",
                 lang: "en"
             }
         ],
