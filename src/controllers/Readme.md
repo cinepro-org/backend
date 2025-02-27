@@ -22,7 +22,6 @@ Here you can find the followin files:
         {
             "file": "url",
             "type": "Specify the type (refer to the /README for details)",
-            "quality": "(If possible, indicate the quality; otherwise, use 'unknown')",
             "lang": "(Specify language using ISO standard; refer to utils/languages.js for available languages)",
             "headers": {
                 "description": "If the request to that specific file needs headers (i.e. cookies), specify them here"

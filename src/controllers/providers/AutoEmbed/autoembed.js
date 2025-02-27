@@ -36,27 +36,18 @@ export async function getAutoembed(media) {
         let vietnameseM3u8;
         let vietnameseM3u8Response;
         let vietnameseM3u8Content;
-        let vietnameseQuality;
 
         try {
             vietnameseM3u8 = await getVietnameseUrl(media);
-            vietnameseM3u8Response = await fetch(vietnameseM3u8);
-            vietnameseM3u8Content = await vietnameseM3u8Response.text();
-            vietnameseQuality = vietnameseM3u8Content.match(/RESOLUTION=(\d+x\d+)/);
         } catch (error) {
             // ignore...
         }
-
-        const bestQualitySource = sources.reduce((best, current) => {
-            return parseInt(current.quality) > parseInt(best.quality) ? current : best;
-        }, { quality: "0p" });
 
         return {
             files: [
                 {
                     file: m3u8Url,
                     type: "hls",
-                    quality: bestQualitySource.quality,
                     lang: "en",
                     headers: {
                         'Referer': 'https://autoembed.cc/'
@@ -71,31 +62,6 @@ export async function getAutoembed(media) {
     } catch (error) {
         return new Error("An error occurred: " + error);
     }
-}
-
-function parseM3U8(m3u8Content) {
-    const lines = m3u8Content.split('\n');
-    const sources = [];
-    let currentSource = {};
-
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim();
-
-        if (line.startsWith('#EXT-X-STREAM-INF:')) {
-            const resolutionMatch = line.match(/RESOLUTION=(\d+x\d+)/);
-            if (resolutionMatch) {
-                const resolution = resolutionMatch[1];
-                const quality = resolution.split('x')[1];
-                currentSource.quality = quality + "p";
-            }
-        } else if (line.startsWith('http')) {
-            currentSource.url = line;
-            sources.push(currentSource);
-            currentSource = {};
-        }
-    }
-
-    return sources;
 }
 
 function mapSubtitles(subtitles) {

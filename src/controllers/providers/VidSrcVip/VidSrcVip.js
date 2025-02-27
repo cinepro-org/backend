@@ -23,7 +23,6 @@ export async function getVidSrcVip(media) {
                 .map(source => ({
                     file: source,
                     type: source.includes('.m3u8') ? 'hls' : source.includes('.mp4') ? 'mp4' : 'unknown',
-                    quality: 'unknown',
                     lang: 'en'
                     }));
             let subtitles = [];

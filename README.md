@@ -33,7 +33,6 @@ Both routes return a JSON object with the following structure:
     {
       "file": "url",
       "type": "Specify the type (refer to the /README for details)",
-      "quality": "(If possible, indicate the quality; otherwise, use 'unknown')",
       "lang": "(Specify language using ISO standard; refer to utils/languages.js for available languages)",
       "headers": {
         "description": "If the request to that specific file needs headers (i.e. cookies), specify them here"
@@ -79,7 +78,6 @@ GET /movie/718930 HTTP/1.1
             {
                 "file": "http://example.com/file.mp4",
                 "type": "mp4",
-                "quality": "1080p",
                 "lang": "en"
             }
         ],

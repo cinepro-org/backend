@@ -30,7 +30,6 @@ export async function getEmbedsu(tmdb_id, s, e) {
         if (!secondDecode || secondDecode.length === 0) return;
 
         let originalPlaylist = "";
-        let bestQuality = null;
         let tracks = [];
 
         for (const item of secondDecode) {
@@ -49,44 +48,16 @@ export async function getEmbedsu(tmdb_id, s, e) {
 
             tracks = dataDirect.subtitles.map(sub => ({
                 url: sub.file,
-                lang: languageMap[sub.label.split(' ')[0]] || sub.label,
+                lang: languageMap[sub.label.split(/[\s-]/)[0]] || sub.label,
                 type: sub.file.split('.').pop()
             })).filter(track => track.lang);
-
-            const requestDirectSize = await fetch(dataDirect.source, {headers, method: "GET"});
-            const parseRequest = await requestDirectSize.text();
-
-            const patternSize = parseRequest.split('\n').filter(item => item.includes('/proxy/'));
-
-            const directQuality = patternSize.map(patternItem => {
-                const sizeQuality = getSizeQuality(patternItem);
-                let dURL = `${DOMAIN}${patternItem}`;
-                dURL = dURL.replace("embed.su/api/proxy/viper/", "").replace(".png", ".m3u8");
-                return {file: dURL, type: 'hls', quality: `${sizeQuality}p`, lang: 'en'};
-            });
-
-            if (!directQuality.length) continue;
-
-            const highestQuality = directQuality.reduce((prev, current) => {
-                return (parseInt(current.quality) > parseInt(prev.quality)) ? current : prev;
-            }, directQuality[0]);
-
-            if (!bestQuality || parseInt(highestQuality.quality) > parseInt(bestQuality.quality)) {
-                bestQuality = highestQuality;
-            }
         }
 
     return {
         files: [{
             file: originalPlaylist.replace("embed.su/api/proxy/viper/", ""),
             type: "hls",
-            quality: bestQuality.quality,
-            lang: "en",
-            headers: {
-                "User-Agent": headers['User-Agent'],
-                "Referer": DOMAIN,
-                "Origin": DOMAIN
-            }
+            lang: "en" // removed headers, since viper does not have cors restrictions
         }],
         subtitles: tracks
     };
@@ -95,12 +66,6 @@ export async function getEmbedsu(tmdb_id, s, e) {
     }
 }
 
-function getSizeQuality(url) {
-    const parts = url.split('/');
-    const base64Part = parts[parts.length - 2];
-    const decodedPart = atob(base64Part);
-    return Number(decodedPart) || 1080;
-}
 
 async function stringAtob(input) {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
