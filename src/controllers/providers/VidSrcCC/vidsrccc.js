@@ -5,6 +5,9 @@ const DOMAIN = "https://vidsrc.cc/api/";
 
 export async function getVidSrcCC(media) {
     let vrfToken = await generateVRF(media.tmdbId);
+    if (!vrfToken) {
+        return new Error("[vidsrccc] Failed to generate VRF token :(");
+    }
     let origin;
     let firstUrl;
     if (media.type !== "tv") {
