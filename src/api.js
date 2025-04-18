@@ -6,6 +6,7 @@ import {getVidSrcCC} from "./controllers/providers/VidSrcCC/vidsrccc.js";
 import {getVidSrc} from "./controllers/providers/VidSrc/VidSrc.js";
 import {getVidSrcSu} from "./controllers/providers/VidSrcSu/VidSrcSu.js";
 import {getVidSrcVip} from "./controllers/providers/VidSrcVip/VidSrcVip.js";
+import {getXprime} from "./controllers/providers/XPrime/xprime.js";
 
 export async function getMovie(media) {
     const id = media.tmdbId;
@@ -18,6 +19,7 @@ export async function getMovie(media) {
     let vidsrc;
     let vidsrcVip;
     let vidsrcSu;
+    let xprime;
 
     //it should continue, no matter what error occur
     try {embedsu = await getEmbedsu(id);} catch (e) {console.log(e)}
@@ -28,11 +30,12 @@ export async function getMovie(media) {
     try {vidsrc = await getVidSrc(media);} catch (e) {console.log(e)}
     try {vidsrcSu = await getVidSrcSu(media);} catch (e) {console.log(e)}
     try {vidsrcVip = await getVidSrcVip(media);} catch (e) {console.log(e)}
+    try {xprime = await getXprime(media);} catch (e) {console.log(e)}
 
     const files = [];
     const subtitles = [];
 
-    [embedsu, twoEmbed, autoembed, primewire, vidsrcCC, vidsrc, vidsrcSu, vidsrcVip].forEach(provider => {
+    [embedsu, twoEmbed, autoembed, primewire, vidsrcCC, vidsrc, vidsrcSu, vidsrcVip, xprime].forEach(provider => {
         if (provider && !(provider instanceof Error)) {
             files.push(...provider.files);
             subtitles.push(...provider.subtitles);
