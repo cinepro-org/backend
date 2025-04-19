@@ -4,7 +4,13 @@ import { languageMap } from "../../../utils/languages.js";
 const DOMAIN = "https://vidsrc.cc/api/";
 
 export async function getVidSrcCC(media) {
+    // since this is broken: 
+    return new Error("[vidsrccc] This provider is broken/down");
+    
     let vrfToken = await generateVRF(media.tmdbId);
+    if (!vrfToken) {
+        return new Error("[vidsrccc] Failed to generate VRF token :(");
+    }
     let origin;
     let firstUrl;
     if (media.type !== "tv") {
