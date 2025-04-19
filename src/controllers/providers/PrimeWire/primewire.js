@@ -181,9 +181,18 @@ async function getStreamtapeUrl(url) {
 
         let finalUrl = fullUrlMatch[1].split(hostname)[1];
         finalUrl = `https://${hostname}${finalUrl}&token=${tokenMatch[1]}`;
+        
+        let fetchUrl = await fetch(finalUrl, {
+            referrer: url,
+        });
+        // fetchUrl should return a 302 redirect to the actual video
+        finalUrl = fetchUrl.url;
+        
+        if (!finalUrl) throw new Error("Failed to get video link");
+        
         return {
-            videoLink: finalUrl + "&dl=1",
-            type: "direct"
+            videoLink: finalUrl,
+            type: "mp4"
         };
     } catch (error) {
         return {
