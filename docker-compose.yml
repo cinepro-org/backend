@@ -1,0 +1,13 @@
+name: cinepro
+services:
+  api:
+    build: .
+    container_name: backend-api
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    restart: unless-stopped
