@@ -112,6 +112,11 @@ function passStringToWasm0(arg, malloc, realloc) {
 function getImports() {
     const imports = {
         wbg: {
+            __wbg_setLocalStorage_edfb7a1bd99ea948: function (keyPtr, keyLen, valuePtr, valueLen) {
+                const key = getStringFromWasm0(keyPtr, keyLen);
+                const value = getStringFromWasm0(valuePtr, valueLen);
+                fakeWindow.localStorage.setItem(key, value);
+            },
             __wbg_buffer_61b7ce01341d7f88: function (arg0) {
                 return arg0.buffer;
             },

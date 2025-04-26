@@ -24,7 +24,7 @@ export async function getVidSrc(params) {
     const iframeHtml1 = (await client.get(url)).data;
 
     const secondUrlMatch = iframeHtml1.match(IFRAME2_SRC_RE);
-    if (!secondUrlMatch) throw new Error("No second iframe found");
+    if (!secondUrlMatch) return new Error("[vidsrc] No second iframe found");
     const secondUrl = new URL(secondUrlMatch.groups.url, URI).toString();
 
     const iframeHtml2 = (await client.get(secondUrl, {
@@ -35,7 +35,7 @@ export async function getVidSrc(params) {
     })).data;
 
     const thirdUrlMatch = iframeHtml2.match(IFRAME3_SRC_RE);
-    if (!thirdUrlMatch) throw new Error("No third iframe found");
+    if (!thirdUrlMatch) return new Error("[vidsrc] No third iframe found");
     const thirdUrl = new URL(thirdUrlMatch.groups.url, HOST_URL).toString();
 
     const iframeHtml3 = (await client.get(thirdUrl, {
@@ -45,7 +45,7 @@ export async function getVidSrc(params) {
     })).data;
 
     const paramsMatch = iframeHtml3.match(PARAMS_RE);
-    if (!paramsMatch) throw new Error("No params in third iframe found");
+    if (!paramsMatch) return new Error("[vidsrc] No params in third iframe found");
     const { id: decoderId, content } = paramsMatch.groups;
 
     let decoded;
