@@ -5,7 +5,7 @@ const DOMAIN = "https://vidsrc.cc/api/";
 
 export async function getVidSrcCC(media) {
     // since this is broken: 
-    return new Error("[vidsrccc] This provider is broken/down");
+    return new Error("[vidsrccc] This provider is broken/down - could maybe someone that understands web assembley check the problem out`? thanks!");
     
     let vrfToken = await generateVRF(media.tmdbId);
     if (!vrfToken) {
