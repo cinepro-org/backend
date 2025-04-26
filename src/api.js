@@ -7,6 +7,9 @@ import { getVidSrc } from "./controllers/providers/VidSrc/VidSrc.js";
 import { getVidSrcSu } from "./controllers/providers/VidSrcSu/VidSrcSu.js";
 import { getVidSrcVip } from "./controllers/providers/VidSrcVip/VidSrcVip.js";
 import { getXprime } from "./controllers/providers/xprime/xprime.js";
+import dotenv from 'dotenv';
+dotenv.config();
+const shouldDebug = process.env.DEBUG.toLowerCase() === "true" || process.env.DEBUG === "1";
 
 export async function getMovie(media) {
   const id = media.tmdbId;
@@ -21,7 +24,7 @@ export async function getMovie(media) {
   let vidsrcSu;
   let xprime;
 
-  //it should continue, no matter what error occur
+  //it should continue, no matter what error occurs
   try {
     embedsu = await getEmbedsu(id);
   } catch (e) {
@@ -85,6 +88,8 @@ export async function getMovie(media) {
     if (provider && !(provider instanceof Error)) {
       files.push(...provider.files);
       subtitles.push(...provider.subtitles);
+    } else if (shouldDebug) {
+        console.error(provider);
     }
   });
 

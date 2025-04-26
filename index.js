@@ -20,7 +20,7 @@ app.get("/", (req, res) => {
 });
 
 app.get("/movie/:tmdbId", async (req, res) => {
-  if (isNaN(parseInt(req.params.tmdbId))) {
+  if (!/^\d+$/.test(req.params.tmdbId)) {
     res.status(405).json({
       error: strings.INVALID_MOVIE_ID,
       hint: strings.INVALID_MOVIE_ID_HINT,
@@ -49,12 +49,9 @@ app.get("/movie/:tmdbId", async (req, res) => {
 
 app.get("/tv/:tmdbId", async (req, res) => {
   if (
-    !req.params.tmdbId ||
-    isNaN(parseInt(req.params.tmdbId)) ||
-    !req.query.s ||
-    isNaN(parseInt(req.query.s)) ||
-    !req.query.e ||
-    isNaN(parseInt(req.query.e))
+    !/^\d+$/.test(req.params.tmdbId) ||
+    !/^\d+$/.test(req.query.s) ||
+    !/^\d+$/.test(req.query.e)
   ) {
     res.status(405).json({
       error: strings.INVALID_TV_ID,
@@ -101,9 +98,12 @@ app.get("/tv/", (req, res) => {
 });
 
 app.get("*", (req, res) => {
-  res.status(404).json({ error: "Not found", hint: "Go to /" });
+  res.status(404).json({ error: "404 Not found", hint: "Go to /" });
 });
 
 app.listen(PORT, () => {
-  console.log(`Server is running on port http://localhost:${PORT}`);
+  console.log(`Server is running on port http://localhost:${PORT};`);
+  if (process.env.DEBUG.toLowerCase() === "true" || process.env.DEBUG === "1") {
+        console.log(`Debug mode is enabled.`);
+  }
 });
