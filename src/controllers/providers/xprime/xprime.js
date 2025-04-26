@@ -1,15 +1,15 @@
 import { languageMap } from "../../../utils/languages.js";
-import {getMovieFromTmdb} from "../../tmdb.js";
 
 const DOMAIN = "https://xprime.tv/";
 
 export async function getXprime(media) {
-    let status = await fetch("https://xprime.tv/api/servers/status", {
+    let status = await fetch(DOMAIN + "servers/", {    
         "headers": {
             "accept": "*/*"
         },
         "referrer": DOMAIN + "watch/" + media.tmdbId
     });
+    // TODO: Check why when going directly to DOMAIN + "servers/" it works, but when fetching it, it returns a 404 (cloudflare??) 
     if (status.status !== 200) {
         return new Error("[Xprime] could not fetch status");
     }
@@ -25,7 +25,7 @@ export async function getXprime(media) {
     for (let server of servers) {
         if (server.status !== "ok") continue;
         // all servers except "nas" are encrypted. will have to implement decryption later
-        if (server.name !== "nas") continue;
+        if (server.name !== "nas" || server.name != "primebox" ) continue;
 
         let url = `${DOMAIN}${server.name}?`;
         if (server.required) {

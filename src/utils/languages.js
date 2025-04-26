@@ -17,6 +17,7 @@ export const languageMap = {
     "Bislama": "bi",
     "Bosnian": "bs",
     "Breton": "br",
+    "Brazilian": "pt",
     "Bulgarian": "bg",
     "Burmese": "my",
     "Catalan": "ca",

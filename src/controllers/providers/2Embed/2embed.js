@@ -1,6 +1,7 @@
 import axios from "axios";
-import fetch from "node-fetch";
 import {resolve} from "../../../utils/checkresolve.js";
+
+// TODO: fix this provider... stuff changed i think..
 
 const URL = "https://www.2embed.cc";
 const PLAYER_URL = "https://uqloads.xyz";
@@ -31,7 +32,7 @@ export async function getTwoEmbed(params) {
             return new Error("No stream found");
         }
 
-        const files = [                
+        const files = [
             {
                 file: streamUrl,
                 type: "hls",
