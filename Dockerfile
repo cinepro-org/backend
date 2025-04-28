@@ -2,7 +2,7 @@
 FROM node:18-alpine
 
 # Set working directory
-WORKDIR /src/app
+WORKDIR /
 
 # Copy dependencies files
 COPY package*.json ./
@@ -14,7 +14,9 @@ RUN npm install
 COPY . .
 
 # Expose port
-EXPOSE 3000
+ARG PORT=3000
+ENV PORT=${PORT}
+EXPOSE ${PORT}
 
 # Start the app
 CMD ["npm", "start"]
