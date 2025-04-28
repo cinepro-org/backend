@@ -1,4 +1,7 @@
 import {languageMap} from "../../../utils/languages.js";
+import {ErrorObject} from "../../../helpers/ErrorObject.js";
+
+const DOMAIN = "https://vidsrc.vip";
 
 export async function getVidSrcVip(media) {
     const link = getLink(media);
@@ -6,39 +9,38 @@ export async function getVidSrcVip(media) {
     try {
         let sources = await fetch(link, {
             headers: {
-                Referer: "https://vidsrc.vip/",
-                Origin: "https://vidsrc.vip",
-                "User-Agent":
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
+                Referer: `${DOMAIN}/`,
+                Origin: DOMAIN,
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
             }
         });
+
         if (!sources.ok) {
-            throw new Error("[vidsrcvip] Failed to scrape sources from https://api2.vidsrc.vip");
-        } else {
-            sources = await sources.json();
-            if (Object.keys(sources).length === 0) {
-                throw new Error("[vidsrcvip] No sources found");
-            }
-
-            const formattedSources = Object.values(sources)
-                .filter(source => source && source.url) // Ensure source and url are valid
-                .map(source => ({
-                    file: source.url,
-                    type: source.url.includes('.m3u8') ? 'hls' : source.url.includes('.mp4') ? 'mp4' : 'unknown',
-                    lang: languageMap[source.language] || source.language,
-                }));
-
-            if (formattedSources.length === 0) {
-                return new Error("[vidsrcvip] No valid sources found");
-            }
-            
-            return {
-                files: formattedSources,
-                subtitles: []
-            };
+            return new ErrorObject("[vidsrcvip] Failed to scrape sources", "VidSrcVip", sources.status, `Failed to fetch sources from ${link}. Check the URL or server status.`, true, true);
         }
+
+        sources = await sources.json();
+        if (Object.keys(sources).length === 0) {
+            return new ErrorObject("[vidsrcvip] No sources found", "VidSrcVip", 404, "No sources were returned by the API. Ensure the media exists or the API is functioning correctly.", true, true);
+        }
+
+        const formattedSources = Object.values(sources)
+            .filter(source => source && source.url) // Ensure source and url are valid
+            .map(source => ({
+                file: source.url,
+                type: source.url.includes('.m3u8') ? 'hls' : source.url.includes('.mp4') ? 'mp4' : 'unknown',
+                lang: languageMap[source.language] || source.language,
+            }));
+
+        if (formattedSources.length === 0) {
+            return new ErrorObject("[vidsrcvip] No valid sources found", "VidSrcVip", 404, "The API returned sources, but none were valid. Check the source URLs or API response.", true, true);
+        }
+
+        return {
+            files: formattedSources, subtitles: []
+        };
     } catch (error) {
-        return error;
+        return new ErrorObject(`Unexpected error: ${error.message}`, "VidSrcVip", 500, "Check the implementation or server status.", true, true);
     }
 }
 
@@ -55,8 +57,8 @@ const getLink = (media) => {
     const A = btoa(B);
     const D = btoa(A);
     if (media.type === "tv") {
-        return `https://api2.vidsrc.vip/tv/${D}`;
-    }else {
-        return `https://api2.vidsrc.vip/movie/${D}`;
+        return `${DOMAIN}/api/tv/${D}`;
+    } else {
+        return `${DOMAIN}/api/movie/${D}`;
     }
 };

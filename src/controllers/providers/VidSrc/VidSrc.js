@@ -1,8 +1,8 @@
 import axios from "axios";
-import { Buffer } from 'buffer';
-import { atob } from 'buffer';
-import { URL } from 'url';
+import {atob, Buffer} from 'buffer';
+import {URL} from 'url';
 import base64 from "base-64";
+import {ErrorObject} from "../../../helpers/ErrorObject.js";
 
 const URI = "https://vidsrc.xyz";
 const HOST_URL = "https://edgedeliverynetwork.com";
@@ -11,68 +11,91 @@ const IFRAME2_SRC_RE = /id="player_iframe" src="(?<url>[^"]+)"/;
 const IFRAME3_SRC_RE = /src: '(?<url>\/prorcp\/[^']+)'/;
 const PARAMS_RE = /<div id="(?<id>[^"]+)" style="display:none;">(?<content>[^>]+)<\/div>/;
 
-export async function getVidSrc(params) {
-    const id = params.imdb;
-
-    const url = params.episode
-        ? `${URI}/embed/tv/${id}/${params.season}-${params.episode}`
-        : `${URI}/embed/movie/${id}`;
+export async function getVidSrc(media) {
+    const url = media.episode ? `${URI}/embed/tv/${media.imdb}/${media.season}-${media.episode}` : `${URI}/embed/movie/${media.imdb}`;
 
     const client = axios.create();
 
-    const iframeHtml1 = (await client.get(url)).data;
+    try {
+        const iframeHtml1 = (await client.get(url)).data;
 
-    const secondUrlMatch = iframeHtml1.match(IFRAME2_SRC_RE);
-    if (!secondUrlMatch) return new Error("[vidsrc] No second iframe found");
-    const secondUrl = new URL(secondUrlMatch.groups.url, URI).toString();
-
-    const iframeHtml2 = (await client.get(secondUrl, {
-        headers: {
-            Referer: url,
-            Origin: secondUrl
+        const secondUrlMatch = iframeHtml1.match(IFRAME2_SRC_RE);
+        if (!secondUrlMatch) {
+            return new ErrorObject("[vidsrc] No second iframe found", "VidSrc", 404, "The page structure might have changed or the iframe is missing.", true, true);
         }
-    })).data;
+        const secondUrl = new URL(secondUrlMatch.groups.url, URI).toString();
 
-    const thirdUrlMatch = iframeHtml2.match(IFRAME3_SRC_RE);
-    if (!thirdUrlMatch) return new Error("[vidsrc] No third iframe found");
-    const thirdUrl = new URL(thirdUrlMatch.groups.url, HOST_URL).toString();
-
-    const iframeHtml3 = (await client.get(thirdUrl, {
-        headers: {
-            Referer: secondUrl
-        }
-    })).data;
-
-    const paramsMatch = iframeHtml3.match(PARAMS_RE);
-    if (!paramsMatch) return new Error("[vidsrc] No params in third iframe found");
-    const { id: decoderId, content } = paramsMatch.groups;
-
-    let decoded;
-    switch (decoderId) {
-        case "NdonQLf1Tzyx7bMG": decoded = decoder1(content); break;
-        case "sXnL9MQIry": decoded = decoder2(content); break;
-        case "IhWrImMIGL": decoded = decoder3(content); break;
-        case "KJHidj7det": decoded = decoder7(content); break;
-        case "Oi3v1dAlaM": decoded = decoder9(content, 5); break;
-        case "TsA2KGDGux": decoded = decoder9(content, 7); break;
-        case "JoAHUMCLXV": decoded = decoder9(content, 3); break;
-        case "eSfH1IRMyL": decoded = decoder6(content); break;
-        case "o2VSUnjnZl": decoded = decoder8(content); break;
-        case "xTyBxQyGTA": decoded = decoder4(content); break;
-        case "ux8qjPHC66": decoded = decoder5(content); break;
-        default: decoderId;
-    }
-
-    return {
-        files: [
-            {
-                file: decoded,
-                type: "hls",
-                lang: "en"
+        const iframeHtml2 = (await client.get(secondUrl, {
+            headers: {
+                Referer: url, Origin: secondUrl
             }
-        ],
-        subtitles: []
-    };
+        })).data;
+
+        const thirdUrlMatch = iframeHtml2.match(IFRAME3_SRC_RE);
+        if (!thirdUrlMatch) {
+            return new ErrorObject("[vidsrc] No third iframe found", "VidSrc", 404, "The page structure might have changed or the iframe is missing.", true, true);
+        }
+        const thirdUrl = new URL(thirdUrlMatch.groups.url, HOST_URL).toString();
+
+        const iframeHtml3 = (await client.get(thirdUrl, {
+            headers: {
+                Referer: secondUrl
+            }
+        })).data;
+
+        const paramsMatch = iframeHtml3.match(PARAMS_RE);
+        if (!paramsMatch) {
+            return new ErrorObject("[vidsrc] No media in third iframe found", "VidSrc", 404, "The page structure might have changed or the media is missing.", true, true);
+        }
+        const {id: decoderId, content} = paramsMatch.groups;
+
+        let decoded;
+        switch (decoderId) {
+            case "NdonQLf1Tzyx7bMG":
+                decoded = decoder1(content);
+                break;
+            case "sXnL9MQIry":
+                decoded = decoder2(content);
+                break;
+            case "IhWrImMIGL":
+                decoded = decoder3(content);
+                break;
+            case "KJHidj7det":
+                decoded = decoder7(content);
+                break;
+            case "Oi3v1dAlaM":
+                decoded = decoder9(content, 5);
+                break;
+            case "TsA2KGDGux":
+                decoded = decoder9(content, 7);
+                break;
+            case "JoAHUMCLXV":
+                decoded = decoder9(content, 3);
+                break;
+            case "eSfH1IRMyL":
+                decoded = decoder6(content);
+                break;
+            case "o2VSUnjnZl":
+                decoded = decoder8(content);
+                break;
+            case "xTyBxQyGTA":
+                decoded = decoder4(content);
+                break;
+            case "ux8qjPHC66":
+                decoded = decoder5(content);
+                break;
+            default:
+                return new ErrorObject(`[vidsrc] Unknown decoder ID: ${decoderId}`, "VidSrc", 500, "The decoder logic might need to be updated.", true, true);
+        }
+
+        return {
+            files: [{
+                file: decoded, type: "hls", lang: "en"
+            }], subtitles: []
+        };
+    } catch (error) {
+        return new ErrorObject(`Unexpected error: ${error.message}`, "VidSrc", 500, "Check the implementation or server status.", true, true);
+    }
 }
 
 function decoder1(a) {
@@ -83,8 +106,7 @@ function decoder1(a) {
         c.push(a.substring(d, Math.min(d + b, a.length)));
         d += b;
     }
-    const e = c.reverse().join('');
-    return e;
+    return c.reverse().join('');
 }
 
 function decoder2(a) {
@@ -107,8 +129,7 @@ function decoder3(a) {
 function decoder4(a) {
     const b = a.split('').reverse().join('');
     const c = Array.from(b).filter((_, index) => index % 2 === 0).join('');
-    const decoded = atob(c);
-    return decoded;
+    return atob(c);
 }
 
 function decoder5(a) {
@@ -137,15 +158,60 @@ function decoder7(a) {
 
 function decoder8(a) {
     const b = {
-        'x': 'a', 'y': 'b', 'z': 'c', 'a': 'd', 'b': 'e', 'c': 'f', 'd': 'g', 'e': 'h', 'f': 'i',
-        'g': 'j', 'h': 'k', 'i': 'l', 'j': 'm', 'k': 'n', 'l': 'o', 'm': 'p', 'n': 'q', 'o': 'r',
-        'p': 's', 'q': 't', 'r': 'u', 's': 'v', 't': 'w', 'u': 'x', 'v': 'y', 'w': 'z',
-        'X': 'A', 'Y': 'B', 'Z': 'C', 'A': 'D', 'B': 'E', 'C': 'F', 'D': 'G', 'E': 'H', 'F': 'I',
-        'G': 'J', 'H': 'K', 'I': 'L', 'J': 'M', 'K': 'N', 'L': 'O', 'M': 'P', 'N': 'Q', 'O': 'R',
-        'P': 'S', 'Q': 'T', 'R': 'U', 'S': 'V', 'T': 'W', 'U': 'X', 'V': 'Y', 'W': 'Z'
+        'x': 'a',
+        'y': 'b',
+        'z': 'c',
+        'a': 'd',
+        'b': 'e',
+        'c': 'f',
+        'd': 'g',
+        'e': 'h',
+        'f': 'i',
+        'g': 'j',
+        'h': 'k',
+        'i': 'l',
+        'j': 'm',
+        'k': 'n',
+        'l': 'o',
+        'm': 'p',
+        'n': 'q',
+        'o': 'r',
+        'p': 's',
+        'q': 't',
+        'r': 'u',
+        's': 'v',
+        't': 'w',
+        'u': 'x',
+        'v': 'y',
+        'w': 'z',
+        'X': 'A',
+        'Y': 'B',
+        'Z': 'C',
+        'A': 'D',
+        'B': 'E',
+        'C': 'F',
+        'D': 'G',
+        'E': 'H',
+        'F': 'I',
+        'G': 'J',
+        'H': 'K',
+        'I': 'L',
+        'J': 'M',
+        'K': 'N',
+        'L': 'O',
+        'M': 'P',
+        'N': 'Q',
+        'O': 'R',
+        'P': 'S',
+        'Q': 'T',
+        'R': 'U',
+        'S': 'V',
+        'T': 'W',
+        'U': 'X',
+        'V': 'Y',
+        'W': 'Z'
     };
-    const result = Array.from(a).map(char => b[char] || char).join('');
-    return result;
+    return Array.from(a).map(char => b[char] || char).join('');
 }
 
 function decoder9(a, shift) {

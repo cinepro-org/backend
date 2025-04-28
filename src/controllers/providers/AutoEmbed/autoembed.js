@@ -1,63 +1,65 @@
 import fetch from "node-fetch";
-import {languageMap} from "../../../utils/languages.js";
+import {ErrorObject} from "../../../helpers/ErrorObject.js";
+
+const DOMAIN = "https://player.vidsrc.co/"
+const headers = {
+    Referer: DOMAIN,
+    Origin: DOMAIN,
+    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.6787.65 Safari/537.36 Edg/132.0.2855.99",
+    "accept": "*/*"
+};
+const numberOfServers = 15;
 
 export async function getAutoembed(media) {
-    const id = media.tmdb;
-    const season = media.season;
-    const episode = media.episode;
+    let {tmdb, season, episode, type} = media;
+    const url = type === "tv"
+        ? `https://player.vidsrc.co/api/server?id=${tmdb}&ss=${season}&ep=${episode}`
+        : `https://player.vidsrc.co/api/server?id=${tmdb}`;
 
-    let url;
-    if (media.type === "tv") {
-        url = `https://nono.autoembed.cc/api/getVideoSource?type=tv&id=${id}/${season}/${episode}`;
-    } else {
-        url = `https://nono.autoembed.cc/api/getVideoSource?type=movie&id=${id}`;
-    }
+    let files = [];
+    let subtitles = [];
 
     try {
-        const response = await fetch(url, {
-            headers: {
-                'Referer': 'https://autoembed.cc/'
+        for (let i = 1; i <= numberOfServers; i++) {
+            let currentLang;
+            if (i <= 3) {
+                currentLang = "en";
+            } else if (i <= 5) {
+                currentLang = "hi";
+            } else if (i <= 7) {
+                currentLang = "bn";
+            } else if (i <= 9) {
+                currentLang = "ta";
+            } else if (i <= 11) {
+                currentLang = "te";
+            } else if (i <= 13) {
+                currentLang = "ml";
+            } else {
+                currentLang = "kn";
             }
-        });
-        if (!response.ok) {
-            if (response.status === 404) {
-                return null;
-            }
-        }
-        const data = await response.json();
-        if (data.error) {
-            return new Error("No stream wish id found");
-        }
-        
-        return {
-            files: [
-                {
-                    file: data.videoSource,
-                    type: "hls",
-                    lang: "en"
-                }
-            ],
-            subtitles: [
-                ...mapSubtitles(data.subtitles)
-            ]
-        };
 
+            const serverUrl = `${url}&sr=${i}`;
+            const response = await fetch(serverUrl, {
+                method: "GET",
+                headers: headers
+            });
+            if (!response.ok) {
+                continue;
+            }
+            const data = await response.json();
+            files.push({
+                file: data.url,
+                type: data.url.includes("mp4") ? "mp4" : "hls",
+                lang: currentLang,
+                headers: data.headers && Object.keys(data.headers).length > 0 ? data.headers : undefined
+            });
+
+            if (data.tracks) {
+                // TODO: implement subtitles
+            }
+        }
+        return {files, subtitles};
     } catch (error) {
-        return new Error("An error occurred: " + error);
+        return new ErrorObject(`Unexpected error: ${error.message}`, "AutoEmbed/vidsrc.co", 500, undefined, true, true);
     }
-}
-
-function mapSubtitles(subtitles) {
-    return subtitles.map(subtitle => {
-        const lang = languageMap[subtitle.label.split(' ')[0]] || subtitle.label || "unknown";
-        const fileUrl = subtitle.file;
-        const fileExtension = fileUrl.split('.').pop().toLowerCase();
-        const type = fileExtension === 'vtt' ? 'vtt' : 'srt';
-
-        return {
-            url: subtitle.file,
-            lang: lang,
-            type: type
-        };
-    });
 }

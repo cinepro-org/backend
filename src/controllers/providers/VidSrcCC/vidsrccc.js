@@ -1,16 +1,14 @@
-import { generateVRF } from "./vrfgen.js";
-import { languageMap } from "../../../utils/languages.js";
+import {languageMap} from "../../../utils/languages.js";
+import {generateVRF} from "./vrfgen.js";
+import {ErrorObject} from "../../../helpers/ErrorObject.js";
 
 const DOMAIN = "https://vidsrc.cc/api/";
 
 export async function getVidSrcCC(media) {
-    // since this is broken: 
-    return new Error("[vidsrccc] This provider is broken/down - could maybe someone that understands web assembley check the problem out`? thanks!");
-    
-    let vrfToken = await generateVRF(media.tmdb);
-    if (!vrfToken) {
-        return new Error("[vidsrccc] Failed to generate VRF token :(");
-    }
+    return new ErrorObject("[vidsrccc] This provider is mean :(", "VidSrcCC", 500, " 3 things: 1. They want a vrf token when requesting for server hashes, 2. you would also need 'v' attribute where something gets hashed and you also need the cf_clearance cookie to get the server hashes. After that, the existing logic would stay the same...", true, true);
+
+    let cfToken = getCloudflareClearance(media);
+    let vrfToken = generateVRF(media.tmdb);
     let origin;
     let firstUrl;
     if (media.type !== "tv") {
@@ -24,10 +22,12 @@ export async function getVidSrcCC(media) {
         'User-Agent': "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3",
         'Referer': origin,
         'Origin': origin,
+        cookie: cfToken
     };
-    let firstResponse = await fetch(firstUrl, { headers });
+
+    let firstResponse = await fetch(firstUrl, {headers});
     if (firstResponse.status !== 200) {
-        return new Error("Failed to fetch first response");
+        return new ErrorObject("Failed to fetch first response", "VidSrcCC", firstResponse.status, "Check the VRF token, cf_clearance cookie, or the server response.", true, true);
     }
     let firstData = await firstResponse.json();
     let hashes = [];
@@ -39,9 +39,9 @@ export async function getVidSrcCC(media) {
 
     for (let hash of hashes) {
         let secondUrl = `${DOMAIN}source/${hash}?opensubtitles=true`;
-        let secondResponse = await fetch(secondUrl, { headers });
+        let secondResponse = await fetch(secondUrl, {headers});
         if (!secondResponse.ok) {
-            return new Error("Failed to fetch second response");
+            return new ErrorObject("Failed to fetch second response", "VidSrcCC", secondResponse.status, "Check the hash or the server response.", true, true);
         }
         let secondData = await secondResponse.json();
         if (secondData.success) {
@@ -54,8 +54,7 @@ export async function getVidSrcCC(media) {
     vidsrcCCSources.forEach(source => {
         source.subtitles.forEach(subtitle => {
             subtitles.push({
-                lang: languageMap[subtitle.label.split(' ')[0]] || subtitle.lang,
-                url: subtitle.file
+                lang: languageMap[subtitle.label.split(' ')[0]] || subtitle.lang, url: subtitle.file
             });
         });
     });
@@ -64,24 +63,21 @@ export async function getVidSrcCC(media) {
     let files = [];
     for (let source of vidsrcCCSources) {
         files.push({
-            file: source.url,
-            type: "hls",
-            lang: "en"
+            file: source.url, type: "hls", lang: "en"
         });
     }
 
     return {
         files: files.map(file => ({
-            file: file.file,
-            type: file.type,
-            lang: file.lang,
-            headers: headers
+            file: file.file, type: file.type, lang: file.lang, headers: headers
         })),
 
         subtitles: subtitles.map(subtitle => ({
-            url: subtitle.url,
-            lang: subtitle.lang,
-            type: subtitle.url.split('.').pop()
+            url: subtitle.url, lang: subtitle.lang, type: subtitle.url.split('.').pop()
         }))
     };
+}
+
+function getCloudflareClearance(media) {
+    return new ErrorObject("Cloudflare clearance cookie is missing", "VidSrcCC", 500, "You need to obtain the cf_clearance cookie manually or implement a mechanism to bypass Cloudflare's protection.", true, true);
 }

@@ -27,13 +27,13 @@ export async function getMovieFromTmdb(tmdb_id) {
         if (new Date(data.release_date) > new Date().getTime()) {
             return new ErrorObject("This movie has not been released.", "user", 405, strings.INVALID_MOVIE_ID_HINT, true, false);
         }
-        
+
         let secondData = await fetch(`https://api.themoviedb.org/3/movie/${tmdb_id}/external_ids?api_key=${apiKey}`);
         if (secondData.status !== 200) {
             return new ErrorObject(strings.INVALID_MOVIE_ID, "user", 405, strings.INVALID_MOVIE_ID_HINT, true, false);
         }
         secondData = await secondData.json();
-        
+
         return {
             type: "movie",
             title: data.original_title,
@@ -79,7 +79,7 @@ export async function getTvFromTmdb(tmdb_id, season, episode) {
         }
         secondData = await secondData.json();
         let title = secondData.name;
-        
+
         let thirdData = await fetch(`https://api.themoviedb.org/3/tv/${tmdb_id}/external_ids?api_key=${apiKey}`);
         if (thirdData.status !== 200) {
             return new ErrorObject(strings.INVALID_TV_ID, "user", 405, strings.INVALID_TV_ID_HINT, true, false);

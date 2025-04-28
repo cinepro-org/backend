@@ -52,7 +52,7 @@ export default class JsUnpacker {
     unpack() {
         let js = this.packedJS;
         try {
-            const regex = /\}\s*\('(.*)',\s*(.*?),\s*(\d+),\s*'(.*?)'\.split\('\|'\)/s;
+            const regex = /}\s*\('(.*)',\s*(.*?),\s*(\d+),\s*'(.*?)'\.split\('\|'\)/s;
             const match = js.match(regex);
             if (match && match.length === 5) {
                 let payload = match[1].replace(/\\'/g, "'");

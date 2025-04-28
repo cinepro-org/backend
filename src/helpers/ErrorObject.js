@@ -22,7 +22,7 @@ export class ErrorObject {
      * @param {boolean} goesToFrontend - Whether the error should be sent to the frontend. Also influences the format of the error.
      * @param {boolean} issueLink - Whether to include an issue reporting link in the error.
      */
-    constructor(message, provider, responseCode, hint, goesToFrontend, issueLink) {
+    constructor(message, provider, responseCode, hint, goesToFrontend = false, issueLink = false) {
         this._message = message || "Unknown error";
         this._provider = provider || "backend";
         this._responseCode = responseCode || 500;

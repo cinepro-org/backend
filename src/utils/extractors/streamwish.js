@@ -2,43 +2,77 @@ import fetch from 'node-fetch';
 import JsUnpacker from '../jsunpack.js';
 import {ErrorObject} from "../../helpers/ErrorObject.js";
 
-const referer = "https://www.2embed.cc/";
-
-export async function extract_streamwish(url) {
-
+export async function extract_streamwish(url, referer) {
     try {
         const response = await fetch(url, {
             headers: {
-                "Referer": referer
+                Referer: referer,
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
             }
         });
 
         if (!response.ok) {
-            return new ErrorObject("Failed to fetch streamwish data.", "streamwish extractor", 500, "the wrong URL received or streamwish is experiencing some downtime", false, false);
+            return new ErrorObject(`Resolve failed for ${url}: Status ${response.status}`, "streamwish", 500, "Check the URL or server status.", true, true);
         }
 
         const data = await response.text();
-
-        const packedDataRegex = /eval\(function(.*?)split.*\)\)\)/;
-
+        const packedDataRegex = /eval\(function(.*?)split.*\)\)\)/s;
         const packedDataMatch = data.match(packedDataRegex);
-        if (packedDataMatch) {
-            const packedJS = packedDataMatch[0];
 
-            const unpacker = new JsUnpacker(packedJS);
+        if (packedDataMatch) {
+            const unpacker = new JsUnpacker(packedDataMatch[0]);
             if (unpacker.detect()) {
                 const unpackedJS = unpacker.unpack();
-                const fileregex = /sources\:\[{file:"(.*?)"}/;
-                const matcheuri = unpackedJS.match(fileregex);
+                if (!unpackedJS) {
+                    return new ErrorObject("JsUnpacker failed to unpack.", "streamwish", 500, "Check the packed data format.", true, true);
+                }
+                let fileRegex;
+                let matchUri;
+                if (unpackedJS.includes("\"hls2\":\"https")) {
+                    fileRegex = /links=.*hls2":"(.*?)"};/;
+                    matchUri = unpackedJS.match(fileRegex);
+                } else {
+                    fileRegex = /sources\s*:\s*\[\s*\{\s*file\s*:\s*"([^"]+)"/;
+                    matchUri = unpackedJS.match(fileRegex);
+                }
 
-                return matcheuri[1];
-
+                if (matchUri && matchUri[1]) {
+                    return matchUri[1];
+                } else {
+                    return new ErrorObject("Could not find file URL in unpacked JS.", "streamwish", 500, "Check the backend logic.", true, true);
+                }
+            } else {
+                return new ErrorObject("JsUnpacker could not detect packed data.", "streamwish", 500, "Check the packed data format.", true, true);
             }
         } else {
-            return new ErrorObject("No packed data was found.", "streamwish extractor", 500, "streamwish probably changed their backend logic :(", false, false);
+            return new ErrorObject("No packed JS data found in resolve response.", "streamwish", 500, "Check the response content.", true, true);
         }
     } catch (error) {
-        return new ErrorObject("Error occurred while extracting streamwish data: " + error, "streamwish extractor", 500, "could be anything...", false, false);
+        return new ErrorObject(`Error during resolve for ${url}: ${error.message}`, "streamwish", 500, "Check the implementation or server status.", true, true);
     }
+}
 
+export async function parseSubs(scriptstring) {
+    try {
+        const linksMatch = scriptstring.match(/var links\s*=\s*({[^;]*});/);
+        if (!linksMatch) {
+            return new ErrorObject("Could not find links object in script.", "streamwish", 500, "Check the script content.", true, true);
+        }
+
+        const links = JSON.parse(linksMatch[1].replace(/'/g, '"'));
+        const videoUrl = links.hls2 || links.hls4;
+
+        const setupMatch = scriptstring.match(/jwplayer\(["']vplayer["']\)\.setup\((\{[\s\S]*?\})\);/);
+        if (!setupMatch) {
+            return new ErrorObject("Could not find JWPlayer setup configuration.", "streamwish", 500, "Check the script content.", true, true);
+        }
+
+        const setupConfig = JSON.parse(setupMatch[1].replace(/'/g, '"'));
+        return (setupConfig.tracks || []).filter(track => track.kind === "subtitles").map(track => ({
+            url: track.file,
+            lang: track.label || "en"
+        }));
+    } catch (error) {
+        return new ErrorObject(`Error during subtitle parsing: ${error.message}`, "streamwish", 500, "Check the script content or implementation.", true, true);
+    }
 }
