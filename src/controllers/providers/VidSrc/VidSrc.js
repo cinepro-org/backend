@@ -12,11 +12,10 @@ const IFRAME3_SRC_RE = /src: '(?<url>\/prorcp\/[^']+)'/;
 const PARAMS_RE = /<div id="(?<id>[^"]+)" style="display:none;">(?<content>[^>]+)<\/div>/;
 
 export async function getVidSrc(params) {
-    const tmdbId = params.tmdbId.toString();
-    const id = params.imdbId || tmdbId;
+    const id = params.imdb;
 
-    const url = params.ep
-        ? `${URI}/embed/tv/${id}/${params.ep.s}-${params.ep.e}`
+    const url = params.episode
+        ? `${URI}/embed/tv/${id}/${params.season}-${params.episode}`
         : `${URI}/embed/movie/${id}`;
 
     const client = axios.create();

@@ -4,9 +4,9 @@ import * as cheerio from "cheerio";
 export async function getVidSrcSu(media) {
     let embedUrl;
     if (media.type === "tv") {
-        embedUrl = `https://vidsrc.su/embed/tv/${media.tmdbId}/${media.season}/${media.episode}`;
+        embedUrl = `https://vidsrc.su/embed/tv/${media.tmdb}/${media.season}/${media.episode}`;
     } else {
-        embedUrl = `https://vidsrc.su/embed/movie/${media.tmdbId}`;
+        embedUrl = `https://vidsrc.su/embed/movie/${media.tmdb}`;
     }
 
     try {

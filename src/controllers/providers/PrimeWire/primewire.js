@@ -7,7 +7,7 @@ const URL = "https://www.primewire.tf";
 const DS_KEY = "JyjId97F9PVqUPuMO0";
 
 export async function getPrimewire(info) {
-    if (!info.imdbId) {
+    if (!info.imdb) {
         return null;
     }
 
@@ -50,7 +50,7 @@ export async function getPrimewire(info) {
 }
 
 async function lookupPage(info) {
-    const imdbId = info.imdbId;
+    const imdbId = info.imdb;
     const ds = sha1Hex(`${imdbId}${DS_KEY}`).slice(0, 10);
 
     let $;
@@ -147,14 +147,13 @@ const getMixdropVideoViaInternalId = async (id) => {
     }
     const json = await r2.json();
 
-    const data = {
+    return {
         url: url.startsWith("http") ? url : "http:" + url,
         headers: {
             cookie: cookie,
             Referer: referer.length > 0 ? referer : "https://mixdrop.ps/",
         },
     };
-    return data;
 };
 
 async function getStreamtapeUrl(url) {

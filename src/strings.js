@@ -18,5 +18,8 @@ export const strings = {
     TV_NOT_FOUND: "Did not find any sources for this one :(",
     TV_NOT_FOUND_HINT: function() {
         return `If you know where to find this movie and know programming feel free to join us on GitHub: ${this.SOURCE} to add it.`;
-    }
+    },
+    DEFAULT_ISSUE_LINK: "https://github.com/cinepro-org/backend/issues/new/choose",
+    ROUTE_NOT_FOUND: "404 not found",
+    ROUTE_NOT_FOUND_HINT: "Check the documentation again to see how to use this endpoint"
 }

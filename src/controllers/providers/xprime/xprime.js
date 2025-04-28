@@ -7,7 +7,7 @@ export async function getXprime(media) {
         "headers": {
             "accept": "*/*"
         },
-        "referrer": DOMAIN + "watch/" + media.tmdbId
+        "referrer": DOMAIN + "watch/" + media.tmdb
     });
     // TODO: Check why when going directly to DOMAIN + "servers/" it works, but when fetching it, it returns a 404 (cloudflare??) 
     if (status.status !== 200) {
@@ -55,7 +55,7 @@ export async function getXprime(media) {
             "headers": {
                 "accept": "*/*"
             },
-            "referrer": DOMAIN + "watch/" + media.tmdbId
+            "referrer": DOMAIN + "watch/" + media.tmdb
         });
         if (response.status !== 200) {
             console.log(`[Xprime] Failed to fetch from server: ${server.name}`);

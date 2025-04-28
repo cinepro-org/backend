@@ -1,11 +1,14 @@
 import express from "express";
 import { getMovie, getTv } from "./src/api.js";
-import { getMovieFromTmdb, getTvFromTmdb } from "./src/controllers/tmdb.js";
+import { getMovieFromTmdb, getTvFromTmdb } from "./src/helpers/tmdb.js";
 import cors from "cors";
 import { strings } from "./src/strings.js";
+import {checkIfPossibleTmdbId, handleErrorResponse} from "./src/helpers/helper.js";
+import {ErrorObject} from "./src/helpers/ErrorObject.js";
 
 const PORT = process.env.PORT;
 const app = express();
+const debugMode = process.env.DEBUG.toLowerCase() === "true" || process.env.DEBUG === "1"
 
 app.use(cors());
 
@@ -20,90 +23,58 @@ app.get("/", (req, res) => {
 });
 
 app.get("/movie/:tmdbId", async (req, res) => {
-  if (!/^\d+$/.test(req.params.tmdbId)) {
-    res.status(405).json({
-      error: strings.INVALID_MOVIE_ID,
-      hint: strings.INVALID_MOVIE_ID_HINT,
-    });
-    return;
+  if (!checkIfPossibleTmdbId(req.params.tmdbId)) {
+    return handleErrorResponse(res, new ErrorObject(strings.INVALID_MOVIE_ID, "user", 405, strings.INVALID_MOVIE_ID_HINT, true, false));
   }
 
   const media = await getMovieFromTmdb(req.params.tmdbId);
-
-  if (media instanceof Error) {
-    res.status(405).json({ error: media.message });
-    return;
+  if (media instanceof ErrorObject) {
+    return handleErrorResponse(res, media);
   }
 
-  let output = await getMovie(media);
-
-  if (output === null || output instanceof Error) {
-    res.status(404).json({
-      error: strings.MOVIE_NOT_FOUND,
-      hint: strings.MOVIE_NOT_FOUND_HINT,
-    });
-  } else {
-    res.status(200).json(output);
+  const output = await getMovie(media);
+  if (output instanceof ErrorObject) {
+    return handleErrorResponse(res, output);
   }
+
+  res.status(200).json(output);
 });
 
 app.get("/tv/:tmdbId", async (req, res) => {
-  if (
-    !/^\d+$/.test(req.params.tmdbId) ||
-    !/^\d+$/.test(req.query.s) ||
-    !/^\d+$/.test(req.query.e)
-  ) {
-    res.status(405).json({
-      error: strings.INVALID_TV_ID,
-      hint: strings.INVALID_TV_ID_HINT,
-    });
-    return;
+  if (!checkIfPossibleTmdbId(req.params.tmdbId) || !checkIfPossibleTmdbId(req.query.s) || !checkIfPossibleTmdbId(req.query.e)) {
+    return handleErrorResponse(res, new ErrorObject(strings.INVALID_TV_ID, "user", 405, strings.INVALID_TV_ID_HINT, true, false));
   }
 
-  const media = await getTvFromTmdb(
-    req.params.tmdbId,
-    req.query.s,
-    req.query.e
-  );
-
-  if (media instanceof Error) {
-    res.status(405).json({ error: media.message });
-    return;
+  const media = await getTvFromTmdb(req.params.tmdbId, req.query.s, req.query.e);
+  if (media instanceof ErrorObject) {
+    return handleErrorResponse(res, media);
   }
 
-  let output = await getTv(media, req.query.s, req.query.e);
-
-  if (output === null || output instanceof Error) {
-    res.status(404).json({
-      error: strings.TV_NOT_FOUND,
-      hint: strings.TV_NOT_FOUND_HINT,
-    });
-  } else {
-    res.status(200).json(output);
+  const output = await getTv(media);
+  if (output instanceof ErrorObject) {
+    return handleErrorResponse(res, output);
   }
+
+  res.status(200).json(output);
 });
 
 app.get("/movie/", (req, res) => {
-  res.status(405).json({
-    error: strings.INVALID_MOVIE_ID,
-    hint: strings.INVALID_MOVIE_ID_HINT,
-  });
+  handleErrorResponse(res, new ErrorObject(strings.INVALID_MOVIE_ID, "user", 405, strings.INVALID_MOVIE_ID_HINT, true, false));
 });
 
 app.get("/tv/", (req, res) => {
-  res.status(405).json({
-    error: strings.INVALID_TV_ID,
-    hint: strings.INVALID_TV_ID_HINT,
-  });
+  handleErrorResponse(res, new ErrorObject(strings.INVALID_TV_ID, "user", 405, strings.INVALID_TV_ID_HINT, true, false));
 });
 
 app.get("*", (req, res) => {
-  res.status(404).json({ error: "404 Not found", hint: "Go to /" });
+  handleErrorResponse(res, new ErrorObject(strings.ROUTE_NOT_FOUND, "user", 404, strings.ROUTE_NOT_FOUND_HINT, true, false));
 });
 
 app.listen(PORT, () => {
   console.log(`Server is running on port http://localhost:${PORT};`);
-  if (process.env.DEBUG.toLowerCase() === "true" || process.env.DEBUG === "1") {
+  if (debugMode) {
         console.log(`Debug mode is enabled.`);
+  } else {
+        console.log("Debug mode is disabled.");
   }
 });

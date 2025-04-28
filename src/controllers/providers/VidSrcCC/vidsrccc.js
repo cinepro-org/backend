@@ -7,18 +7,18 @@ export async function getVidSrcCC(media) {
     // since this is broken: 
     return new Error("[vidsrccc] This provider is broken/down - could maybe someone that understands web assembley check the problem out`? thanks!");
     
-    let vrfToken = await generateVRF(media.tmdbId);
+    let vrfToken = await generateVRF(media.tmdb);
     if (!vrfToken) {
         return new Error("[vidsrccc] Failed to generate VRF token :(");
     }
     let origin;
     let firstUrl;
     if (media.type !== "tv") {
-        firstUrl = `${DOMAIN}${media.tmdbId}/servers/?type=movie&vrf=${vrfToken}&imdbId=${media.imdbId}`;
-        origin = `${DOMAIN.replace("api/", "")}embed/movie/${media.tmdbId}`;
+        firstUrl = `${DOMAIN}${media.tmdb}/servers/?type=movie&vrf=${vrfToken}&imdbId=${media.imdbId}`;
+        origin = `${DOMAIN.replace("api/", "")}embed/movie/${media.tmdb}`;
     } else {
-        firstUrl = `${DOMAIN}${media.tmdbId}/servers/?vrf=${vrfToken}&season=${media.season}&episode=${media.episode}`;
-        origin = `${DOMAIN.replace("api/", "")}embed/tv/${media.tmdbId}/${media.season}/${media.episode}`;
+        firstUrl = `${DOMAIN}${media.tmdb}/servers/?vrf=${vrfToken}&season=${media.season}&episode=${media.episode}`;
+        origin = `${DOMAIN.replace("api/", "")}embed/tv/${media.tmdb}/${media.season}/${media.episode}`;
     }
     const headers = {
         'User-Agent': "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3",

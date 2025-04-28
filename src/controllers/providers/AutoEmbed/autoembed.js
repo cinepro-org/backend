@@ -2,15 +2,15 @@ import fetch from "node-fetch";
 import {languageMap} from "../../../utils/languages.js";
 
 export async function getAutoembed(media) {
-    const id = media.tmdbId;
+    const id = media.tmdb;
     const season = media.season;
     const episode = media.episode;
 
     let url;
     if (media.type === "tv") {
-        url = `https://tom.autoembed.cc/api/getVideoSource?type=tv&id=${id}/${season}/${episode}`;
+        url = `https://nono.autoembed.cc/api/getVideoSource?type=tv&id=${id}/${season}/${episode}`;
     } else {
-        url = `https://tom.autoembed.cc/api/getVideoSource?type=movie&id=${id}`;
+        url = `https://nono.autoembed.cc/api/getVideoSource?type=movie&id=${id}`;
     }
 
     try {
@@ -20,7 +20,9 @@ export async function getAutoembed(media) {
             }
         });
         if (!response.ok) {
-            return new Error(response.statusText);
+            if (response.status === 404) {
+                return null;
+            }
         }
         const data = await response.json();
         if (data.error) {

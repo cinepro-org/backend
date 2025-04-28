@@ -2,15 +2,15 @@
 
 Here you can find the followin files:
 
-- [tmdb.js](./tmdb.js): This file contains the logic to get the data from the TMDB API. You can call `getMovieFromTmdb(tmdbId)` and `getTvFromTmdb(tmdbId)` to get a media object back.
+- [tmdb.js](../helpers/tmdb.js): This file contains the logic to get the data from the TMDB API. You can call `getMovieFromTmdb(tmdbId)` and `getTvFromTmdb(tmdbId)` to get a media object back.
     media:
     ```json
     {
         "type": "media type: movie or tv",
         "title": "media title",
         "releaseYear": "media release year",
-        "tmdbId": "media tmdb id",
-        "imdbId": "media imdb id"
+        "tmdb": "media tmdb id",
+        "imdb": "media imdb id"
     }
     ```
 
