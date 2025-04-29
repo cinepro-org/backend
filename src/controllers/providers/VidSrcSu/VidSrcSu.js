@@ -20,7 +20,7 @@ export async function getVidSrcSu(media) {
 
         // Extract server URLs
         const servers = [...html.matchAll(/label: 'Server \d+', url: '(https.*)'/g)].map(match => ({
-            file: match[2], type: "hls", lang: "en"
+            file: match[1], type: "hls", lang: "en"
         }));
 
         // Extract subtitles

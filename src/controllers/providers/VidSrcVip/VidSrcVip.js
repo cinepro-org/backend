@@ -57,8 +57,8 @@ const getLink = (media) => {
     const A = btoa(B);
     const D = btoa(A);
     if (media.type === "tv") {
-        return `${DOMAIN}/api/tv/${D}`;
+        return `https://api2.vidsrc.vip/tv/${D}`;
     } else {
-        return `${DOMAIN}/api/movie/${D}`;
+        return `https://api2.vidsrc.vip/movie/${D}`;
     }
 };
