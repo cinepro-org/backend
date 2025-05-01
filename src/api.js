@@ -9,6 +9,7 @@ import {getVidSrcVip} from "./controllers/providers/VidSrcVip/VidSrcVip.js";
 import {getXprime} from "./controllers/providers/xprime/xprime.js";
 import dotenv from 'dotenv';
 import {ErrorObject} from "./helpers/ErrorObject.js";
+import {getVidsrcWtf} from "./controllers/providers/VidSrcWtf/VidSrcWtf.js";
 
 dotenv.config();
 const shouldDebug = process.env.DEBUG.toLowerCase() === "true" || process.env.DEBUG === "1";
@@ -24,6 +25,7 @@ export async function scrapeMedia(media) {
         {fn: () => getVidSrcSu(media)},
         {fn: () => getVidSrcVip(media)},
         {fn: () => getXprime(media)},
+        {fn: () => getVidsrcWtf(media)},
     ];
 
     const results = await Promise.all(
