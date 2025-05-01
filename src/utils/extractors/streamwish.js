@@ -51,28 +51,3 @@ export async function extract_streamwish(url, referer) {
         return new ErrorObject(`Error during resolve for ${url}: ${error.message}`, "streamwish", 500, "Check the implementation or server status.", true, true);
     }
 }
-
-export async function parseSubs(scriptstring) {
-    try {
-        const linksMatch = scriptstring.match(/var links\s*=\s*({[^;]*});/);
-        if (!linksMatch) {
-            return new ErrorObject("Could not find links object in script.", "streamwish", 500, "Check the script content.", true, true);
-        }
-
-        const links = JSON.parse(linksMatch[1].replace(/'/g, '"'));
-        const videoUrl = links.hls2 || links.hls4;
-
-        const setupMatch = scriptstring.match(/jwplayer\(["']vplayer["']\)\.setup\((\{[\s\S]*?\})\);/);
-        if (!setupMatch) {
-            return new ErrorObject("Could not find JWPlayer setup configuration.", "streamwish", 500, "Check the script content.", true, true);
-        }
-
-        const setupConfig = JSON.parse(setupMatch[1].replace(/'/g, '"'));
-        return (setupConfig.tracks || []).filter(track => track.kind === "subtitles").map(track => ({
-            url: track.file,
-            lang: track.label || "en"
-        }));
-    } catch (error) {
-        return new ErrorObject(`Error during subtitle parsing: ${error.message}`, "streamwish", 500, "Check the script content or implementation.", true, true);
-    }
-}

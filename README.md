@@ -116,6 +116,40 @@ GET /movie/718930 HTTP/1.1
 }
 ```
 
+## API Documentation
+
+The API is documented using the OpenAPI 3.0 specification. The specification file is located at `openapi.yaml` in the project root.
+
+### Viewing the Documentation
+
+You can use various tools to view and interact with the API documentation:
+
+1. **Swagger UI**: You can use the Swagger UI to view and test the API endpoints.
+   - Install Swagger UI globally: `npm install -g swagger-ui-cli`
+   - Run: `swagger-ui-cli serve openapi.yaml`
+   - Open your browser at the provided URL
+
+2. **Redoc**: Another option for viewing the API documentation.
+   - Install Redoc globally: `npm install -g redoc-cli`
+   - Run: `redoc-cli serve openapi.yaml`
+   - Open your browser at the provided URL
+
+3. **Online Editors**: You can also use online editors like [Swagger Editor](https://editor.swagger.io/) or [Stoplight Studio](https://stoplight.io/studio) by uploading the `openapi.yaml` file.
+
+### Using the Documentation
+
+The OpenAPI specification provides detailed information about:
+- Available endpoints
+- Request parameters
+- Response schemas
+- Error responses
+
+This can be useful for:
+- Understanding the API structure
+- Generating client libraries
+- Testing the API
+- Creating mock servers
+
 ## Installation
 
 ### Requirements
