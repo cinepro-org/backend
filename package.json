@@ -1,16 +1,24 @@
 {
   "name": "cinepro-backend",
-  "version": "0.0.0.1-beta",
-  "description": "Backend API for CinePro",
+  "version": "0.0.1-beta",
+  "description": "Backend API of CinePro (scraper)",
   "main": "index.js",
+  "homepage": "https://cinepro.mintlify.app/",
+  "bugs": {
+    "url": "https://github.com/cinepro-org/backend/issues"
+  },
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "node --watch index.js --debug",
     "main": "node --watch index.js",
-    "start": "node index.js"
+    "start": "node --watch index.js"
   },
-  "author": "CinePro-Org",
-  "license": "CUSTOM",
+  "author": {
+    "name": "CinePro Dev Team and All contributors",
+    "url": "https://github.com/orgs/cinepro-org/teams/devs/"
+  },
+  "license": "SEE LICENSE ON https://cinepro.mintlify.app/general-information/license#in-a-nutshell",
   "dependencies": {
     "axios": "^1.7.9",
     "base-64": "^1.0.0",
@@ -32,5 +40,9 @@
   "keywords": [],
   "devDependencies": {
     "@types/cors": "^2.8.17"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cinepro-org/backend.git"
   }
 }

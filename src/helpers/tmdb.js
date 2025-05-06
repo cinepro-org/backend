@@ -21,16 +21,16 @@ export async function getMovieFromTmdb(tmdb_id) {
         const url = `https://api.themoviedb.org/3/movie/${tmdb_id}?api_key=${apiKey}`;
         const response = await fetch(url);
         if (response.status !== 200) {
-            return new ErrorObject(strings.INVALID_MOVIE_ID, "user", 405, strings.INVALID_MOVIE_ID_HINT, true, false);
+            return new ErrorObject(strings.INVALID_MOVIE_ID, "user", 404, strings.INVALID_MOVIE_ID_HINT, true, false);
         }
         const data = await response.json();
         if (new Date(data.release_date) > new Date().getTime()) {
-            return new ErrorObject("This movie has not been released.", "user", 405, strings.INVALID_MOVIE_ID_HINT, true, false);
+            return new ErrorObject("This movie has not been released.", "user", 400, strings.INVALID_MOVIE_ID_HINT, true, false);
         }
 
         let secondData = await fetch(`https://api.themoviedb.org/3/movie/${tmdb_id}/external_ids?api_key=${apiKey}`);
         if (secondData.status !== 200) {
-            return new ErrorObject(strings.INVALID_MOVIE_ID, "user", 405, strings.INVALID_MOVIE_ID_HINT, true, false);
+            return new ErrorObject(strings.INVALID_MOVIE_ID, "user", 404, strings.INVALID_MOVIE_ID_HINT, true, false);
         }
         secondData = await secondData.json();
 
@@ -67,7 +67,7 @@ export async function getTvFromTmdb(tmdb_id, season, episode) {
         const url = `https://api.themoviedb.org/3/tv/${tmdb_id}/season/${season}/episode/${episode}?api_key=${apiKey}&append_to_response=external_ids`;
         const response = await fetch(url);
         if (response.status !== 200) {
-            return new ErrorObject(strings.INVALID_TV_ID, "user", 405, strings.INVALID_TV_ID_HINT, true, false);
+            return new ErrorObject(strings.INVALID_TV_ID, "user", 404, strings.INVALID_TV_ID_HINT, true, false);
         }
         const data = await response.json();
         if (new Date(data.air_date) > new Date().getTime()) {
@@ -75,14 +75,14 @@ export async function getTvFromTmdb(tmdb_id, season, episode) {
         }
         let secondData = await fetch(`https://api.themoviedb.org/3/tv/${tmdb_id}?api_key=${apiKey}`);
         if (secondData.status !== 200) {
-            return new ErrorObject(strings.INVALID_TV_ID, "user", 405, strings.INVALID_TV_ID_HINT, true, false);
+            return new ErrorObject(strings.INVALID_TV_ID, "user", 404, strings.INVALID_TV_ID_HINT, true, false);
         }
         secondData = await secondData.json();
         let title = secondData.name;
 
         let thirdData = await fetch(`https://api.themoviedb.org/3/tv/${tmdb_id}/external_ids?api_key=${apiKey}`);
         if (thirdData.status !== 200) {
-            return new ErrorObject(strings.INVALID_TV_ID, "user", 405, strings.INVALID_TV_ID_HINT, true, false);
+            return new ErrorObject(strings.INVALID_TV_ID, "user", 404, strings.INVALID_TV_ID_HINT, true, false);
         }
         thirdData = await thirdData.json();
 

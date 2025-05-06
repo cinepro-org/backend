@@ -7,12 +7,10 @@ import {getVidSrc} from "./controllers/providers/VidSrc/VidSrc.js";
 import {getVidSrcSu} from "./controllers/providers/VidSrcSu/VidSrcSu.js";
 import {getVidSrcVip} from "./controllers/providers/VidSrcVip/VidSrcVip.js";
 import {getXprime} from "./controllers/providers/xprime/xprime.js";
-import dotenv from 'dotenv';
 import {ErrorObject} from "./helpers/ErrorObject.js";
 import {getVidsrcWtf} from "./controllers/providers/VidSrcWtf/VidSrcWtf.js";
 
-dotenv.config();
-const shouldDebug = process.env.DEBUG.toLowerCase() === "true" || process.env.DEBUG === "1";
+const shouldDebug = process.argv.includes("--debug");
 
 export async function scrapeMedia(media) {
     const providers = [
