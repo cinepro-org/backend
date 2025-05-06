@@ -7,10 +7,14 @@ import {checkIfPossibleTmdbId, handleErrorResponse} from "./src/helpers/helper.j
 import {ErrorObject} from "./src/helpers/ErrorObject.js";
 
 const PORT = process.env.PORT;
+const allowedOrigins = ["https://cinepro.mintlify.app"]; // localhost is also allowed. (from any localhost port)
 const app = express();
-const debugMode = process.env.DEBUG.toLowerCase() === "true" || process.env.DEBUG === "1"
 
-app.use(cors());
+app.use(cors({
+    origin: (origin, callback) => {
+        (!origin || allowedOrigins.includes(origin) || /^http:\/\/localhost/.test(origin)) ? callback(null, true) : callback(new Error("Not allowed by CORS"))
+    }
+}));
 
 app.get("/", (req, res) => {
     res.status(200).json({
@@ -18,7 +22,7 @@ app.get("/", (req, res) => {
         routes: strings.ROUTES,
         information: strings.INFORMATION,
         license: strings.LICENSE,
-        source: strings.SOURCE,
+        source: strings.SOURCE
     });
 });
 
@@ -72,7 +76,7 @@ app.get("*", (req, res) => {
 
 app.listen(PORT, () => {
     console.log(`Server is running on port http://localhost:${PORT};`);
-    if (debugMode) {
+    if (process.argv.includes("--debug")) {
         console.log(`Debug mode is enabled.`);
     } else {
         console.log("Debug mode is disabled.");

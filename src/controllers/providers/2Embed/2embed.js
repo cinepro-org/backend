@@ -22,7 +22,7 @@ function parseQuality(qualityString) {
     if (q.includes('720P')) return 720;
     const numMatch = q.match(/(\d+)/);
     return numMatch ? parseInt(numMatch[1], 10) : 0;
-};
+}
 
 export async function getTwoEmbed(params) {
     const { tmdb, season, episode } = params;
@@ -59,8 +59,8 @@ export async function getTwoEmbed(params) {
 
         if (isSwishId) {
             const streamUrl = await extract(`${PLAYER_URL}/e/${extractedValue}`, DOMAIN);
-            if (!streamUrl) {
-                return new ErrorObject(`Could not resolve stream URL for swish ID: ${extractedValue}`, "2Embed", 500, "Check the swish ID or backend logic.", true, true);
+            if (streamUrl instanceof ErrorObject || !streamUrl) {
+                return new ErrorObject(`Could not resolve stream URL for swish ID: ${extractedValue} because of:\n ${streamUrl.toJSON()}`, "2Embed", 500, "Check the swish ID or backend logic.", true, true);
             }
 
             return {
@@ -80,7 +80,7 @@ export async function getTwoEmbed(params) {
             });
 
             if (!listPageResponse.ok) {
-                return new ErrorObject(`Failed to fetch player4u list page ${extractedValue}: ${listPageResponse.status}`);
+                return new ErrorObject(`Failed to fetch player4u list page ${extractedValue}: ${listPageResponse.status}`, "2Embed", 500, "Check the player4u URL or server status.", true, true);
             }
 
             const listPageHtml = await listPageResponse.text();
@@ -119,7 +119,7 @@ export async function getTwoEmbed(params) {
 
                     const streamUrl = await resolve(resolveUrl, extractedValue);
                     if (!streamUrl) {
-                        return new ErrorObject(`Could not resolve stream URL for player4u ID: ${player4uId}`);
+                        return new ErrorObject(`Could not resolve stream URL for player4u ID: ${player4uId}`, "2Embed", 500, "Check the player4u ID or backend logic.", true, true);
                     }
                     return {
                         files: {
@@ -130,16 +130,16 @@ export async function getTwoEmbed(params) {
                         subtitles: subtitles
                     };
                 } else {
-                    return new ErrorObject("Could not extract player4u ID from best quality URL");
+                    return new ErrorObject("Could not extract player4u ID from the best quality URL", "2Embed", 500, "Check the player4u URL structure.", true, true);
                 }
             } else {
-                return new ErrorObject("No valid quality options found on player4u page");
+                return new ErrorObject("No valid quality options found on player4u page", "2Embed", 500, "Ensure the page contains valid quality options.", true, true);
             }
         }
     } catch (error) {
         return new ErrorObject(`Unexpected error: ${error.message}`, "2Embed", 500, "Check the implementation or server status.", true, true);
     }
-};
+}
 
 async function resolve(url, referer) {
     try {
@@ -151,8 +151,7 @@ async function resolve(url, referer) {
         });
 
         if (!response.ok) {
-            console.error(`Resolve failed for ${url}: Status ${response.status}`);
-            return null;
+            return new ErrorObject(`Resolve failed for ${url}: Status ${response.status}`, "2Embed", 500, "Check the URL or server status.", true, true);
         }
 
         const data = await response.text();
@@ -166,11 +165,11 @@ async function resolve(url, referer) {
             if (unpacker.detect()) {
                 const unpackedJS = unpacker.unpack();
                 if (!unpackedJS) {
-                    console.error("JsUnpacker failed to unpack");
-                    return null;
+                    return new ErrorObject("JsUnpacker failed to unpack.", "2Embed", 500, "Check the packed data format.", true, true);
                 }
 
-                await parseSubs(unpackedJS);
+                // TODO: return subs i think
+                let subs = await parseSubs(unpackedJS);
 
                 const docheck = unpackedJS.includes("\"hls2\":\"https");
 
@@ -182,8 +181,7 @@ async function resolve(url, referer) {
                     if (matchUri && matchUri[1]) {
                         return matchUri[1];
                     } else {
-                        console.error("Could not find file URL in unpacked JS");
-                        return null;
+                        return new ErrorObject("Could not find file URL in unpacked JS.", "2Embed", 500, "Check the backend logic.", true, true);
                     }
                 } else {
                     const fileRegex = /sources\s*:\s*\[\s*\{\s*file\s*:\s*"([^"]+)"/;
@@ -193,38 +191,30 @@ async function resolve(url, referer) {
                     if (matchUri && matchUri[1]) {
                         return matchUri[1];
                     } else {
-                        console.error("Could not find file URL in unpacked JS");
-                        return null;
+                        return new ErrorObject("Could not find file URL in unpacked JS.", "2Embed", 500, "Check the backend logic.", true, true);
                     }
                 }
-
-
             } else {
-                console.error("JsUnpacker could not detect packed data in resolve response");
-                return null;
+                return new ErrorObject("JsUnpacker could not detect packed data in resolve response.", "2Embed", 500, "Check the packed data format.", true, true);
             }
         } else {
-            console.error("No packed JS data found in resolve response for:", url);
             if (url.includes('.m3u8')) return url;
-            return null;
+            return new ErrorObject("No packed JS data found in resolve response.", "2Embed", 500, "Check the response content.", true, true);
         }
     } catch (error) {
-        console.error(`Error during resolve for ${url}:`, error);
-        return null;
+        return new ErrorObject(`Error during resolve for ${url}: ${error.message}`, "2Embed", 500, "Check the implementation or server status.", true, true);
     }
-};
+}
 
 async function parseSubs(scriptstring) {
     if (typeof subtitles === 'undefined') {
-        console.error("Subtitles array is not accessible in parseSubs");
-        return;
+        return new ErrorObject("Subtitles array is not accessible in parseSubs.", "2Embed", 500, "Ensure subtitles array is properly initialized.", true, true);
     }
 
     try {
         const linksMatch = scriptstring.match(/var links\s*=\s*({[^;]*});/);
         if (!linksMatch) {
-            console.error("Could not find links object in script");
-            return;
+            return new ErrorObject("Could not find links object in script.", "2Embed", 500, "Check the script content.", true, true);
         }
 
         let linksStr = linksMatch[1]
@@ -236,8 +226,7 @@ async function parseSubs(scriptstring) {
 
         const setupMatch = scriptstring.match(/jwplayer\(["']vplayer["']\)\.setup\((\{[\s\S]*?\})\);[\s\S]*?$/);
         if (!setupMatch || !setupMatch[1]) {
-            console.error("Could not find JWPlayer setup configuration");
-            return;
+            return new ErrorObject("Could not find JWPlayer setup configuration.", "2Embed", 500, "Check the script content.", true, true);
         }
 
         let setupStr = setupMatch[1];
@@ -257,8 +246,7 @@ async function parseSubs(scriptstring) {
         try {
             setupConfig = JSON.parse(setupStr);
         } catch (err) {
-            console.error("JSON parse error:", err, "in string:", setupStr);
-            return;
+            return new ErrorObject("JSON parse error in JWPlayer setup configuration.", "2Embed", 500, "Check the setup configuration format.", true, true);
         }
 
         if (!setupConfig.tracks) {
@@ -279,6 +267,6 @@ async function parseSubs(scriptstring) {
         });
 
     } catch (error) {
-        console.error("Error during subtitle parsing:", error);
+        return new ErrorObject(`Error during subtitle parsing: ${error.message}`, "2Embed", 500, "Check the implementation or script content.", true, true);
     }
-};
+}

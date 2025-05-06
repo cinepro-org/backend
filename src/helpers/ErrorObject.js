@@ -133,9 +133,9 @@ export class ErrorObject {
      */
     toString() {
         if (this._hint) {
-            return `[${this._provider}] ${this._message}\n\nPossible cause: ${this._hint}`;
+            return `============ERROR============\n[${this._provider}] ${this._message}\n\nPossible cause: ${this._hint}\n============END ERROR============\n\n\n`;
         }
-        return `[${this._provider}] ${this._message}`;
+        return `============ERROR============\n[${this._provider}] ${this._message}\n============END ERROR============\n\n\n`;
     }
 
     /**

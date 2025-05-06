@@ -31,7 +31,7 @@ export async function extract(url, DOMAIN = "") {
         }
     }
     
-    if (process.env.DEBUG === "true" || process.env.DEBUG === 1) {
+    if (process.argv.includes("--debug")) {
         console.log(`[extractor] ${url} (${DOMAIN}) is not a supported server... maybe check this out!`);
     }
     return new ErrorObject("No extractor found", "Extractor", 500, "No extractor found matching for this URL: " + url, true, true);
