@@ -60,8 +60,7 @@ export async function getTwoEmbed(params) {
         if (isSwishId) {
             const streamUrl = await extract(`${PLAYER_URL}/e/${extractedValue}`, DOMAIN);
             if (streamUrl instanceof ErrorObject || !streamUrl) {
-                return new ErrorObject(`Could not resolve stream URL for swish ID: ${extractedValue} because of:\n ${streamUrl.toJSON()}`, "2Embed", 500, "Check the swish ID or backend logic.", true, true);
-            }
+                return new ErrorObject(`Could not resolve stream URL for swish ID: ${extractedValue} because of: ${JSON.stringify(streamUrl)}`, "2Embed", 500, "Check the swish ID or backend logic.", true, true);            }
 
             return {
                 files: {

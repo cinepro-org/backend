@@ -16,12 +16,12 @@ export async function getVidSrcVip(media) {
         });
 
         if (!sources.ok) {
-            return new ErrorObject("[vidsrcvip] Failed to scrape sources", "VidSrcVip", sources.status, `Failed to fetch sources from ${link}. Check the URL or server status.`, true, true);
+            return new ErrorObject("Failed to scrape sources", "VidSrcVip", sources.status, `Failed to fetch sources from ${link}. Check the URL or server status.`, true, true);
         }
 
         sources = await sources.json();
         if (Object.keys(sources).length === 0) {
-            return new ErrorObject("[vidsrcvip] No sources found", "VidSrcVip", 404, "No sources were returned by the API. Ensure the media exists or the API is functioning correctly.", true, true);
+            return new ErrorObject("No sources found", "VidSrcVip", 404, "No sources were returned by the API. Ensure the media exists or the API is functioning correctly.", true, true);
         }
 
         const formattedSources = Object.values(sources)
@@ -33,7 +33,7 @@ export async function getVidSrcVip(media) {
             }));
 
         if (formattedSources.length === 0) {
-            return new ErrorObject("[vidsrcvip] No valid sources found", "VidSrcVip", 404, "The API returned sources, but none were valid. Check the source URLs or API response.", true, true);
+            return new ErrorObject("No valid sources found", "VidSrcVip", 404, "The API returned sources, but none were valid. Check the source URLs or API response.", true, true);
         }
 
         return {

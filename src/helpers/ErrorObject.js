@@ -133,7 +133,7 @@ export class ErrorObject {
      */
     toString() {
         if (this._hint) {
-            return `============ERROR============\n[${this._provider}] ${this._message}\n\nPossible cause: ${this._hint}\n============END ERROR============\n\n\n`;
+            return `============ERROR============\n[${this._provider}] ${this._message}\nPossible cause: ${this._hint}\n============END ERROR============\n\n\n`;
         }
         return `============ERROR============\n[${this._provider}] ${this._message}\n============END ERROR============\n\n\n`;
     }
@@ -146,7 +146,7 @@ export class ErrorObject {
         if (this._goesToFrontend && this._issueLink) {
             return {
                 message: this._message,
-                "where did this happen?": this._provider,
+                location_key: this._provider,
                 response: this._responseCode,
                 hint: this._hint,
                 reportTo: "Please report this error and as many details as possible to us by using this link: " + strings.DEFAULT_ISSUE_LINK,
@@ -162,7 +162,7 @@ export class ErrorObject {
         } else {
             return {
                 message: this._message,
-                "where did this happen?": this._provider,
+                location_key: this._provider,
                 "what could be the cause?": this._hint
             };
         }
