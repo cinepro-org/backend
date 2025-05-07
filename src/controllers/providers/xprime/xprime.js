@@ -14,14 +14,14 @@ export async function getXprime(media) {
         });
 
         if (status.status !== 200) {
-            return new ErrorObject("[Xprime] Could not fetch status", "Xprime", status.status, "Check if the server is accessible or if Cloudflare is blocking the request.", true, true);
+            return new ErrorObject("Could not fetch status", "Xprime", status.status, "Check if the server is accessible or if Cloudflare is blocking the request.", true, true);
         }
 
         status = await status.json();
         let servers = status.servers;
 
         if (!servers || servers.length === 0) {
-            return new ErrorObject("[Xprime] No servers available", "Xprime", 404, "The server list is empty. Ensure the media exists or the API is functioning correctly.", true, true);
+            return new ErrorObject("No servers available", "Xprime", 404, "The server list is empty. Ensure the media exists or the API is functioning correctly.", true, true);
         }
 
         let files = [];
@@ -29,12 +29,12 @@ export async function getXprime(media) {
 
         for (let server of servers) {
             if (server.status !== "ok") {
-                return new ErrorObject(`[Xprime] Server ${server.name} is not operational`, "Xprime", 500, "The server status is not 'ok'.", true, true);
+                return new ErrorObject(`Server ${server.name} is not operational`, "Xprime", 500, "The server status is not 'ok'.", true, true);
             }
 
             // Only process "nas" and "primebox" servers
             if (server.name !== "nas" && server.name !== "primebox") {
-                return new ErrorObject(`[Xprime] Unsupported server: ${server.name}`, "Xprime", 500, "Only 'nas' and 'primebox' servers are supported.", true, true);
+                return new ErrorObject(`Unsupported server: ${server.name}`, "Xprime", 500, "Only 'nas' and 'primebox' servers are supported.", true, true);
             }
 
             let url = `${DOMAIN}${server.name}?`;
@@ -71,12 +71,12 @@ export async function getXprime(media) {
                 });
 
                 if (response.status !== 200) {
-                    return new ErrorObject(`[Xprime] Failed to fetch from server: ${server.name}`, "Xprime", response.status, "Check the server response or URL.", true, true);
+                    return new ErrorObject(`Failed to fetch from server: ${server.name}`, "Xprime", response.status, "Check the server response or URL.", true, true);
                 }
 
                 let data = await response.json();
                 if (data.status === "error") {
-                    return new ErrorObject(`[Xprime] Server ${server.name} returned an error`, "Xprime", 500, "The server response indicates an error.", true, true);
+                    return new ErrorObject(`Server ${server.name} returned an error`, "Xprime", 500, "The server response indicates an error.", true, true);
                 }
 
                 // Process streams
@@ -97,12 +97,12 @@ export async function getXprime(media) {
                     });
                 });
             } catch (error) {
-                return new ErrorObject(`[Xprime] Error processing server: ${server.name}`, "Xprime", 500, `Unexpected error: ${error.message}`, true, true);
+                return new ErrorObject(`Error processing server: ${server.name}`, "Xprime", 500, `Unexpected error: ${error.message}`, true, true);
             }
         }
 
         if (files.length === 0) {
-            return new ErrorObject("[Xprime] No valid files found", "Xprime", 404, "No valid streams were found. Check the server responses or media availability.", true, true);
+            return new ErrorObject("No valid files found", "Xprime", 404, "No valid streams were found. Check the server responses or media availability.", true, true);
         }
 
         return {

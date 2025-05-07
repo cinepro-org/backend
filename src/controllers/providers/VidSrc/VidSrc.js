@@ -21,7 +21,7 @@ export async function getVidSrc(media) {
 
         const secondUrlMatch = iframeHtml1.match(IFRAME2_SRC_RE);
         if (!secondUrlMatch) {
-            return new ErrorObject("[vidsrc] No second iframe found", "VidSrc", 404, "The page structure might have changed or the iframe is missing.", true, true);
+            return new ErrorObject("No second iframe found", "VidSrc", 404, "The page structure might have changed or the iframe is missing.", true, true);
         }
         const secondUrl = new URL(secondUrlMatch.groups.url, URI).toString();
 
@@ -33,7 +33,7 @@ export async function getVidSrc(media) {
 
         const thirdUrlMatch = iframeHtml2.match(IFRAME3_SRC_RE);
         if (!thirdUrlMatch) {
-            return new ErrorObject("[vidsrc] No third iframe found", "VidSrc", 404, "The page structure might have changed or the iframe is missing.", true, true);
+            return new ErrorObject("No third iframe found", "VidSrc", 404, "The page structure might have changed or the iframe is missing.", true, true);
         }
         const thirdUrl = new URL(thirdUrlMatch.groups.url, HOST_URL).toString();
 
@@ -45,7 +45,7 @@ export async function getVidSrc(media) {
 
         const paramsMatch = iframeHtml3.match(PARAMS_RE);
         if (!paramsMatch) {
-            return new ErrorObject("[vidsrc] No media in third iframe found", "VidSrc", 404, "The page structure might have changed or the media is missing.", true, true);
+            return new ErrorObject("No media in third iframe found", "VidSrc", 404, "The page structure might have changed or the media is missing.", true, true);
         }
         const {id: decoderId, content} = paramsMatch.groups;
 
@@ -85,7 +85,7 @@ export async function getVidSrc(media) {
                 decoded = decoder5(content);
                 break;
             default:
-                return new ErrorObject(`[vidsrc] Unknown decoder ID: ${decoderId}`, "VidSrc", 500, "The decoder logic might need to be updated.", true, true);
+                return new ErrorObject(`Unknown decoder ID: ${decoderId}`, "VidSrc", 500, "The decoder logic might need to be updated.", true, true);
         }
 
         return {

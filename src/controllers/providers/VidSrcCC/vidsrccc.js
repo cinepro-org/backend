@@ -5,7 +5,7 @@ import {ErrorObject} from "../../../helpers/ErrorObject.js";
 const DOMAIN = "https://vidsrc.cc/api/";
 
 export async function getVidSrcCC(media) {
-    return new ErrorObject("[vidsrccc] This provider is mean :(", "VidSrcCC", 500, " 3 things: 1. They want a vrf token when requesting for server hashes, 2. you would also need 'v' attribute where something gets hashed and you also need the cf_clearance cookie to get the server hashes. After that, the existing logic would stay the same...", true, true);
+    return new ErrorObject("This provider is mean :(", "VidSrcCC", 500, "3 things: 1. They want a vrf token when requesting for server hashes, 2. you would also need 'v' attribute where something gets hashed and you also need the cf_clearance cookie to get the server hashes. After that, the existing logic would stay the same... (and if that isnt enough, they block IPs (403 = your ip is cooked))", true, false);
 
     let cfToken = getCloudflareClearance(media);
     let vrfToken = generateVRF(media.tmdb);

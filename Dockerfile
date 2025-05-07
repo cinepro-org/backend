@@ -19,4 +19,4 @@ ENV PORT=${PORT}
 EXPOSE ${PORT}
 
 # Start the app
-CMD ["npm", "start"]
+CMD ["npm", "deploy"]
