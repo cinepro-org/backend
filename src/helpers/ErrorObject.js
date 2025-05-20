@@ -156,6 +156,7 @@ export class ErrorObject {
             return {
                 message: this._message,
                 response: this._responseCode,
+                location_key: this._provider,
                 hint: this._hint,
                 error: true
             };

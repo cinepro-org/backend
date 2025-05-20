@@ -14,23 +14,24 @@ const shouldDebug = process.argv.includes("--debug");
 
 export async function scrapeMedia(media) {
     const providers = [
-        {fn: () => getTwoEmbed(media)},
-        {fn: () => getAutoembed(media)},
-        {fn: () => getPrimewire(media)},
-        {fn: () => getVidSrcCC(media)},
-        {fn: () => getVidSrc(media)},
-        {fn: () => getVidSrcSu(media)},
-        {fn: () => getVidSrcVip(media)},
-        {fn: () => getXprime(media)},
-        {fn: () => getVidsrcWtf(media)},
+        {getTwoEmbed: () => getTwoEmbed(media)},
+        {getAutoembed: () => getAutoembed(media)},
+        {getPrimewire: () => getPrimewire(media)},
+        {getVidSrcCC: () => getVidSrcCC(media)},
+        {getVidSrc: () => getVidSrc(media)},
+        {getVidSrcSu: () => getVidSrcSu(media)},
+        {getVidSrcVip: () => getVidSrcVip(media)},
+        {getXprime: () => getXprime(media)},
+        {getVidsrcWtf: () => getVidsrcWtf(media)},
     ];
 
     const results = await Promise.all(
         providers.map(async (provider) => {
+            const providerName = Object.keys(provider)[0];
             try {
-                return {data: await provider.fn()};
+                return {data: await provider[providerName](), provider: providerName}; // added the provider as a property for easier debugging 
             } catch (e) {
-                return {data: null};
+                return {data: null, provider: providerName};
             }
         })
     );
@@ -64,7 +65,7 @@ export async function scrapeMedia(media) {
             .filter(({data}) => data instanceof Error || data instanceof ErrorObject)
             .map(({data}) => data)
 
-        return {files, subtitles, errors: errors};
+        return {files, subtitles, errors};
     }
 
     return {files, subtitles};
