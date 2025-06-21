@@ -1,8 +1,7 @@
 name: CinePro
 services:
-  api:
+  backend:
     build: .
-    container_name: CinePro-backend
     ports:
       - "3000:3000"
     env_file:
