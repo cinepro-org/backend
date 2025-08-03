@@ -5,7 +5,7 @@ import base64 from "base-64";
 import {ErrorObject} from "../../../helpers/ErrorObject.js";
 
 const URI = "https://vidsrc.xyz";
-const HOST_URL = "https://edgedeliverynetwork.com";
+const HOST_URL = "https://cloudnestra.com";
 
 const IFRAME2_SRC_RE = /id="player_iframe" src="(?<url>[^"]+)"/;
 const IFRAME3_SRC_RE = /src: '(?<url>\/prorcp\/[^']+)'/;
