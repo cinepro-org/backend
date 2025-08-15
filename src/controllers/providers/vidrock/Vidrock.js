@@ -1,9 +1,9 @@
 import {languageMap} from "../../../utils/languages.js";
 import {ErrorObject} from "../../../helpers/ErrorObject.js";
 
-const DOMAIN = "https://vidsrc.vip";
+const DOMAIN = "https://vidrock.net";
 
-export async function getVidSrcVip(media) {
+export async function getVidrock(media) {
     const link = getLink(media);
 
     try {
@@ -16,12 +16,12 @@ export async function getVidSrcVip(media) {
         });
 
         if (!sources.ok) {
-            return new ErrorObject("Failed to scrape sources", "VidSrcVip", sources.status, `Failed to fetch sources from ${link}. Check the URL or server status.`, true, true);
+            return new ErrorObject("Failed to scrape sources", "Vidrock", sources.status, `Failed to fetch sources from ${link}. Check the URL or server status.`, true, true);
         }
 
         sources = await sources.json();
         if (Object.keys(sources).length === 0) {
-            return new ErrorObject("No sources found", "VidSrcVip", 404, "No sources were returned by the API. Ensure the media exists or the API is functioning correctly.", true, true);
+            return new ErrorObject("No sources found", "Vidrock", 404, "No sources were returned by the API. Ensure the media exists or the API is functioning correctly.", true, true);
         }
 
         const formattedSources = Object.values(sources)
@@ -33,14 +33,14 @@ export async function getVidSrcVip(media) {
             }));
 
         if (formattedSources.length === 0) {
-            return new ErrorObject("No valid sources found", "VidSrcVip", 404, "The API returned sources, but none were valid. Check the source URLs or API response.", true, true);
+            return new ErrorObject("No valid sources found", "Vidrock", 404, "The API returned sources, but none were valid. Check the source URLs or API response.", true, true);
         }
 
         return {
             files: formattedSources, subtitles: []
         };
     } catch (error) {
-        return new ErrorObject(`Unexpected error: ${error.message}`, "VidSrcVip", 500, "Check the implementation or server status.", true, true);
+        return new ErrorObject(`Unexpected error: ${error.message}`, "Vidrock", 500, "Check the implementation or server status.", true, true);
     }
 }
 
@@ -57,8 +57,8 @@ const getLink = (media) => {
     const A = btoa(B);
     const D = btoa(A);
     if (media.type === "tv") {
-        return `https://api2.vidsrc.vip/tv/${D}`;
+        return `https://vidrock.net/api/tv/${D}`;
     } else {
-        return `https://api2.vidsrc.vip/movie/${D}`;
+        return `https://vidrock.net/api/movie/${D}`;
     }
 };

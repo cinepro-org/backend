@@ -65,7 +65,7 @@ async function lookupPage(info) {
             return new ErrorObject(`No search results found for IMDB ID: ${imdbId}`, "Primewire", 404, "Ensure the IMDB ID is correct or the content exists on Primewire.", true, true);
         }
 
-        return info.type === "tv" ? `${URL}${originalLink.replace("-", "/", 1)}-season-${info.season}-episode-${info.episode}` : `${URL}/${originalLink}`;
+        return info.type === "tv" ? `${URL}${originalLink.replace("-", "/", 1)}-season-${info.season}-episode-${info.episode}` : `${URL}${originalLink}`;
     } catch (error) {
         return new ErrorObject(`Error fetching data for IMDB ID: ${imdbId}`, "Primewire", 500, "Check the network connection or Primewire's availability.", true, true);
     }
@@ -76,7 +76,7 @@ async function loadServers(link) {
         let website = await fetch(link);
         website = await website.text();
         const urls = Array.from(website.matchAll(/data-wp-menu="(.+?)"/g)).map((match) => ({
-            url: `https://primewire.tf/links/go/${match[1]}`, idx: match[1],
+            url: `https://primewire.tf/links/gos/${match[1]}`, idx: match[1],
         }));
 
         const embeds = [];
