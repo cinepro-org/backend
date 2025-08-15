@@ -14,7 +14,6 @@ const shouldDebug = process.argv.includes("--debug");
 
 export async function scrapeMedia(media) {
     const providers = [
-        {fn: () => getEmbedsu(media)},
         {fn: () => getTwoEmbed(media)},
         {fn: () => getAutoembed(media)},
         {fn: () => getPrimewire(media)},
