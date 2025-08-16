@@ -121,9 +121,7 @@ async function loadServers(link) {
 
     const embeds = [];
     for (const item of urls) {
-      const response = await axios.get(item.url);
-      const location = `https://${response.request.host}${response.request.path}`;
-      embeds.push(location);
+      embeds.push(await fromPrimewireToProvider(item));
     }
     return embeds;
   } catch (error) {
@@ -140,4 +138,29 @@ async function loadServers(link) {
 
 function sha1Hex(str) {
   return crypto.createHash("sha1").update(str).digest("hex");
+}
+
+async function fromPrimewireToProvider(primwireObject) {
+    const response = await axios.get(primwireObject.url);
+    let javascriptfile = response.data.match(/<script async type="text\/javascript" src="\/js\/app-(.+?)\">/);
+    if (javascriptfile) {
+        javascriptfile = javascriptfile[1];
+        const jsfiledata = await axios.get(`https://primewire.tf/js/app-${javascriptfile}`);
+        let token = jsfiledata.data.match(/return Object\(r\.useEffect\)\(\(function\(\)\{var t,n;t="(.+?)"/);
+        if (token) {
+            token = token[1];
+        }
+        let mediaobject = axios.get(`https://primewire.tf/links/go/${primwireObject.idx}?token=${token}&embed=true`);
+        mediaobject = await mediaobject;
+        return mediaobject.data.link;
+    }
+
+    throw new ErrorObject(
+        "Failed to extract media link from Primewire",
+        "Primewire",
+        500,
+        "Check the response format or Primewire's availability.",
+        true,
+        true
+    );
 }
