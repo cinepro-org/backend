@@ -16,7 +16,7 @@ export class ErrorObject {
      * Constructs an instance of the ErrorObject class.
      *
      * @param {string} message - The error message.
-     * @param {string} provider - The provider where the error occurred (e.g., "backend", "VidSrcVip").
+     * @param {string} provider - The provider where the error occurred (e.g., "backend", "Vidrock").
      * @param {number} responseCode - The HTTP response code associated with the error. Null if not applicable.
      * @param {string} hint - If it goes to the frontend this is the hint to help extract the error. In the backend it is a note/hint for the developer of what could be the cause of the error.
      * @param {boolean} goesToFrontend - Whether the error should be sent to the frontend. Also influences the format of the error.

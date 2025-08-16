@@ -37,6 +37,10 @@ export async function extract_streamwish(url, referer) {
                 }
 
                 if (matchUri && matchUri[1]) {
+                    if (matchUri[1].match('",\\"hls4\\":\\"')) {
+                        matchUri[1] = matchUri[1].replace(/",\\hls4\\":\\".*?"/, '');
+                        return matchUri[1];
+                    }
                     return matchUri[1];
                 } else {
                     return new ErrorObject("Could not find file URL in unpacked JS.", "streamwish", 500, "Check the backend logic.", true, true);

@@ -63,6 +63,7 @@ export async function getEmbedsu(media) {
                 lang: languageMap[sub.label.split(/[\s-]/)[0]] || sub.label,
                 type: sub.file.split('.').pop()
             })).filter(track => track.lang);
+            
         }
 
         return {

@@ -28,9 +28,15 @@
     "dotenv": "^16.4.7",
     "express": "^4.18.2",
     "node-fetch": "^3.3.2",
+    "prettier": "^3.6.2",
     "unpacker": "^1.0.1"
   },
-  "keywords": ["cinepro", "movie", "tv show", "scraper"],
+  "keywords": [
+    "cinepro",
+    "movie",
+    "tv show",
+    "scraper"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/cinepro-org/backend.git"
