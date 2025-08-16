@@ -160,6 +160,7 @@ function handleSuccess(data, lang) {
       quality: quality,
       headers: {
         Referer: DOMAIN,
+        
       },
     });
   }

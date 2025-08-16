@@ -122,6 +122,7 @@ export async function getVidSrc(media) {
           true,
           true
         );
+        
     }
 
     return {

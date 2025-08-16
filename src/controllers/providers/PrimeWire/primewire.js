@@ -8,6 +8,7 @@ import { ErrorObject } from "../../../helpers/ErrorObject.js";
 const URL = "https://www.primewire.tf";
 const DS_KEY = "JyjId97F9PVqUPuMO0";
 
+
 export async function getPrimewire(media) {
   if (!media.imdb) {
     return new ErrorObject(
@@ -47,6 +48,7 @@ export async function getPrimewire(media) {
       type: embedLink.type,
       lang: "en",
       ...(embedLink.headers && { headers: embedLink.headers }),
+
     }));
 
   return {

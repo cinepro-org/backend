@@ -51,7 +51,8 @@ export async function getAutoembed(media) {
             }
             let encObj = await response.json();
             const data = decryptData(encObj.data);  // Decrypt the data
-            let data2 = decrypt(encObj.data);
+            // let data2 = decrypt(encObj.data);
+            return new ErrorObject("Data Decryption is not yet implemented", "AutoEmbed/vidsrc.co", 500, "could someone pls fix this. thanksss", true, false);
             files.push({
                 file: data.url,
                 type: data.url.includes("mp4") ? "mp4" : "hls",
@@ -61,8 +62,8 @@ export async function getAutoembed(media) {
             if (data.tracks) {
                 // TODO: implement subtitles
             }
-            return new ErrorObject("Data Decryption is not yet implemented", "AutoEmbed/vidsrc.co", 500, "could someone pls fix this. thanksss", true, false);
         }
+        
         return { files, subtitles };
     } catch (error) {
         console.error("Error:", error);  // Log the error for debugging

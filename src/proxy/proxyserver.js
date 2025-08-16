@@ -245,6 +245,7 @@ export function createProxyRoutes(app) {
             )}&headers=${encodeURIComponent(JSON.stringify(headers))}`;
             newLines.push(proxyUrl);
           } catch {
+            
             newLines.push(line); // Keep original if URL parsing fails
           }
         } else {

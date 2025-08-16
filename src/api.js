@@ -26,6 +26,7 @@ export async function scrapeMedia(media) {
   const results = await Promise.all(
     providers.map(async (provider) => {
       const providerName = Object.keys(provider)[0];
+      
       try {
         return { data: await provider[providerName](), provider: providerName }; // added the provider as a property for easier debugging
       } catch (e) {
