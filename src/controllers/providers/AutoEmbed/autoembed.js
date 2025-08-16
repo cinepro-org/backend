@@ -50,18 +50,18 @@ export async function getAutoembed(media) {
                 continue;
             }
             let encObj = await response.json();
-            return new ErrorObject("Data Decryption is not yet implemented", "AutoEmbed/vidsrc.co", 500, "could someone pls fix this. thanksss", true, false);
-            //const data = decryptData(encObj.data);  // Decrypt the data
-            //let data2 = decrypt(encObj.data);
+            const data = decryptData(encObj.data);  // Decrypt the data
+            let data2 = decrypt(encObj.data);
             files.push({
                 file: data.url,
                 type: data.url.includes("mp4") ? "mp4" : "hls",
                 lang: currentLang
             });
-
+            
             if (data.tracks) {
                 // TODO: implement subtitles
             }
+            return new ErrorObject("Data Decryption is not yet implemented", "AutoEmbed/vidsrc.co", 500, "could someone pls fix this. thanksss", true, false);
         }
         return { files, subtitles };
     } catch (error) {
