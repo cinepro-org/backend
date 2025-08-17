@@ -1,12 +1,12 @@
-import { languageMap } from '../../../utils/languages.js';
 import { ErrorObject } from '../../../helpers/ErrorObject.js';
+import { languageMap } from '../../../utils/languages.js';
 
 const DOMAIN = 'https://xprime.tv/';
 const BACKEND_DOMAIN = 'https://backend.xprime.tv/';
 
 export async function getXprime(media) {
     try {
-        let status = await fetch(DOMAIN + 'servers', {
+        let status = await fetch(BACKEND_DOMAIN + 'servers', {
             headers: {
                 Accept: '*/*',
                 Referer: DOMAIN + 'watch/' + media.tmdb,
@@ -42,75 +42,37 @@ export async function getXprime(media) {
         let files = [];
         let subtitles = [];
         let errors = [];
+        let goodServers = servers.filter((server) => server.status === 'ok');
 
-        for (let server of servers) {
-            if (server.status !== 'ok') {
-                return new ErrorObject(
-                    `Server ${server.name} is not operational`,
-                    'Xprime',
-                    500,
-                    "The server status is not 'ok'.",
-                    true,
-                    true
-                );
-            }
-
-            switch (server.name) {
-                case 'nas':
-                    let nas = await handleNas(media);
-                    if (nas instanceof ErrorObject) {
-                        errors.push(nas);
-                        break;
-                    }
-                    files.push(...nas.files);
-                    subtitles.push(...nas.subtitles);
+        for (let server of goodServers) {
+            switch (server.name.toLowerCase()) {
+                case 'phoenix':
+                    await doPhoenixStuff(media, files, subtitles, errors);
                     break;
 
                 case 'primenet':
-                    let url = await fetch(
-                        DOMAIN + `primenet?id=${media.tmdb}`,
-                        {
-                            headers: {
-                                Accept: '*/*',
-                                Referer: DOMAIN + 'watch/' + media.tmdb,
-                                Origin: DOMAIN
-                            }
-                        }
-                    );
-                    if (url.ok) continue;
-                    url = await url.json();
-                    files.push(
-                        ...{
-                            file: url.url,
-                            lang: 'en',
-                            type: 'hls'
-                        }
-                    );
+                    doPrimenetStuff(media, files, subtitles, errors);
                     break;
 
                 case 'primebox':
-                    let primebox = await handlePrimebox(media);
-                    if (primebox instanceof ErrorObject) {
-                        errors.push(primebox);
-                        break;
-                    }
-                    files.push(...primebox.files);
-                    subtitles.push(...primebox.subtitles);
+                    doPrimeboxStuff(media, files, subtitles, errors);
                     break;
-            }
-        }
 
-        let volkswagen = await handleVolkswagen(media);
-        if (volkswagen instanceof ErrorObject) {
-            errors.push(volkswagen);
-        } else {
-            files.push(...volkswagen.files);
-            subtitles.push(...volkswagen.subtitles);
-        }
+                case 'kraken':
+                    doKrakenStuff(media, files, subtitles, errors);
+                    break;
 
-        if (process.argv.includes('--debug')) {
-            for (let error in errors) {
-                console.error(error.toString());
+                case 'harbour':
+                    doHarbourStuff(media, files, subtitles, errors);
+                    break;
+
+                case 'volkswagen':
+                    doVolkswagenStuff(media, files, subtitles, errors);
+                    break;
+
+                case 'fendi':
+                    doFendiStuff(media, files, subtitles, errors);
+                    break;
             }
         }
 
@@ -150,154 +112,153 @@ export async function getXprime(media) {
     }
 }
 
-function handleSuccess(data, lang) {
-    const files = [];
-    const subtitles = [];
+async function doPhoenixStuff(media, files, subtitles, errors) {
+    let url;
 
-    // Process streams (quality files)
-    for (const quality in data.streams) {
-        files.push({
-            file: data.streams[quality],
-            type: 'mp4',
-            lang: lang,
-            quality: quality,
-            headers: {
-                Referer: DOMAIN
-            }
-        });
+    if (media.type === 'movie') {
+        url = `${BACKEND_DOMAIN}phoenix?name=${encodeURI(media.title)}&year=${media.year}&id=${media.tmdb}&imdb=${media.imdb}`;
+    } else if (media.type === 'tv') {
+        url = `${BACKEND_DOMAIN}phoenix?name=${encodeURI(media.title)}&year=${media.year}&id=${media.tmdb}&imdb=${media.imdb}&season=${media.season}&episode=${media.episode}`;
     }
 
-    // Process subtitles
-    if (data.has_subtitles && data.subtitles) {
-        data.subtitles.forEach((subtitle) => {
-            subtitles.push({
-                url: subtitle.file,
-                lang:
-                    languageMap[subtitle.label.split(' ')[0]] || subtitle.label,
-                type: subtitle.file.split('.').pop().slice(0, 3)
-            });
-        });
-    }
-
-    return { files, subtitles };
-}
-
-async function handleNas(media) {
-    try {
-        const url = `${DOMAIN}nas?imdb=${media.imdb}`;
-        console.log(`Fetching URL: ${url}`); // Log the URL for debugging
-
-        let data = await fetch(url, {
-            headers: {
-                Accept: '*/*'
-            }
-        });
-
-        if (!data.ok) {
-            console.error(`Fetch failed with status: ${data.status}`);
-            return new ErrorObject(
-                'Failed to fetch nas',
-                'xprime - nas',
+    let data = await fetch(url, {
+        headers: {
+            Accept: '*/*',
+            Referer: DOMAIN + 'watch/' + media.tmdb,
+            Origin: DOMAIN
+        }
+    });
+    if (data.status !== 200) {
+        errors.push(
+            new ErrorObject(
+                'Failed to fetch Phoenix data',
+                'Xprime',
                 data.status,
-                'Check if the URL is valid or the server is accessible.',
+                'Check if the Phoenix server is accessible or if the media exists.',
                 true,
                 true
-            );
-        }
+            )
+        );
+    }
+    // TODO: I did not find a working pheonix response to map to. Will have to try later again.
+}
 
-        data = await data.json();
-        if (data.status !== 'ok') {
-            return new ErrorObject(
-                'Nas reported: ' + data.details,
-                'xprime - nas',
-                404,
-                undefined,
+async function doPrimenetStuff(media, files, subtitles, errors) {
+    let url;
+
+    if (media.type === 'movie') {
+        url = `${BACKEND_DOMAIN}primenet?name=${encodeURI(media.title)}&year=${media.year}&id=${media.tmdb}&imdb=${media.imdb}`;
+    } else if (media.type === 'tv') {
+        url = `${BACKEND_DOMAIN}primenet?name=${encodeURI(media.title)}&year=${media.year}&id=${media.tmdb}&imdb=${media.imdb}&season=${media.season}&episode=${media.episode}`;
+    }
+
+    let data = await fetch(url, {
+        headers: {
+            Accept: '*/*',
+            Referer: DOMAIN + 'watch/' + media.tmdb,
+            Origin: DOMAIN
+        }
+    });
+
+    if (data.status !== 200) {
+        errors.push(
+            new ErrorObject(
+                'Failed to fetch Primenet data',
+                'Xprime',
+                data.status,
+                'Check if the Primenet server is accessible or if the media exists.',
                 true,
-                false
-            );
-        }
-
-        return handleSuccess(data, 'en');
-    } catch (error) {
-        console.error(`Error during fetch: ${error.message}`);
-        return new ErrorObject(
-            `Unexpected error: ${error.message}`,
-            'xprime - nas',
-            500,
-            'An unexpected error occurred while fetching nas.',
-            true,
-            true
+                true
+            )
         );
+        return;
     }
-}
 
-async function handlePrimebox(media) {
-    let data = await fetch(
-        DOMAIN + `primebox?name=${media.title}&year=${media.releaseYear}`,
-        {
+    data = await data.json();
+    if (data.url) {
+        files.push({
+            file: data.url,
+            type: 'hls',
+            lang: 'en',
             headers: {
-                Accept: '*/*',
                 Referer: DOMAIN + 'watch/' + media.tmdb,
                 Origin: DOMAIN
             }
-        }
-    );
-    if (!data.ok) {
-        return new ErrorObject(
-            'Failed to fetch primebox',
-            'xprime - primebox',
-            data.status,
-            'check if valid url',
-            true,
-            true
-        );
+        });
     }
-    data = await data.json();
-    if (data.status !== 'ok') {
-        return new ErrorObject(
-            'primebox reported: ' + data.details,
-            'xprime - primebox',
-            404,
-            undefined,
-            true,
-            false
-        );
-    }
-    return handleSuccess(data, 'en');
 }
 
-async function handleVolkswagen(media) {
-    let data = await fetch(
-        BACKEND_DOMAIN +
-            `volkswagen?name=${media.title}&year=${media.releaseYear}`,
-        {
-            headers: {
-                Accept: '*/*',
-                Referer: DOMAIN + 'watch/' + media.tmdb,
-                Origin: DOMAIN
+async function doPrimeboxStuff(media, files, subtitles, errors) {
+    let url;
+
+    if (media.type === 'movie') {
+        url = `${BACKEND_DOMAIN}primebox?name=${encodeURI(media.title)}&year=${media.year}`;
+    } else if (media.type === 'tv') {
+        url = `${BACKEND_DOMAIN}primebox?name=${encodeURI(media.title)}&year=${media.year}&season=${media.season}&episode=${media.episode}`;
+    }
+
+    let data = await fetch(url, {
+        headers: {
+            Accept: '*/*',
+            Referer: DOMAIN + 'watch/' + media.tmdb,
+            Origin: DOMAIN
+        }
+    });
+
+    if (data.status !== 200) {
+        errors.push(
+            new ErrorObject(
+                'Failed to fetch Primebox data',
+                'Xprime',
+                data.status,
+                'Check if the Primebox server is accessible or if the media exists.',
+                true,
+                true
+            )
+        );
+        return;
+    }
+
+    data = await data.json();
+    if (data.streams && data.available_qualities) {
+        for (const quality of data.available_qualities) {
+            if (data.streams[quality]) {
+                files.push({
+                    file: data.streams[quality],
+                    type: 'hls',
+                    lang: 'en',
+                    quality: quality,
+                    headers: {
+                        Referer: DOMAIN + 'watch/' + media.tmdb,
+                        Origin: DOMAIN
+                    }
+                });
             }
         }
-    );
-    if (!data.ok) {
-        return new ErrorObject(
-            'Failed to fetch volkswagen',
-            'xprime - volkswagen',
-            data.status,
-            'check if valid url',
-            true,
-            true
-        );
     }
-    data = await data.json();
-    if (data.status !== 'ok') {
-        return new ErrorObject(
-            'volkswagen reported: ' + data.details,
-            'xprime - volkswagen',
-            404,
-            undefined,
-            true,
-            false
-        );
+    if (Array.isArray(data.subtitles)) {
+        for (const sub of data.subtitles) {
+            subtitles.push({
+                url: sub.file,
+                lang: languageMap[sub.language] || 'unknown',
+                type: 'vtt'
+            });
+        }
     }
-    return handleSuccess(data, 'de');
+}
+
+async function doKrakenStuff(media, files, subtitles, errors) {
+    // TODO: Xprime was not completely working when i tried to implement this.
+}
+
+async function doHarbourStuff(media, files, subtitles, errors) {
+    // TODO: Xprime was not completely working when i tried to implement this.
+}
+
+async function doVolkswagenStuff(media, files, subtitles, errors) {
+    // TODO: Xprime was not completely working when i tried to implement this.
+}
+
+async function doFendiStuff(media, files, subtitles, errors) {
+    // TODO: Xprime was not completely working when i tried to implement this.
 }

@@ -29,7 +29,8 @@
     "express": "^4.18.2",
     "node-fetch": "^3.3.2",
     "prettier": "^3.6.2",
-    "unpacker": "^1.0.1"
+    "unpacker": "^1.0.1",
+    "wyzie-lib": "^2.2.5"
   },
   "keywords": [
     "cinepro",
