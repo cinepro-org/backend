@@ -7,6 +7,7 @@ import { getVidrock } from './controllers/providers/Vidrock/Vidrock.js';
 import { getXprime } from './controllers/providers/xprime/xprime.js';
 import { ErrorObject } from './helpers/ErrorObject.js';
 import { getVidsrcWtf } from './controllers/providers/VidSrcWtf/VidSrcWtf.js';
+import { getVidZee } from './controllers/providers/vidzee/vidzee.js';
 
 const shouldDebug = process.argv.includes('--debug');
 
@@ -19,7 +20,8 @@ export async function scrapeMedia(media) {
         { getVidSrc: () => getVidSrc(media) },
         { getVidrock: () => getVidrock(media) },
         { getXprime: () => getXprime(media) },
-        { getVidsrcWtf: () => getVidsrcWtf(media) }
+        { getVidsrcWtf: () => getVidsrcWtf(media) },
+        { getVidZee: () => getVidZee(media) }
     ];
 
     const results = await Promise.all(
@@ -30,7 +32,7 @@ export async function scrapeMedia(media) {
                 return {
                     data: await provider[providerName](),
                     provider: providerName
-                }; // added the provider as a property for easier debugging
+                };
             } catch (e) {
                 return { data: null, provider: providerName };
             }
