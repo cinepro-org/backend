@@ -1,9 +1,9 @@
 // Credit where it's due: https://github.com/Dungeon69/vidsrc_wasm
-import {webcrypto} from "crypto";
-import {readFileSync} from "fs";
+import { webcrypto } from "crypto";
+import { readFileSync } from "fs";
 import * as path from "path";
-import {dirname} from "path";
-import {fileURLToPath} from 'url';
+import { dirname } from "path";
+import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -50,14 +50,14 @@ const fakeWindow = {
         webdriver: false,
         userAgent: userAgent,
     },
-    document: {cookie: ""},
+    document: { cookie: "" },
     location: {
         href: "",
         origin: "",
     },
     crypto: webcrypto,
     msCrypto: webcrypto,
-    performance: {timeOrigin: Date.now()},
+    performance: { timeOrigin: Date.now() },
     TextEncoder: globalThis.TextEncoder,
     TextDecoder: globalThis.TextDecoder,
 };
@@ -285,21 +285,31 @@ function encrypted(id) {
  * @param {string} movieId
  * @returns {Promise<string>}
  */
-export async function generateVRF(movieId) {
-    try {
-        const filePath = path.join(__dirname, "file.wasm");
-        const wasmBuffer = readFileSync(filePath);
-        const arrayBuffer = wasmBuffer.buffer.slice(
-            wasmBuffer.byteOffset,
-            wasmBuffer.byteOffset + wasmBuffer.byteLength
-        );
 
-        await initWasm(arrayBuffer);
-        if (typeof wasm.encrypted === "function") {
-            encrypted(movieId);
-        }
-        return fakeWindow.sessionStorage.storage.get("vrf_" + movieId);
-    } catch (error) {
-        console.error("Error:", error);
+// we should probably try to pass the userID from the vidsrc.cc page
+
+export async function generateVRF(movieId) {
+    const encoder = new TextEncoder();
+    // we should probably try to pass the userID from the vidsrc.cc page
+    const keyData = await crypto.subtle.digest("SHA-256", encoder.encode("Bh0IPAQjGH0FIwB5Bxp9MAQjEA"));
+
+    const key = await crypto.subtle.importKey(
+        "raw",
+        keyData,
+        {
+            name: "AES-CBC",
+        },
+        false,
+        ["encrypt"]
+    );
+    const algo = {
+        name: "AES-CBC",
+        iv: new Uint8Array(16),
+    };
+    const buffer = await crypto.subtle.encrypt(algo, key, encoder.encode(movieId));
+    function transform(buffer) {
+        const n = String.fromCharCode(...new Uint8Array(buffer));
+        return btoa(n).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
     }
+    return transform(buffer);
 }
