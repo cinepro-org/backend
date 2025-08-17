@@ -1,6 +1,7 @@
 name: Bug Report
 description: Report a bug or issue with CinePro
-
+labels: [ "🐛bug", "🔺needs-triage" ]
+title: "Bug: "
 body:
   - type: markdown
     attributes:
@@ -96,3 +97,4 @@ body:
       render: markdown
     validations:
       required: false
+

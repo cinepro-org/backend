@@ -1,5 +1,7 @@
 name: New Provider Request
 description: Request a new provider to be added to CinePro
+title: "Provider Request: "
+labels: [ "🌟enhancement", "📀provider", "🔺needs-triage" ]
 
 body:
   - type: markdown
