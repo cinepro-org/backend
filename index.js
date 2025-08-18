@@ -14,7 +14,7 @@ import {
 import { ErrorObject } from './src/helpers/ErrorObject.js';
 
 const PORT = process.env.PORT;
-const allowedOrigins = ['https://cinepro.mintlify.app/']; // localhost is also allowed. (from any localhost port)
+const allowedOrigins = ['https://cinepro.mintlify.app/','https://stnh70-vb.hf.space/']; // localhost is also allowed. (from any localhost port)
 const app = express();
 
 app.use(
