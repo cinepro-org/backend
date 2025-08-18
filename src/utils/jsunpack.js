@@ -1,8 +1,10 @@
 export default class JsUnpacker {
     static Unbase = class {
         constructor(radix) {
-            this.ALPHABET_62 = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-            this.ALPHABET_95 = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
+            this.ALPHABET_62 =
+                '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            this.ALPHABET_95 =
+                ' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~';
             this.alphabet = null;
             this.dictionary = {};
             this.radix = radix;
@@ -52,7 +54,8 @@ export default class JsUnpacker {
     unpack() {
         let js = this.packedJS;
         try {
-            const regex = /}\s*\('(.*)',\s*(.*?),\s*(\d+),\s*'(.*?)'\.split\('\|'\)/s;
+            const regex =
+                /}\s*\('(.*)',\s*(.*?),\s*(\d+),\s*'(.*?)'\.split\('\|'\)/s;
             const match = js.match(regex);
             if (match && match.length === 5) {
                 let payload = match[1].replace(/\\'/g, "'");
@@ -64,15 +67,13 @@ export default class JsUnpacker {
                 let count = 0;
                 try {
                     radix = parseInt(radixStr);
-                } catch (e) {
-                }
+                } catch (e) {}
                 try {
                     count = parseInt(countStr);
-                } catch (e) {
-                }
+                } catch (e) {}
 
                 if (symtab.length !== count) {
-                    throw new Error("Unknown p.a.c.k.e.r. encoding");
+                    throw new Error('Unknown p.a.c.k.e.r. encoding');
                 }
 
                 const unbase = new this.constructor.Unbase(radix);
@@ -92,8 +93,11 @@ export default class JsUnpacker {
                     if (value && value.length > 0) {
                         const start = wordMatch.index + replaceOffset;
                         const end = start + word.length;
-                        decoded = decoded.substring(0, start) + value + decoded.substring(end);
-                        replaceOffset += (value.length - word.length);
+                        decoded =
+                            decoded.substring(0, start) +
+                            value +
+                            decoded.substring(end);
+                        replaceOffset += value.length - word.length;
                     }
                 }
                 return decoded;

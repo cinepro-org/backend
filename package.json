@@ -11,7 +11,6 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "node --watch index.js --debug",
-    "dev-no-cache": "node --watch index.js --debug --no-cache",
     "main": "node --watch index.js",
     "deploy": "node --watch index.js",
     "start": "node --watch index.js"
