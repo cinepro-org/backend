@@ -8,7 +8,7 @@ const streamwish =
 const mixdrop =
     /(?:\/\/|\.)((?:mi?xdro*p\d*(?:jmk)?|md(?:3b0j6hj|bekjwqa|fx9dc8n|y48tn97|zsmutpcvykb))\.(?:c[ho]m?|to|sx|bz|gl|club|vc|ag|pw|net|is|s[ib]|nu|m[sy]|ps))\/(?:f|e)\/(\w+)/;
 const streamtape =
-    /(?:\/\/|\.)((?:s(?:tr)?(?:eam|have)?|tapewith|watchadson)?(?:adblock(?:er|plus)?|antiad|noads)?(?:ta?p?e?|cloud)?(?:blocker|advertisement|adsenjoyer)?\.(?:com|cloud|net|pe|site|link|cc|online|fun|cash|to|xyz|org|wiki|club))\/(?:e|v)\/([0-9a-zA-Z]+)/;
+    /(?:\/\/|\.)((?:s(?:tr)?(?:eam|have)?|tapewith|watchadson)?(?:adblock(?:er|plus)?|antiad|noads)?(?:ta?p?e?|cloud)?(?:blocker|advertisement|adsenjoyer)?\.(?:com|cloud|net|pe|site|link|cc|online|fun|cash|to|xyz|org|wiki|club|tech))\/(?:e|v)\/([0-9a-zA-Z]+)/;
 
 export async function extract(url, DOMAIN = '') {
     if (streamwish.test(url)) {
@@ -29,7 +29,7 @@ export async function extract(url, DOMAIN = '') {
             return data;
         }
         return {
-            file: data.url,
+            file: data.file || data.url,
             type: 'mp4'
         };
     }

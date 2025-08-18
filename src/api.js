@@ -3,7 +3,7 @@ import { getAutoembed } from './controllers/providers/AutoEmbed/autoembed.js';
 import { getPrimewire } from './controllers/providers/PrimeWire/primewire.js';
 import { getVidSrcCC } from './controllers/providers/VidSrcCC/vidsrccc.js';
 import { getVidSrc } from './controllers/providers/VidSrc/VidSrc.js';
-import { getVidrock } from './controllers/providers/vidrock/Vidrock.js';
+import { getVidRock } from './controllers/providers/vidrock/Vidrock.js';
 import { getXprime } from './controllers/providers/xprime/xprime.js';
 import { ErrorObject } from './helpers/ErrorObject.js';
 import { getVidsrcWtf } from './controllers/providers/VidSrcWtf/VidSrcWtf.js';
@@ -42,7 +42,7 @@ export async function scrapeMedia(media) {
         { getPrimewire: () => getPrimewire(media) },
         { getVidSrcCC: () => getVidSrcCC(media) },
         { getVidSrc: () => getVidSrc(media) },
-        { getVidrock: () => getVidrock(media) },
+        { getVidRock: () => getVidRock(media) },
         { getXprime: () => getXprime(media) },
         { getVidsrcWtf: () => getVidsrcWtf(media) },
         { getVidZee: () => getVidZee(media) }
