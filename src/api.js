@@ -3,27 +3,28 @@ import { getAutoembed } from './controllers/providers/AutoEmbed/autoembed.js';
 import { getPrimewire } from './controllers/providers/PrimeWire/primewire.js';
 import { getVidSrcCC } from './controllers/providers/VidSrcCC/vidsrccc.js';
 import { getVidSrc } from './controllers/providers/VidSrc/VidSrc.js';
-import { getVidRock } from './controllers/providers/vidrock/Vidrock.js';
+import { getVidRock } from './controllers/providers/VidRock/Vidrock.js';
 import { getXprime } from './controllers/providers/xprime/xprime.js';
 import { ErrorObject } from './helpers/ErrorObject.js';
 import { getVidsrcWtf } from './controllers/providers/VidSrcWtf/VidSrcWtf.js';
-import { getVidZee } from './controllers/providers/vidzee/vidzee.js';
+import { getVidZee } from './controllers/providers/VidZee/VidZee.js';
+import { getWyzie } from './controllers/subs/wyzie.js';
 import { getCacheKey, getFromCache, setToCache } from './cache/cache.js';
 
 const shouldDebug = process.argv.includes('--debug');
-const bypassCache = process.argv.includes('--no-cache');
+
 export async function scrapeMedia(media) {
     // First thing - check if we already have this data cached (unless you're debugging and want fresh data)
     const cacheKey = getCacheKey(media);
 
-    if (!bypassCache) {
+    if (!shouldDebug) {
         const cachedResult = getFromCache(cacheKey);
 
         if (cachedResult) {
             // Found it in cache, then we don't need to scrape again
             if (shouldDebug) {
                 console.log(
-                    `Cache for ${cacheKey} - serving from memory instead of scraping`
+                    `[CACHE] Cache for ${cacheKey} - serving from memory instead of scraping`
                 );
             }
             return cachedResult;
@@ -33,7 +34,7 @@ export async function scrapeMedia(media) {
     // If no cache or bypassed, time to do the actual workkkk
     if (shouldDebug) {
         console.log(
-            `${bypassCache ? 'Cache bypassed' : 'No cache Found'} for ${cacheKey}, work starts now...`
+            `${shouldDebug ? 'Cache bypassed' : 'No cache Found'} for ${cacheKey}, work starts now...`
         );
     }
     const providers = [
@@ -42,10 +43,11 @@ export async function scrapeMedia(media) {
         { getPrimewire: () => getPrimewire(media) },
         { getVidSrcCC: () => getVidSrcCC(media) },
         { getVidSrc: () => getVidSrc(media) },
-        { getVidRock: () => getVidRock(media) },
+        { getVidrock: () => getVidRock(media) },
         { getXprime: () => getXprime(media) },
         { getVidsrcWtf: () => getVidsrcWtf(media) },
-        { getVidZee: () => getVidZee(media) }
+        { getVidZee: () => getVidZee(media) },
+        { getWyzie: () => getWyzie(media) }
     ];
 
     const results = await Promise.all(
@@ -119,20 +121,16 @@ export async function scrapeMedia(media) {
     }
 
     // Only cache if we actually found some streams and we're not bypassing cache
-    if (files.length > 0 && !bypassCache) {
+    if (files.length > 0 && !shouldDebug) {
         setToCache(cacheKey, finalResult);
         if (shouldDebug) {
             console.log(
                 `Cached result for ${cacheKey}, next request will be much faster`
             );
         }
-    } else if (bypassCache && shouldDebug) {
-        console.log(
-            `Not caching result for ${cacheKey} - cache is bypassed for debugging`
-        );
     } else if (shouldDebug) {
         console.log(
-            `Not caching empty result for ${cacheKey} - maybe the media doesn't exist or if cache is having a bad day ?`
+            `Not caching result for ${cacheKey} - cache is bypassed for debugging`
         );
     }
 
