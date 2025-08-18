@@ -31,11 +31,14 @@ jobs:
       - name: Install step
         run: "npm install"
 
+      - name: Build step
+        run: "npm start"
+
       - name: Upload to Deno Deploy
         uses: denoland/deployctl@v1
         with:
           project: "aston314-backend-31"
-          entrypoint: "jsr:@deno/nextjs-start/v15"
+          entrypoint: "npm:index.js"
           root: "."
-          include: .next, public
+          
           
