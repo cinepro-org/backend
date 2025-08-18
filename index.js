@@ -19,13 +19,10 @@ const app = express();
 
 app.use(
     cors({
-        origin: (origin, callback) => {
-            !origin ||
-            allowedOrigins.includes(origin) ||
-            /^http:\/\/localhost/.test(origin)
-                ? callback(null, true)
-                : callback(new Error('Not allowed by CORS'));
-        }
+        origin: true,  // 允许任何来源
+        credentials: true,
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization']
     })
 );
 
