@@ -31,6 +31,8 @@ export async function scrapeMedia(media) {
             const providerName = Object.keys(provider)[0];
 
             try {
+                console.log(providerName,await provider[providerName]());
+                
                 return {
                     data: await provider[providerName](),
                     provider: providerName
