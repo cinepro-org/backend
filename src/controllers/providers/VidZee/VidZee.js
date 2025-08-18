@@ -24,8 +24,7 @@ export async function getVidZee(media) {
 
     let allFiles = [];
     for (const url of urls) {
-        const PROXY = 'https://api.codetabs.com/v1/proxy?quest=' + url;
-        const response = await fetch(PROXY, {
+        const response = await fetch(url, {
             method: 'GET',
             headers: headers
         });

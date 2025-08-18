@@ -7,7 +7,7 @@ import { getVidRock } from './controllers/providers/VidRock/Vidrock.js';
 import { getXprime } from './controllers/providers/xprime/xprime.js';
 import { ErrorObject } from './helpers/ErrorObject.js';
 import { getVidsrcWtf } from './controllers/providers/VidSrcWtf/VidSrcWtf.js';
-import { getVidZee } from './controllers/providers/vidzee/vidzee.js';
+import { getVidZee } from './controllers/providers/VidZee/VidZee.js';
 import { getWyzie } from './controllers/subs/wyzie.js';
 import { getCacheKey, getFromCache, setToCache } from './cache/cache.js';
 
