@@ -8,7 +8,6 @@ import { getXprime } from './controllers/providers/xprime/xprime.js';
 import { ErrorObject } from './helpers/ErrorObject.js';
 import { getVidsrcWtf } from './controllers/providers/VidSrcWtf/VidSrcWtf.js';
 import { getVidZee } from './controllers/providers/vidzee/vidzee.js';
-import { getWyzie } from './controllers/subs/wyzie.js';
 import { getCacheKey, getFromCache, setToCache } from './cache/cache.js';
 
 const shouldDebug = process.argv.includes('--debug');
@@ -46,8 +45,7 @@ export async function scrapeMedia(media) {
         { getVidrock: () => getVidrock(media) },
         { getXprime: () => getXprime(media) },
         { getVidsrcWtf: () => getVidsrcWtf(media) },
-        { getVidZee: () => getVidZee(media) },
-        { getWyzie: () => getWyzie(media) }
+        { getVidZee: () => getVidZee(media) }
     ];
 
     const results = await Promise.all(
