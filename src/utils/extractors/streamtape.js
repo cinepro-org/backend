@@ -4,7 +4,7 @@ import { ErrorObject } from '../../helpers/ErrorObject.js';
 //TODO: not finished yet... check: https://github.com/Gujal00/ResolveURL/blob/master/script.module.resolveurl/lib/resolveurl/plugins/streamtape.py
 
 export async function extract_streamtape(url) {
-    console.log('STREAMTAPE FUNCTION STARTED - THIS SHOULD ALWAYS SHOW');
+    console.log('STREAMTAPE FUNCTION STARTED');
     console.log('extract_streamtape called with URL:', url);
     try {
         let hostname = url.match(/https?:\/\/([^\/]+)/)[1];
