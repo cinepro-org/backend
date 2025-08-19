@@ -6,6 +6,7 @@ import { ErrorObject } from '../../helpers/ErrorObject.js';
 export async function extract_streamtape(url) {
     try {
         let hostname = url.match(/https?:\/\/([^\/]+)/)[1];
+
         const response = await fetch(url, {
             headers: {
                 'User-Agent':
@@ -32,9 +33,22 @@ export async function extract_streamtape(url) {
 
         const html = await response.text();
 
-        const fullUrlRegex =
-            /<div id="ideoolink" style="display:none;">(.*)<\/div>/;
-        const fullUrlMatch = html.match(fullUrlRegex);
+        const fullUrlRegex = /ById\('.+?=\s*(["']\/\/[^;<]+)/g;
+        const allMatches = html.match(fullUrlRegex);
+        if (!allMatches) {
+            return new ErrorObject(
+                'ById URL pattern not found in the response.',
+                'Streamtape',
+                500,
+                'The page structure might have changed.',
+                true,
+                true
+            );
+        }
+        // Get the last match like Python does with src[-1]
+        const lastMatch = allMatches[allMatches.length - 1];
+        const fullUrlMatch = lastMatch.match(/ById\('.+?=\s*(["']\/\/[^;<]+)/);
+
         if (!fullUrlMatch) {
             return new ErrorObject(
                 'ideoooolink URL not found in the response.',
@@ -46,38 +60,38 @@ export async function extract_streamtape(url) {
             );
         }
 
-        let finalUrl = `https:/${fullUrlMatch[1]}`;
+        let srcUrl = '';
+        const parts = fullUrlMatch[1].replace(/'/g, '"').split('+');
 
-        const fetchUrl = await fetch(finalUrl, {
-            referrer: url,
-            headers: {
-                'User-Agent':
-                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/y130.0.0.0 Safari/537.36',
-                Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                'Accept-Language': 'en-US,en;q=0.5',
-                'Accept-Encoding': 'gzip, deflate, br',
-                Connection: 'keep-alive',
-                Referer: url,
-                Host: hostname,
-                'Upgrade-Insecure-Requests': '1',
-                cookie: '_b=kube11; _csrf=822ec8cb97ba224e8ed314c00303276b8a030fa1fa7751f05507cce0fa1db8f3a%3A2%3A%7Bi%3A0%3Bs%3A5%3A%22_csrf%22%3Bi%3A1%3Bs%3A32%3A%228_a9Qu8qKOy8vXbu6bUZ50ULkGMWAcxO%22%3B%7D'
+        for (const part of parts) {
+            const p1Match = part.match(/"([^"]*)/);
+            if (p1Match) {
+                let p1 = p1Match[1];
+                let p2 = 0;
+                if (part.includes('substring')) {
+                    const substMatches = part.match(/substring\((\d+)/g);
+                    if (substMatches) {
+                        for (const sub of substMatches) {
+                            // p2 += parseInt(sub.match(/\d+/)[0]);
+
+                            const num = sub.match(/substring\((\d+)/)[1];
+                            p2 += parseInt(num);
+                        }
+                    }
+                }
+                srcUrl += p1.substring(p2);
+                console.log(
+                    'Debug: p1:',
+                    p1,
+                    'p2:',
+                    p2,
+                    'result:',
+                    p1.substring(p2)
+                );
             }
-        });
-
-        let data = await fetchUrl.text();
-
-        if (!fetchUrl.ok) {
-            return new ErrorObject(
-                `Failed to fetch the final video link: Status ${fetchUrl.status}`,
-                'Streamtape',
-                fetchUrl.status,
-                'Check the final URL or server status.',
-                true,
-                true
-            );
         }
-
-        finalUrl = fetchUrl.url + '&stream=1';
+        srcUrl += '&stream=1';
+        let finalUrl = srcUrl.startsWith('//') ? 'https:' + srcUrl : srcUrl;
 
         if (!finalUrl) {
             return new ErrorObject(
@@ -95,6 +109,7 @@ export async function extract_streamtape(url) {
             type: 'mp4'
         };
     } catch (error) {
+        console.error('Error in extract_streamtape:', error);
         return new ErrorObject(
             `Unexpected error: ${error.message}`,
             'Streamtape',

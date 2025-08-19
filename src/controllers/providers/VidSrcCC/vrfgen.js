@@ -1,8 +1,6 @@
 // Credit where it's due: https://github.com/Dungeon69/vidsrc_wasm
-import { webcrypto } from "crypto";
-import { readFileSync } from "fs";
-import * as path from "path";
-import { dirname } from "path";
+import { webcrypto } from 'crypto';
+import { dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -10,7 +8,7 @@ const __dirname = dirname(__filename);
 
 let wasm;
 const userAgent =
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0";
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0';
 
 class StoragePolyfill {
     constructor() {
@@ -22,8 +20,10 @@ class StoragePolyfill {
     }
 
     setItem(key, value) {
-        if (typeof key !== "string" || typeof value !== "string") {
-            throw new TypeError("StoragePolyfill: key and value must be strings");
+        if (typeof key !== 'string' || typeof value !== 'string') {
+            throw new TypeError(
+                'StoragePolyfill: key and value must be strings'
+            );
         }
         this.storage.set(key, value);
         return true;
@@ -48,18 +48,18 @@ const fakeWindow = {
     sessionStorage: new StoragePolyfill(),
     navigator: {
         webdriver: false,
-        userAgent: userAgent,
+        userAgent: userAgent
     },
-    document: { cookie: "" },
+    document: { cookie: '' },
     location: {
-        href: "",
-        origin: "",
+        href: '',
+        origin: ''
     },
     crypto: webcrypto,
     msCrypto: webcrypto,
     performance: { timeOrigin: Date.now() },
     TextEncoder: globalThis.TextEncoder,
-    TextDecoder: globalThis.TextDecoder,
+    TextDecoder: globalThis.TextDecoder
 };
 
 function addToExternrefTable0(value) {
@@ -78,9 +78,9 @@ function handleError(f, args) {
 }
 
 const cachedTextEncoder = new TextEncoder();
-const cachedTextDecoder = new TextDecoder("utf-8", {
+const cachedTextDecoder = new TextDecoder('utf-8', {
     ignoreBOM: true,
-    fatal: true,
+    fatal: true
 });
 
 let cachedUint8Memory0 = null;
@@ -112,7 +112,12 @@ function passStringToWasm0(arg, malloc, realloc) {
 function getImports() {
     const imports = {
         wbg: {
-            __wbg_setLocalStorage_edfb7a1bd99ea948: function (keyPtr, keyLen, valuePtr, valueLen) {
+            __wbg_setLocalStorage_edfb7a1bd99ea948: function (
+                keyPtr,
+                keyLen,
+                valuePtr,
+                valueLen
+            ) {
                 const key = getStringFromWasm0(keyPtr, keyLen);
                 const value = getStringFromWasm0(valuePtr, valueLen);
                 fakeWindow.localStorage.setItem(key, value);
@@ -193,14 +198,14 @@ function getImports() {
                 return arg0.versions;
             },
             __wbindgen_is_function: function (arg0) {
-                return typeof arg0 === "function";
+                return typeof arg0 === 'function';
             },
             __wbindgen_is_object: function (arg0) {
                 const val = arg0;
-                return typeof val === "object" && val !== null;
+                return typeof val === 'object' && val !== null;
             },
             __wbindgen_is_string: function (arg0) {
-                return typeof arg0 === "string";
+                return typeof arg0 === 'string';
             },
             __wbindgen_is_undefined: function (arg0) {
                 return arg0 === undefined;
@@ -246,8 +251,8 @@ function getImports() {
             __wbindgen_externref_table_set_null: function (idx) {
                 const table = wasm.__wbindgen_export_2;
                 table.set(idx, null);
-            },
-        },
+            }
+        }
     };
     return imports;
 }
@@ -263,7 +268,7 @@ async function initWasm(wasmModule) {
     wasm = instance.exports;
 
     cachedUint8Memory0 = null;
-    if (typeof wasm.__wbindgen_start === "function") {
+    if (typeof wasm.__wbindgen_start === 'function') {
         wasm.__wbindgen_start();
     }
 
@@ -291,25 +296,37 @@ function encrypted(id) {
 export async function generateVRF(movieId) {
     const encoder = new TextEncoder();
     // we should probably try to pass the userID from the vidsrc.cc page
-    const keyData = await crypto.subtle.digest("SHA-256", encoder.encode("Bh0IPAQjGH0FIwB5Bxp9MAQjEA"));
+    const keyData = await crypto.subtle.digest(
+        'SHA-256',
+        encoder.encode('Bh0IPAQjGH0FIwB5Bxp9MAQjEA')
+    );
 
     const key = await crypto.subtle.importKey(
-        "raw",
+        'raw',
         keyData,
         {
-            name: "AES-CBC",
+            name: 'AES-CBC'
         },
         false,
-        ["encrypt"]
+        ['encrypt']
     );
     const algo = {
-        name: "AES-CBC",
-        iv: new Uint8Array(16),
+        name: 'AES-CBC',
+        iv: new Uint8Array(16)
     };
-    const buffer = await crypto.subtle.encrypt(algo, key, encoder.encode(movieId));
+    const buffer = await crypto.subtle.encrypt(
+        algo,
+        key,
+        encoder.encode(movieId)
+    );
+
     function transform(buffer) {
         const n = String.fromCharCode(...new Uint8Array(buffer));
-        return btoa(n).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+        return btoa(n)
+            .replace(/\+/g, '-')
+            .replace(/\//g, '_')
+            .replace(/=+$/, '');
     }
+
     return transform(buffer);
 }

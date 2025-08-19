@@ -12,6 +12,7 @@ import {
     handleErrorResponse
 } from './src/helpers/helper.js';
 import { ErrorObject } from './src/helpers/ErrorObject.js';
+import { getCacheStats } from './src/cache/cache.js';
 
 const PORT = process.env.PORT;
 const allowedOrigins = ['https://cinepro.mintlify.app/','https://stnh70-vb.hf.space/']; // localhost is also allowed. (from any localhost port)
@@ -25,7 +26,6 @@ app.use(
         allowedHeaders: ['Content-Type', 'Authorization']
     })
 );
-
 createProxyRoutes(app);
 
 app.get('/', (req, res) => {
@@ -134,6 +134,17 @@ app.get('/tv/', (req, res) => {
     );
 });
 
+// Endpoint to flex how well our cache is doing - because who doesn't love stats
+// Hell Yeah we love it, Because STONE COLD SAID SOOOOO
+app.get('/cache-stats', (req, res) => {
+    const stats = getCacheStats();
+    res.status(200).json({
+        ...stats,
+        cacheEnabled: true,
+        ttl: '3 hours (10800 seconds)'
+    });
+});
+
 app.get('*', (req, res) => {
     handleErrorResponse(
         res,
@@ -152,7 +163,9 @@ app.listen(PORT, () => {
     console.log(`Server is running on port http://localhost:${PORT};`);
     if (process.argv.includes('--debug')) {
         console.log(`Debug mode is enabled.`);
+        console.log('Cache is disabled.');
     } else {
         console.log('Debug mode is disabled.');
+        console.log('Cache is enabled.');
     }
 });

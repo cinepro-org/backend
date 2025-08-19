@@ -1,5 +1,11 @@
 blank_issues_enabled: false
 contact_links:
+  - name: CinePro Documentation
+    url: https://cinepro.mintlify.app
+    about: Comprehensive documentation for using and contributing to CinePro.
+  - name: CinePro Community
+    url: https://t.me/cinepro_community
+    about: The fastest way to get help and discuss features with the CinePro community.
   - name: CinePro Issue Tracker
     url: https://github.com/cinepro-org/backend/issues
     about: For technical issues, bugs, and feature requests related to CinePro.
