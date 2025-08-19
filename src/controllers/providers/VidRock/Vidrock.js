@@ -3,7 +3,7 @@ import { ErrorObject } from '../../../helpers/ErrorObject.js';
 
 const DOMAIN = 'https://vidrock.net';
 
-export async function getVidrock(media) {
+export async function getVidRock(media) {
     const link = getLink(media);
 
     try {

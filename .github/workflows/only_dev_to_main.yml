@@ -1,5 +1,4 @@
 name: Only allow PRs from Dev to Main
-description: This workflow ensures that only pull requests from the Dev branch to the Main branch are allowed.
 
 on:
   pull_request:
@@ -16,15 +15,28 @@ jobs:
     steps:
       - name: Check if PR is from Dev to Main
         run: |
-          if [[ "${{ github.event.pull_request.base.ref }}" != "main" || "${{ github.event.pull_request.head.ref }}" != "dev" ]]; then
-            echo "This workflow only allows pull requests from Dev to Main."
-            curl -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-              -d '{"body": "Only Pull Requests from [dev](https://github.com/An0n-00/M426/tree/dev) are allowed to be merged to [main](https://github.com/An0n-00/M426/tree/main). I will close this PR. Please merge into dev before merging to main.❌"}' \
+          BASE_BRANCH="${{ github.event.pull_request.base.ref }}"
+          HEAD_BRANCH="${{ github.event.pull_request.head.ref }}"
+          HEAD_REPO="${{ github.event.pull_request.head.repo.full_name }}"
+          REPO="${{ github.repository }}"
+          
+          echo "Base branch: $BASE_BRANCH"
+          echo "Head branch: $HEAD_BRANCH"
+          echo "Head repo: $HEAD_REPO"
+          echo "Repository: $REPO"
+
+          if [[ "$BASE_BRANCH" != "main" || "$HEAD_BRANCH" != "dev" || "$HEAD_REPO" != "$REPO" ]]; then
+            echo "Invalid PR source or destination. Posting comment and closing PR."
+
+            curl -s -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              -d '{"body": "Only Pull Requests from [dev](https://github.com/${{ github.repository }}/tree/dev) are allowed to be merged to [main](https://github.com/${{ github.repository }}/tree/main). This PR will be closed. Please merge into dev first. ❌"}' \
               "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments"
-            curl -X PATCH -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+
+            curl -s -X PATCH -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
               -d '{"state": "closed"}' \
               "https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}"
+
             exit 0
           else
-            echo "Pull request is valid✅"
+            echo "✅ Pull request is valid (Dev → Main)."
           fi

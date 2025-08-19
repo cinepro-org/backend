@@ -1,5 +1,7 @@
 name: Feature Request
 description: Suggest a new feature or enhancement for CinePro
+title: "Feat: "
+labels: [ "🌟enhancement", "🔺needs-triage" ]
 
 body:
   - type: markdown

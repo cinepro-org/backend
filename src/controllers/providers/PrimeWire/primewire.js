@@ -34,7 +34,7 @@ export async function getPrimewire(media) {
         servers.map(async (server) => {
             const result = await extract(server);
             if (result instanceof ErrorObject) {
-                return null;
+                return result;
             }
             return result;
         })

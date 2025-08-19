@@ -81,6 +81,9 @@ export async function getTwoEmbed(params) {
                 DOMAIN
             );
             if (streamUrl instanceof ErrorObject || !streamUrl) {
+                if (streamUrl instanceof ErrorObject) {
+                    return streamUrl;
+                }
                 return new ErrorObject(
                     `Could not resolve stream URL for swish ID: ${extractedValue} because of: ${JSON.stringify(
                         streamUrl
