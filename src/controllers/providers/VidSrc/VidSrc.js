@@ -1,3 +1,5 @@
+// SEE LINE 70 for a TODO
+
 import axios from 'axios';
 import { atob, Buffer } from 'buffer';
 import { URL } from 'url';
@@ -9,8 +11,8 @@ const HOST_URL = 'https://cloudnestra.com';
 
 const IFRAME2_SRC_RE = /id="player_iframe" src="(?<url>[^"]+)"/;
 const IFRAME3_SRC_RE = /src: '(?<url>\/prorcp\/[^']+)'/;
-const PARAMS_RE =
-    /<div id="(?<id>[^"]+)" style="display:none;">(?<content>[^>]+)<\/div>/;
+const PARAMS_RE = /<div id="(?<id>[^"]+)" style="display:none;">(?<content>[^>]+)<\/div>/;
+const FILE_RE = /player_parent.*?file:.*?'(.*?)'.*?cuid/;
 
 export async function getVidSrc(media) {
     const url = media.episode
@@ -65,16 +67,53 @@ export async function getVidSrc(media) {
             })
         ).data;
 
+        console.log(iframeHtml3);
+
+        /*
+        * TODO: Implement cloudflare resolve.
+        * after making a too many requests in a short period to the thirdUrl it will sometimes need a cloudflare resolve. 
+        */
+
         const paramsMatch = iframeHtml3.match(PARAMS_RE);
         if (!paramsMatch) {
-            return new ErrorObject(
-                'No media in third iframe found',
-                'VidSrc',
-                404,
-                'The page structure might have changed or the media is missing.',
-                true,
-                true
-            );
+            try {
+                const sourceHLS = iframeHtml3.match(FILE_RE);
+                if (sourceHLS) {
+                    return {
+                        files: [
+                            {
+                                file: sourceHLS[1],
+                                type: 'hls',
+                                lang: 'en',
+                                headers: {
+                                    Referer: secondUrl
+                                }
+                            }
+                        ],
+                        subtitles: []
+                    };
+                } else {
+                    return new ErrorObject(
+                        'No media in third iframe found',
+                        'VidSrc',
+                        404,
+                        'The page structure might have changed or the media is missing.',
+                        true,
+                        true
+                    );
+                }
+
+            } catch (e) {
+                return new ErrorObject(
+                    'No media in third iframe found',
+                    'VidSrc',
+                    404,
+                    'The page structure might have changed or the media is missing.',
+                    true,
+                    true
+                );
+            }
+
         }
         const { id: decoderId, content } = paramsMatch.groups;
 
