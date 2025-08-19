@@ -48,8 +48,9 @@ export async function extract_bigwarp(url) {
 
         let bestSource = sources[0].url;
 
-        // This is because I think Python lib which we are converting... to js uses at the end of the URL
-        // to pass headers
+        // This is because I think Python lib which we are converting... to js
+        // the python lib uses the headers to parse it to the url so I think we should join this with
+        // '&' (not sure tho)
         const headerParams = Object.entries(headers)
             .map(
                 ([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`
@@ -58,6 +59,8 @@ export async function extract_bigwarp(url) {
 
         bestSource = `${bestSource}|${headerParams}`;
 
+
+        // well i checked and voila we get the file url exact so... good to go i think
         return {
             url: bestSource,
             headers: headers
