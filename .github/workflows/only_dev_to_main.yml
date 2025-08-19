@@ -1,4 +1,5 @@
 name: Only allow PRs from Dev to Main
+description: This workflow ensures that only pull requests from the Dev branch to the Main branch are allowed.
 
 on:
   pull_request:
@@ -15,13 +16,15 @@ jobs:
     steps:
       - name: Check if PR is from Dev to Main
         run: |
-          echo "Base branch: ${{ github.event.pull_request.base.ref }}"
-          echo "Head branch: ${{ github.event.pull_request.head.ref }}"
-          echo "Repo: ${{ github.event.pull_request.head.repo.full_name }}"
+          BASE_BRANCH="${{ github.event.pull_request.base.ref }}"
+          HEAD_BRANCH="${{ github.event.pull_request.head.ref }}"
+          HEAD_REPO="${{ github.event.pull_request.head.repo.full_name }}"
           
-          if [[ "${{ github.event.pull_request.base.ref }}" != "main" || \
-                "${{ github.event.pull_request.head.ref }}" != "dev" || \
-                "${{ github.event.pull_request.head.repo.full_name }}" != "cinepro-org/backend" ]]; then
+          echo "Base branch: $BASE_BRANCH"
+          echo "Head branch: $HEAD_BRANCH"
+          echo "Head repo: $HEAD_REPO"
+
+          if [[ "$BASE_BRANCH" != "main" || "$HEAD_BRANCH" != "dev" || "$HEAD_REPO" != "cinepro-org/backend" ]]; then
             echo "Invalid PR source or destination. Posting comment and closing PR."
 
             curl -s -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
@@ -30,4 +33,9 @@ jobs:
 
             curl -s -X PATCH -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
               -d '{"state": "closed"}' \
-              "https://api.github.com/repos/${{ github.repository }}/pulls/${{
+              "https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}"
+
+            exit 0
+          else
+            echo "✅ Pull request is valid (Dev → Main)."
+          fi
