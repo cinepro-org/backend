@@ -16,10 +16,9 @@ jobs:
     steps:
       - name: Check if PR is from Dev to Main
         run: |
-          if [[ "${{ github.event.pull_request.base.ref }}" != "main" || "${{ github.event.pull_request.head.ref }}" != "dev" ]]; then
-            echo "This workflow only allows pull requests from Dev to Main."
+            if [[ "${{ github.event.pull_request.base.ref }}" != "main" || "${{ github.event.pull_request.head.ref }}" != "dev" || "${{ github.event.pull_request.head.repo.full_name }}" != "cinepro-org/backend" ]]; then
             curl -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-              -d '{"body": "Only Pull Requests from [dev](https://github.com/An0n-00/M426/tree/dev) are allowed to be merged to [main](https://github.com/An0n-00/M426/tree/main). I will close this PR. Please merge into dev before merging to main.❌"}' \
+              -d '{"body": "Only Pull Requests from [dev](https://github.com/cinepro-org/backend/tree/dev) are allowed to be merged to [main](https://github.com/cinepro-org/backend/tree/main). I will close this PR. Please merge into dev before merging to main.❌"}' \
               "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments"
             curl -X PATCH -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
               -d '{"state": "closed"}' \
