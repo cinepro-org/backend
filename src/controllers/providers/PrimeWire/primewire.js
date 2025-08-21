@@ -5,6 +5,8 @@ import fetch from 'node-fetch';
 import { extract } from '../../../utils/Extractor.js';
 import { ErrorObject } from '../../../helpers/ErrorObject.js';
 
+//uses cloudflare so sometimes wont work.
+
 const URL = 'https://www.primewire.tf';
 const DS_KEY = 'JyjId97F9PVqUPuMO0';
 

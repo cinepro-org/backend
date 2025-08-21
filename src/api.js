@@ -39,17 +39,22 @@ export async function scrapeMedia(media) {
         );
     }
     const providers = [
+
+        // WORKING
         { getTwoEmbed: () => getTwoEmbed(media) },
         { getAutoembed: () => getAutoembed(media) },
-        { getPrimewire: () => getPrimewire(media) },
+        { get111Movies: () => get111Movies(media) },
         { getVidSrcCC: () => getVidSrcCC(media) },
         { getVidSrc: () => getVidSrc(media) },
         { getVidrock: () => getVidRock(media) },
+
+        // NEED TO FIX
         { getXprime: () => getXprime(media) },
-        { getVidsrcWtf: () => getVidsrcWtf(media) },
-        { getVidZee: () => getVidZee(media) },
         { getWyzie: () => getWyzie(media) },
-        { get111Movies: () => get111Movies(media) }
+        { getVidZee: () => getVidZee(media) },
+        { getPrimewire: () => getPrimewire(media) },
+        { getVidsrcWtf: () => getVidsrcWtf(media) }
+
     ];
 
     const results = await Promise.all(
