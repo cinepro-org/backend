@@ -24,6 +24,7 @@
     "axios": "^1.7.9",
     "base-64": "^1.0.0",
     "cheerio": "^1.0.0",
+    "cloudflare-scraper": "^2.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.18.2",

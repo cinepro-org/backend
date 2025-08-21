@@ -4,23 +4,124 @@ import fetch from 'node-fetch';
 // Add as needed the orbit proxy and proxy-uira.live I saw in another issue
 const PROXY_DOMAINS = [
     'hls1.vid1.site',
+    'hls1.vdrk.site',
     'orbitproxy.cc',
     'hls3.vid1.site',
     'hls2.vid1.site',
     'proxy-m3u8.uira.live'
 ];
+// Add cache system similar to pstream
+const CACHE_MAX_SIZE = 2000;
+const CACHE_EXPIRY_MS = 2 * 60 * 60 * 1000; // 2 hours
+const segmentCache = new Map();
+
+// Check if caching is disabled
+const isCacheDisabled = () => process.env.DISABLE_CACHE === 'true';
+
+function cleanupCache() {
+    const now = Date.now();
+    let expiredCount = 0;
+
+    for (const [url, entry] of segmentCache.entries()) {
+        if (now - entry.timestamp > CACHE_EXPIRY_MS) {
+            segmentCache.delete(url);
+            expiredCount++;
+        }
+    }
+
+    // Remove oldest entries if cache is too big
+    if (segmentCache.size > CACHE_MAX_SIZE) {
+        const entries = Array.from(segmentCache.entries()).sort(
+            (a, b) => a[1].timestamp - b[1].timestamp
+        );
+
+        const toRemove = entries.slice(0, segmentCache.size - CACHE_MAX_SIZE);
+        for (const [url] of toRemove) {
+            segmentCache.delete(url);
+        }
+
+        console.log(`Cache cleanup: removed ${toRemove.length} old entries`);
+    }
+
+    return segmentCache.size;
+}
+
+// Start cleanup interval
+setInterval(cleanupCache, 30 * 60 * 1000); // every 30 minutes
+
+function getCachedSegment(url) {
+    if (isCacheDisabled()) return undefined;
+
+    const entry = segmentCache.get(url);
+    if (entry) {
+        if (Date.now() - entry.timestamp > CACHE_EXPIRY_MS) {
+            segmentCache.delete(url);
+            return undefined;
+        }
+        return entry;
+    }
+    return undefined;
+}
+
+async function prefetchSegment(url, headers) {
+    if (isCacheDisabled() || segmentCache.size >= CACHE_MAX_SIZE) {
+        return;
+    }
+
+    const existing = segmentCache.get(url);
+    const now = Date.now();
+    if (existing && now - existing.timestamp <= CACHE_EXPIRY_MS) {
+        return; // already cached and fresh
+    }
+
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'User-Agent': DEFAULT_USER_AGENT,
+                ...headers
+            }
+        });
+
+        console.log(
+            `Response For Prefetching Segment(.ts) : ${response.status} ${response.statusText}`
+        );
+        console.log('Response Headers for Prefetching Segment (.ts)');
+        response.headers.forEach((v, k) => console.log(`   ${k}: ${v}`));
+        console.log();
+        if (!response.ok) {
+            console.log(`Failed to prefetch: ${response.status}`);
+            return;
+        }
+
+        const data = new Uint8Array(await response.arrayBuffer());
+
+        const responseHeaders = {};
+        response.headers.forEach((value, key) => {
+            responseHeaders[key] = value;
+        });
+
+        segmentCache.set(url, {
+            data,
+            headers: responseHeaders,
+            timestamp: Date.now()
+        });
+
+        console.log(`Cached segment: ${url}`);
+    } catch (error) {
+        console.log(`Prefetch error: ${error.message}`);
+    }
+}
 
 // defaultt user agent i think adding the user agent in the url it self wil mess things up
 const DEFAULT_USER_AGENT =
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 
-// We will at first Check if url needs proxying
-function needsProxy(url) {
+function getOriginFromUrl(url) {
     try {
-        const urlObj = new URL(url);
-        return PROXY_DOMAINS.some((domain) => urlObj.hostname.includes(domain));
+        return new URL(url).origin;
     } catch {
-        return false;
+        return url;
     }
 }
 
@@ -28,21 +129,43 @@ function extractOriginalUrl(proxyUrl) {
     try {
         const url = new URL(proxyUrl);
 
-        // right now only for hls1.vid1.site/proxy/ and hls3.vid1.site/proxy/ because they are the ones that has not been working...
-        if (
-            (url.hostname === 'hls1.vid1.site' ||
-                url.hostname === 'hls3.vid1.site') &&
-            url.pathname.startsWith('/proxy/')
-        ) {
-            const encodedUrl = url.pathname.replace('/proxy/', '');
-            return decodeURIComponent(encodedUrl);
+        // Pattern 1: /proxy/encodedUrl (like hls1.vid1.site/proxy/...)
+        if (url.pathname.includes('/proxy/')) {
+            const proxyMatch = url.pathname.match(/\/proxy\/(.+)$/);
+            if (proxyMatch) {
+                let decoded = decodeURIComponent(proxyMatch[1]);
+                while (decoded.includes('%2F')) {
+                    try {
+                        decoded = decodeURIComponent(decoded);
+                    } catch {
+                        break;
+                    }
+                }
+                return decoded;
+            }
         }
 
+        // for patterns like ?url=encodedUrl (like madplay.site/api/holly/proxy?url=...)
         if (url.searchParams.has('url')) {
             return decodeURIComponent(url.searchParams.get('url'));
         }
 
-        return proxyUrl; // we will Return as-is if no proxy pattern found
+        // Pattern 3: Other common proxy patterns using regex
+        const commonProxyPatterns = [
+            /\/api\/[^\/]+\/proxy\?url=(.+)$/, // /api/*/proxy?url=
+            /\/proxy\?.*url=([^&]+)/, // /proxy?url= (with other params)
+            /\/stream\/proxy\/(.+)$/, // /stream/proxy/
+            /\/p\/(.+)$/ // Short proxy like /p/
+        ];
+
+        for (const pattern of commonProxyPatterns) {
+            const match = proxyUrl.match(pattern);
+            if (match) {
+                return decodeURIComponent(match[1]);
+            }
+        }
+
+        return proxyUrl; // Return as-is if no proxy pattern found
     } catch {
         return proxyUrl;
     }
@@ -57,15 +180,15 @@ export function createProxyRoutes(app) {
         try {
             headers = JSON.parse(req.query.headers || '{}');
         } catch (e) {
-            console.log('Invalid headers JSON:', req.query.headers);
+            console.log('Invalid headers JSON');
         }
 
         if (!targetUrl) {
-            return res.status(400).json({ error: 'URL parameter is required' });
+            return res.status(400).json({ error: 'URL parameter required' });
         }
 
         try {
-            console.log(`[M3U8 Proxy] Fetching: ${targetUrl}`);
+            console.log(`[M3U8] Fetching: ${targetUrl}`);
 
             const response = await fetch(targetUrl, {
                 headers: {
@@ -74,60 +197,90 @@ export function createProxyRoutes(app) {
                 }
             });
 
+            console.log(
+                `[M3U8] Response: ${response.status} ${response.statusText}`
+            );
+            console.log('[M3U8] Request Headers', headers);
+            console.log('[M3U8] Response Headers');
+            response.headers.forEach((v, k) => console.log(`   ${k}: ${v}`));
             if (!response.ok) {
                 return res.status(response.status).json({
-                    error: `Failed to fetch M3U8: ${response.status}`
+                    error: `M3U8 fetch failed: ${response.status}`
                 });
             }
 
             let m3u8Content = await response.text();
-
             const lines = m3u8Content.split('\n');
             const newLines = [];
+            const segmentUrls = [];
+
+            // Get base URL for proxying
+            const protocol = req.headers['x-forwarded-proto'] || 'http';
+            const host = req.headers.host;
+            const baseProxyUrl = `${protocol}://${host}`;
 
             for (const line of lines) {
                 if (line.startsWith('#')) {
-                    // encryption keys sooo this is a bit tricky
                     if (line.startsWith('#EXT-X-KEY:')) {
+                        // Handle encryption keys
                         const regex = /https?:\/\/[^""\s]+/g;
                         const keyUrl = regex.exec(line)?.[0];
                         if (keyUrl) {
-                            const proxyUrl = `/ts-proxy?url=${encodeURIComponent(
-                                keyUrl
-                            )}&headers=${encodeURIComponent(JSON.stringify(headers))}`;
+                            const proxyUrl = `${baseProxyUrl}/ts-proxy?url=${encodeURIComponent(keyUrl)}&headers=${encodeURIComponent(JSON.stringify(headers))}`;
                             newLines.push(line.replace(keyUrl, proxyUrl));
+
+                            // Prefetch key if cache enabled
+                            if (!isCacheDisabled()) {
+                                prefetchSegment(keyUrl, headers);
+                            }
                         } else {
                             newLines.push(line);
                         }
                     } else {
                         newLines.push(line);
                     }
-                } else if (line.trim()) {
-                    // Segment URLs
+                } else if (line.trim() && !line.startsWith('#')) {
+                    // Handle segment URLs
                     try {
                         const segmentUrl = new URL(line, targetUrl).href;
-                        const proxyUrl = `/ts-proxy?url=${encodeURIComponent(
-                            segmentUrl
-                        )}&headers=${encodeURIComponent(JSON.stringify(headers))}`;
+                        segmentUrls.push(segmentUrl);
+
+                        const proxyUrl = `${baseProxyUrl}/ts-proxy?url=${encodeURIComponent(segmentUrl)}&headers=${encodeURIComponent(JSON.stringify(headers))}`;
                         newLines.push(proxyUrl);
                     } catch {
-                        newLines.push(line); // we will in case Keep original if URL parsing fails
+                        newLines.push(line); // keep original if parsing fails
                     }
                 } else {
-                    newLines.push(line); // Keep empty lines
+                    newLines.push(line); // keep empty lines
                 }
             }
 
-            // We will also need to Set response headers to add proper content support for HLS
+            // Prefetch segments if cache enabled
+            if (segmentUrls.length > 0 && !isCacheDisabled()) {
+                console.log(
+                    `Starting prefetch of ${segmentUrls.length} segments`
+                );
+                cleanupCache();
 
+                // Prefetch in background, don't wait
+                Promise.all(
+                    segmentUrls.map((url) => prefetchSegment(url, headers))
+                ).catch((err) => console.log('Prefetch error:', err.message));
+            }
+
+            // Set proper headers
             res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
             res.setHeader('Access-Control-Allow-Origin', '*');
             res.setHeader('Access-Control-Allow-Headers', '*');
             res.setHeader('Access-Control-Allow-Methods', '*');
+            res.setHeader(
+                'Cache-Control',
+                'no-cache, no-store, must-revalidate'
+            );
 
             res.send(newLines.join('\n'));
         } catch (error) {
-            console.error('[M3U8 Proxy Error]:', error.message);
+            console.log('[M3U8 Error]:', error.message);
             res.status(500).json({ error: error.message });
         }
     });
@@ -140,15 +293,35 @@ export function createProxyRoutes(app) {
         try {
             headers = JSON.parse(req.query.headers || '{}');
         } catch (e) {
-            console.log('Invalid headers JSON:', req.query.headers);
+            console.log('Invalid headers JSON');
         }
 
         if (!targetUrl) {
-            return res.status(400).json({ error: 'URL parameter is required' });
+            return res.status(400).json({ error: 'URL parameter required' });
         }
 
         try {
-            console.log(`[TS Proxy] Fetching: ${targetUrl}`);
+            // Check cache first if enabled
+            if (!isCacheDisabled()) {
+                const cachedSegment = getCachedSegment(targetUrl);
+
+                if (cachedSegment) {
+                    console.log(`[TS Cache Hit] ${targetUrl}`);
+
+                    res.setHeader(
+                        'Content-Type',
+                        cachedSegment.headers['content-type'] || 'video/mp2t'
+                    );
+                    res.setHeader('Access-Control-Allow-Origin', '*');
+                    res.setHeader('Access-Control-Allow-Headers', '*');
+                    res.setHeader('Access-Control-Allow-Methods', '*');
+                    res.setHeader('Cache-Control', 'public, max-age=3600');
+
+                    return res.send(Buffer.from(cachedSegment.data));
+                }
+            }
+
+            console.log(`[TS] Fetching: ${targetUrl}`);
 
             const response = await fetch(targetUrl, {
                 headers: {
@@ -156,23 +329,33 @@ export function createProxyRoutes(app) {
                     ...headers
                 }
             });
+            console.log(
+                `[TS Proxy] Response: ${response.status} ${response.statusText}`
+            );
+            console.log(`[TS Proxy] Request Headers:`, headers);
+            console.log(`[TS Proxy] Response Headers:`);
+            response.headers.forEach((v, k) => console.log(`   ${k}: ${v}`));
 
             if (!response.ok) {
+                console.log(
+                    `[TS Proxy] Error fetching segment ${targetUrl} → ${response.status}`
+                );
                 return res.status(response.status).json({
-                    error: `Failed to fetch segment: ${response.status}`
+                    error: `TS fetch failed: ${response.status}`
                 });
             }
 
-            // Set response headers for the segment file to treat as it as a segmentsssssss
+            // Set headers for segment
             res.setHeader('Content-Type', 'video/mp2t');
             res.setHeader('Access-Control-Allow-Origin', '*');
             res.setHeader('Access-Control-Allow-Headers', '*');
             res.setHeader('Access-Control-Allow-Methods', '*');
+            res.setHeader('Cache-Control', 'public, max-age=3600');
 
-            // Stream the response
+            // Stream the response directly
             response.body.pipe(res);
         } catch (error) {
-            console.error('[TS Proxy Error]:', error.message);
+            console.log('[TS Error]:', error.message);
             res.status(500).json({ error: error.message });
         }
     });
@@ -207,6 +390,13 @@ export function createProxyRoutes(app) {
                     ...headers
                 }
             });
+
+            console.log(
+                `[HLS Proxy] Response: ${response.status} ${response.statusText}`
+            );
+            console.log('[HLS Proxy] Response Headers: ');
+            response.headers.forEach((v, k) => console.log(`   ${k}: ${v}`));
+            console.log('[HLS Proxy] Request Headers: ', headers);
 
             if (!response.ok) {
                 console.log(
@@ -277,86 +467,48 @@ export function processApiResponse(apiResponse, serverUrl) {
     const processedFiles = apiResponse.files.map((file) => {
         if (!file.file || typeof file.file !== 'string') return file;
 
-        // Check if this is an external proxy URL that we want to replace
-        if (needsProxy(file.file)) {
-            const originalUrl = extractOriginalUrl(file.file);
-            const urlObj = new URL(file.file);
+        let finalUrl = file.file;
+        let proxyHeaders = file.headers || {};
 
-            // Only process hls1.vid1.site, hls2.vid1.site, and hls3.vid1.site URLs
-            if (
-                urlObj.hostname === 'hls1.vid1.site' ||
-                urlObj.hostname === 'hls2.vid1.site' ||
-                urlObj.hostname === 'hls3.vid1.site'
-            ) {
-                // Use the M3U8's origin as the referer, not the provider's domain
-                const m3u8Origin = new URL(originalUrl).origin;
-                console.log(
-                    `[HLS Proxy Replacement] Original URL: ${originalUrl}`
-                );
-                console.log(
-                    `[HLS Proxy Replacement] M3U8 Origin: ${m3u8Origin}`
-                );
+        // Extract original URL if it's wrapped in external proxy
+        finalUrl = extractOriginalUrl(finalUrl);
 
-                const proxyHeaders = {
-                    Referer: m3u8Origin,
-                    Origin: m3u8Origin
-                };
+        // proxy ALL URLs through our system
+        if (finalUrl.includes('.m3u8')) {
+            // Use M3U8 proxy for HLS streams
+            const m3u8Origin = getOriginFromUrl(finalUrl);
+            proxyHeaders = {
+                ...proxyHeaders,
+                Referer: proxyHeaders.Referer || m3u8Origin,
+                Origin: proxyHeaders.Origin || m3u8Origin
+            };
 
-                const localProxyUrl = `${serverUrl}/proxy/hls?link=${encodeURIComponent(
-                    originalUrl
-                )}&headers=${encodeURIComponent(JSON.stringify(proxyHeaders))}`;
+            const localProxyUrl = `${serverUrl}/m3u8-proxy?url=${encodeURIComponent(finalUrl)}&headers=${encodeURIComponent(JSON.stringify(proxyHeaders))}`;
 
-                console.log(
-                    `[HLS Proxy Replacement] ${file.file} -> ${localProxyUrl}`
-                );
-                console.log(
-                    `[HLS Proxy Headers] ${JSON.stringify(proxyHeaders)}`
-                );
+            return {
+                ...file,
+                file: localProxyUrl,
+                type: 'hls',
+                headers: proxyHeaders
+            };
+        } else {
+            // we can Use TS proxy for direct video files
+            const videoOrigin = getOriginFromUrl(finalUrl);
+            proxyHeaders = {
+                ...proxyHeaders,
+                Referer: proxyHeaders.Referer || videoOrigin,
+                Origin: proxyHeaders.Origin || videoOrigin
+            };
 
-                return {
-                    ...file,
-                    file: localProxyUrl,
-                    type: 'hls',
-                    headers: proxyHeaders
-                };
-            }
+            const localProxyUrl = `${serverUrl}/ts-proxy?url=${encodeURIComponent(finalUrl)}&headers=${encodeURIComponent(JSON.stringify(proxyHeaders))}`;
+
+            return {
+                ...file,
+                file: localProxyUrl,
+                type: file.type || 'mp4',
+                headers: proxyHeaders
+            };
         }
-
-        // For non-proxy URLs, also fix the referer if it's pointing to the wrong domain
-        if (file.file && file.file.includes('.m3u8') && file.headers) {
-            try {
-                const m3u8Origin = new URL(file.file).origin;
-
-                // If the current referer doesn't match the M3U8's origin, fix it
-                if (
-                    file.headers.Referer &&
-                    !file.headers.Referer.includes(new URL(file.file).hostname)
-                ) {
-                    console.log(
-                        `[Direct M3U8] Fixing referer for: ${file.file}`
-                    );
-                    console.log(
-                        `[Direct M3U8] Old referer: ${file.headers.Referer} -> New referer: ${m3u8Origin}`
-                    );
-
-                    return {
-                        ...file,
-                        headers: {
-                            ...file.headers,
-                            Referer: m3u8Origin,
-                            Origin: m3u8Origin
-                        }
-                    };
-                }
-            } catch (error) {
-                // If URL parsing fails, keep the original file
-                console.log(
-                    `[Direct M3U8] URL parsing failed for: ${file.file}`
-                );
-            }
-        }
-
-        return file; // Return unchanged if no proxy needed
     });
 
     return {
@@ -365,4 +517,4 @@ export function processApiResponse(apiResponse, serverUrl) {
     };
 }
 
-export { needsProxy, extractOriginalUrl };
+export { extractOriginalUrl };

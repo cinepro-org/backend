@@ -53,11 +53,10 @@ export async function getAutoembed(media) {
             }
             let encObj = await response.json();
 
-            console.log(encObj);
+            // console.log(encObj);
 
             const data = decryptData(encObj.data); // Decrypt the data
 
-            
             files.push({
                 file: data.url,
                 type: data.url.includes('mp4') ? 'mp4' : 'hls',
@@ -71,7 +70,7 @@ export async function getAutoembed(media) {
 
         return { files, subtitles };
     } catch (error) {
-        console.error('Error:', error); // Log the error for debugging
+        // console.error('Error:', error); // Log the error for debugging
         return new ErrorObject(
             `Unexpected error: ${error.message}`,
             'AutoEmbed/vidsrc.co',
@@ -85,30 +84,31 @@ export async function getAutoembed(media) {
 
 // Decrypt function
 function decryptData(encryptedObjectB64) {
-  const encryptedObject = JSON.parse(
-    Buffer.from(encryptedObjectB64, "base64").toString("utf8")
-  );
+    const encryptedObject = JSON.parse(
+        Buffer.from(encryptedObjectB64, 'base64').toString('utf8')
+    );
 
-  const { algorithm, key, iv, salt, iterations, encryptedData } = encryptedObject;
+    const { algorithm, key, iv, salt, iterations, encryptedData } =
+        encryptedObject;
 
-  // Derive the actual AES key using PBKDF2
-  const derivedKey = crypto.pbkdf2Sync(
-    key,                                // password
-    Buffer.from(salt, "hex"),           // salt
-    iterations,                         // iterations
-    32,                                 // key length = 32 bytes (AES-256)
-    "sha256"                            // hash
-  );
+    // Derive the actual AES key using PBKDF2
+    const derivedKey = crypto.pbkdf2Sync(
+        key, // password
+        Buffer.from(salt, 'hex'), // salt
+        iterations, // iterations
+        32, // key length = 32 bytes (AES-256)
+        'sha256' // hash
+    );
 
-  const ivBuffer = Buffer.from(iv, "hex");
-  const decipher = crypto.createDecipheriv(algorithm, derivedKey, ivBuffer);
+    const ivBuffer = Buffer.from(iv, 'hex');
+    const decipher = crypto.createDecipheriv(algorithm, derivedKey, ivBuffer);
 
-  let decrypted =
-    decipher.update(encryptedData, "base64", "utf8") +
-    decipher.final("utf8");
+    let decrypted =
+        decipher.update(encryptedData, 'base64', 'utf8') +
+        decipher.final('utf8');
 
-  console.log("Decrypted:", decrypted);
-  return JSON.parse(decrypted);
+    // console.log("Decrypted:", decrypted);
+    return JSON.parse(decrypted);
 }
 
 function getCurrentPeriod() {
