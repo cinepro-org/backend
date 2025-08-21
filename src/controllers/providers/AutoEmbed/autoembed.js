@@ -18,8 +18,8 @@ export async function getAutoembed(media) {
     let { tmdb, season, episode, type } = media;
     const url =
         type === 'tv'
-            ? `https://player.vidsrc.co/api/server?id=${tmdb}&ss=${season}&ep=${episode}`
-            : `https://player.vidsrc.co/api/server?id=${tmdb}`;
+            ? `https://test.autoembed.cc/api/server?id=${tmdb}&ss=${season}&ep=${episode}`
+            : `https://test.autoembed.cc/api/server?id=${tmdb}`;
 
     let files = [];
     let subtitles = [];
@@ -52,16 +52,12 @@ export async function getAutoembed(media) {
                 continue;
             }
             let encObj = await response.json();
+
+            console.log(encObj);
+
             const data = decryptData(encObj.data); // Decrypt the data
-            // let data2 = decrypt(encObj.data);
-            return new ErrorObject(
-                'Data Decryption is not yet implemented',
-                'AutoEmbed/vidsrc.co',
-                500,
-                'could someone pls fix this. thanksss',
-                true,
-                false
-            );
+
+            
             files.push({
                 file: data.url,
                 type: data.url.includes('mp4') ? 'mp4' : 'hls',
@@ -88,26 +84,31 @@ export async function getAutoembed(media) {
 }
 
 // Decrypt function
-function decryptData(encryptedObject) {
-    // Convert base64 encoded string to JSON object
-    encryptedObject = JSON.parse(
-        Buffer.from(encryptedObject, 'base64').toString('utf8')
-    );
-    const { algorithm, key, iv, encryptedData } = encryptedObject;
+function decryptData(encryptedObjectB64) {
+  const encryptedObject = JSON.parse(
+    Buffer.from(encryptedObjectB64, "base64").toString("utf8")
+  );
 
-    const keyBuffer = Buffer.from(key, 'hex');
-    const ivBuffer = Buffer.from(iv, 'hex');
+  const { algorithm, key, iv, salt, iterations, encryptedData } = encryptedObject;
 
-    const decipher = crypto.createDecipheriv(algorithm, keyBuffer, ivBuffer);
+  // Derive the actual AES key using PBKDF2
+  const derivedKey = crypto.pbkdf2Sync(
+    key,                                // password
+    Buffer.from(salt, "hex"),           // salt
+    iterations,                         // iterations
+    32,                                 // key length = 32 bytes (AES-256)
+    "sha256"                            // hash
+  );
 
-    let decrypted = decipher.update(
-        Buffer.from(encryptedData, 'base64'),
-        'utf8',
-        'utf8'
-    );
-    decrypted += decipher.final('utf8');
+  const ivBuffer = Buffer.from(iv, "hex");
+  const decipher = crypto.createDecipheriv(algorithm, derivedKey, ivBuffer);
 
-    return JSON.parse(decrypted); // Assuming decrypted data is in JSON format
+  let decrypted =
+    decipher.update(encryptedData, "base64", "utf8") +
+    decipher.final("utf8");
+
+  console.log("Decrypted:", decrypted);
+  return JSON.parse(decrypted);
 }
 
 function getCurrentPeriod() {

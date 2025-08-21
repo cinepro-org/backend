@@ -10,6 +10,7 @@ import { getVidsrcWtf } from './controllers/providers/VidSrcWtf/VidSrcWtf.js';
 import { getVidZee } from './controllers/providers/VidZee/VidZee.js';
 import { getWyzie } from './controllers/subs/wyzie.js';
 import { getCacheKey, getFromCache, setToCache } from './cache/cache.js';
+import { get111Movies } from './controllers/providers/111movies/111movies.js';
 
 const shouldDebug = process.argv.includes('--debug');
 
@@ -47,7 +48,8 @@ export async function scrapeMedia(media) {
         { getXprime: () => getXprime(media) },
         { getVidsrcWtf: () => getVidsrcWtf(media) },
         { getVidZee: () => getVidZee(media) },
-        { getWyzie: () => getWyzie(media) }
+        { getWyzie: () => getWyzie(media) },
+        { get111Movies: () => get111Movies(media) }
     ];
 
     const results = await Promise.all(
