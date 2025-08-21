@@ -11,6 +11,7 @@ import { getVidZee } from './controllers/providers/VidZee/VidZee.js';
 import { getWyzie } from './controllers/subs/wyzie.js';
 import { getCacheKey, getFromCache, setToCache } from './cache/cache.js';
 import { get111Movies } from './controllers/providers/111movies/111movies.js';
+import { getCinemaOS } from './controllers/providers/CinemaOS/CinemaOS.js';
 
 const shouldDebug = process.argv.includes('--debug');
 
@@ -47,10 +48,11 @@ export async function scrapeMedia(media) {
         { getVidSrcCC: () => getVidSrcCC(media) },
         { getVidSrc: () => getVidSrc(media) },
         { getVidrock: () => getVidRock(media) },
+        { getCinemaOS: () => getCinemaOS(media)},
 
         // NEED TO FIX
         // { getXprime: () => getXprime(media) },
-        // { getVidZee: () => getVidZee(media) },
+        //{ getVidZee: () => getVidZee(media) },
         // { getPrimewire: () => getPrimewire(media) },
         // { getVidsrcWtf: () => getVidsrcWtf(media) }
 
