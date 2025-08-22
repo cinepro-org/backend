@@ -1,15 +1,6 @@
 import cors from 'cors';
 import fetch from 'node-fetch';
 
-// Add as needed the orbit proxy and proxy-uira.live I saw in another issue
-const PROXY_DOMAINS = [
-    'hls1.vid1.site',
-    'hls1.vdrk.site',
-    'orbitproxy.cc',
-    'hls3.vid1.site',
-    'hls2.vid1.site',
-    'proxy-m3u8.uira.live'
-];
 // Add cache system similar to pstream
 const CACHE_MAX_SIZE = 2000;
 const CACHE_EXPIRY_MS = 2 * 60 * 60 * 1000; // 2 hours
@@ -229,9 +220,29 @@ export function createProxyRoutes(app) {
                             const proxyUrl = `${baseProxyUrl}/ts-proxy?url=${encodeURIComponent(keyUrl)}&headers=${encodeURIComponent(JSON.stringify(headers))}`;
                             newLines.push(line.replace(keyUrl, proxyUrl));
 
-                            // Prefetch key if cache enabled
                             if (!isCacheDisabled()) {
                                 prefetchSegment(keyUrl, headers);
+                            }
+                        } else {
+                            newLines.push(line);
+                        }
+                    } else if (
+                        line.startsWith('#EXT-X-MEDIA:') ||
+                        line.startsWith('#EXT-X-I-FRAME-STREAM-INF:')
+                    ) {
+                        // Handle audio tracks, subtitle tracks, and i-frame streams
+                        const uriMatch = line.match(/URI="([^"]+)"/);
+                        if (uriMatch) {
+                            let mediaUrl = uriMatch[1];
+                            try {
+                                // Resolve relative URLs
+                                mediaUrl = new URL(mediaUrl, targetUrl).href;
+                                const proxyUrl = `${baseProxyUrl}/m3u8-proxy?url=${encodeURIComponent(mediaUrl)}&headers=${encodeURIComponent(JSON.stringify(headers))}`;
+                                newLines.push(
+                                    line.replace(uriMatch[1], proxyUrl)
+                                );
+                            } catch {
+                                newLines.push(line); // Keep original if URL parsing fails
                             }
                         } else {
                             newLines.push(line);
@@ -240,7 +251,7 @@ export function createProxyRoutes(app) {
                         newLines.push(line);
                     }
                 } else if (line.trim() && !line.startsWith('#')) {
-                    // Handle segment URLs
+                    // Handle segment URLs (existing code)
                     try {
                         const segmentUrl = new URL(line, targetUrl).href;
                         segmentUrls.push(segmentUrl);
@@ -248,10 +259,10 @@ export function createProxyRoutes(app) {
                         const proxyUrl = `${baseProxyUrl}/ts-proxy?url=${encodeURIComponent(segmentUrl)}&headers=${encodeURIComponent(JSON.stringify(headers))}`;
                         newLines.push(proxyUrl);
                     } catch {
-                        newLines.push(line); // keep original if parsing fails
+                        newLines.push(line);
                     }
                 } else {
-                    newLines.push(line); // keep empty lines
+                    newLines.push(line);
                 }
             }
 

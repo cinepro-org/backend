@@ -89,6 +89,10 @@ export async function getMultiembed(params) {
             new URLSearchParams({ token }),
             { headers }
         );
+        console.log(
+            '\n=== Response 2 HTML snippet ===\n',
+            resp2.data.substring(0, 500)
+        );
         const $ = cheerio.load(resp2.data);
 
         const vipSource = $('li')
@@ -117,7 +121,7 @@ export async function getMultiembed(params) {
         if (!hunterMatch) throw new Error('Cannot find encoded HUNTER Pack');
 
         const hunterPack = hunterMatch[1];
-        // console.log("Hunter pack string:", hunterPack);
+        console.log('Hunter pack string:', hunterPack);
 
         let dataArray;
         try {
@@ -140,17 +144,17 @@ export async function getMultiembed(params) {
 
         const [h, u, n, t, e, r] = dataArray;
 
-        // console.log("Hunter parameters:", {
-        //     h: typeof h,
-        //     u: typeof u,
-        //     n: typeof n,
-        //     t: typeof t,
-        //     e: typeof e,
-        //     r: typeof r
-        // });
+        console.log('Hunter parameters:', {
+            h: typeof h,
+            u: typeof u,
+            n: typeof n,
+            t: typeof t,
+            e: typeof e,
+            r: typeof r
+        });
 
         const decoded = decodeHunter(h, u, n, t, e, r);
-        // console.log("Decoded content preview:", decoded.substring(0, 200));
+        console.log('Decoded content preview:', decoded.substring(0, 200));
 
         const videoMatch = decoded.match(/file:"(https?:\/\/[^"]+)"/);
         if (!videoMatch)
@@ -170,7 +174,7 @@ export async function getMultiembed(params) {
             subtitles: []
         };
     } catch (err) {
-        // console.error("Multiembed error:", err.message);
+        console.error('Multiembed error:', err.message);
         return new ErrorObject(
             `Unexpected error: ${err.message}`,
             'Multiembed',

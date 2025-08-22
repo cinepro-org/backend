@@ -57,14 +57,35 @@ export async function getAutoembed(media) {
 
             const data = decryptData(encObj.data); // Decrypt the data
 
+            // Extract the actual direct URL from the decrypted data
+            let directUrl = data.url;
+
+            // If the URL contains embed-proxy or other proxy patterns, extract the real URL
+            if (directUrl.includes('embed-proxy')) {
+                try {
+                    // Extract from patterns like /api/embed-proxy?url=ENCODED_URL
+                    const urlMatch = directUrl.match(/[?&]url=([^&]+)/);
+                    if (urlMatch) {
+                        directUrl = decodeURIComponent(urlMatch[1]);
+                    }
+                } catch (e) {
+                    console.log('Failed to extract direct URL:', e.message);
+                }
+            }
+
             files.push({
-                file: data.url,
-                type: data.url.includes('mp4') ? 'mp4' : 'hls',
+                file: directUrl,
+                type: directUrl.includes('mp4') ? 'mp4' : 'hls',
                 lang: currentLang
             });
 
             if (data.tracks) {
-                // TODO: implement subtitles
+                data.tracks.forEach((track) => {
+                    subtitles.push({
+                        lang: track.lang || 'unknown',
+                        url: track.file
+                    });
+                });
             }
         }
 
