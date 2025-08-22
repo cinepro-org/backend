@@ -2,7 +2,7 @@ name: Only allow PRs from Dev to Main
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -14,7 +14,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check if PR is from Dev to Main
-        id: pr-check
         run: |
           BASE_BRANCH="${{ github.event.pull_request.base.ref }}"
           HEAD_BRANCH="${{ github.event.pull_request.head.ref }}"
@@ -27,39 +26,19 @@ jobs:
           echo "Repository: $REPO"
 
           if [[ "$BASE_BRANCH" != "main" || "$HEAD_BRANCH" != "dev" || "$HEAD_REPO" != "$REPO" ]]; then
-            echo "result=fail" >> $GITHUB_OUTPUT
+            echo "Invalid PR source or destination. Posting comment and closing PR."
+
+            curl -s -X POST -H "Authorization: token ${{ secrets.PR_TOKEN }}" \
+              -d '{"body": "Only Pull Requests from [dev](https://github.com/${{ github.repository }}/tree/dev) are allowed to be merged to [main](https://github.com/${{ github.repository }}/tree/main). This PR will be closed. Please merge into dev first. ❌"}' \
+              "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments"
+
+            curl -s -X PATCH -H "Authorization: token ${{ secrets.PR_TOKEN }}" \
+              -d '{"state": "closed"}' \
+              "https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}"
+
+                echo "::error::Only PRs from dev to main are allowed. This PR was closed."
+            exit 1
           else
-            echo "result=pass" >> $GITHUB_OUTPUT
+            echo "✅ Pull request is valid (Dev → Main)."
+            exit 0
           fi
-
-      - name: Comment on PR if check fails
-        if: steps.pr-check.outputs.result == 'fail'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: "❌ Only PRs from 'dev' to 'main' in the same repository are allowed. This PR will be closed."
-            })
-
-      - name: Close PR if check fails
-        if: steps.pr-check.outputs.result == 'fail'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.pulls.update({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.issue.number,
-              state: 'closed'
-            })
-
-      - name: Fail workflow if check fails
-        if: steps.pr-check.outputs.result == 'fail'
-        run: exit 1
-
-      - name: Success message if check passes
-        if: steps.pr-check.outputs.result == 'pass'
-        run: echo "✅ Pull request is valid (Dev → Main)."
