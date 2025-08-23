@@ -50,12 +50,11 @@ export async function scrapeMedia(media) {
         { getVidrock: () => getVidRock(media) },
         { getCinemaOS: () => getCinemaOS(media) },
         { getMultiembed: () => getMultiembed(media) },
-
+        { getVidsrcWtf: () => getVidsrcWtf(media) },
         // NEED TO FIX
         // { getXprime: () => getXprime(media) },
         // { getVidZee: () => getVidZee(media) },
         // { getPrimewire: () => getPrimewire(media) },
-        // { getVidsrcWtf: () => getVidsrcWtf(media) }
 
         // SUB SEARCH
         { getWyzie: () => getWyzie(media) }
