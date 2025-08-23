@@ -1,5 +1,6 @@
 import cors from 'cors';
 import fetch from 'node-fetch';
+import { VIDSRC_HLS_ORIGIN } from '../controllers/providers/VidSrc/VidSrc.js';
 
 // Add cache system similar to pstream
 const CACHE_MAX_SIZE = 2000;
@@ -110,7 +111,11 @@ const DEFAULT_USER_AGENT =
 
 function getOriginFromUrl(url) {
     try {
-        return new URL(url).origin;
+        let origin = new URL(url).origin;
+        if (origin.includes(VIDSRC_HLS_ORIGIN)) {
+            return undefined;
+        }
+        return;
     } catch {
         return url;
     }
@@ -163,7 +168,7 @@ function extractOriginalUrl(proxyUrl) {
 }
 
 export function createProxyRoutes(app) {
-    // M3U8 Proxy endpoint main this is main thing which I am scared of...
+    // M3U8 Proxy endpoint
     app.get('/m3u8-proxy', cors(), async (req, res) => {
         const targetUrl = req.query.url;
         let headers = {};
@@ -288,6 +293,11 @@ export function createProxyRoutes(app) {
                 'Cache-Control',
                 'no-cache, no-store, must-revalidate'
             );
+            // Set filename
+            res.setHeader(
+                'Content-Disposition',
+                `attachment; filename="master.m3u8"`
+            );
 
             res.send(newLines.join('\n'));
         } catch (error) {
@@ -362,6 +372,11 @@ export function createProxyRoutes(app) {
             res.setHeader('Access-Control-Allow-Headers', '*');
             res.setHeader('Access-Control-Allow-Methods', '*');
             res.setHeader('Cache-Control', 'public, max-age=3600');
+            // set filename for TS segments
+            res.setHeader(
+                'Content-Disposition',
+                `attachment; filename="media.mp4"`
+            );
 
             // Stream the response directly
             response.body.pipe(res);
@@ -371,7 +386,7 @@ export function createProxyRoutes(app) {
         }
     });
 
-    // HLS Proxy endpoint it will get url as query parameter and headers as well
+    // HLS Proxy endpoint
     app.get('/proxy/hls', cors(), async (req, res) => {
         const targetUrl = req.query.link;
         let headers = {};
@@ -460,6 +475,11 @@ export function createProxyRoutes(app) {
             res.setHeader('Access-Control-Allow-Origin', '*');
             res.setHeader('Access-Control-Allow-Headers', '*');
             res.setHeader('Access-Control-Allow-Methods', '*');
+            // Set filename
+            res.setHeader(
+                'Content-Disposition',
+                `attachment; filename="master.m3u8"`
+            );
 
             console.log(
                 `[HLS Proxy] Successfully proxied HLS for: ${targetUrl}`
@@ -485,14 +505,16 @@ export function processApiResponse(apiResponse, serverUrl) {
         finalUrl = extractOriginalUrl(finalUrl);
 
         // proxy ALL URLs through our system
-        if (finalUrl.includes('.m3u8')) {
+        if (!finalUrl.includes('.mp4') && !finalUrl.includes('.mkv')) {
             // Use M3U8 proxy for HLS streams
             const m3u8Origin = getOriginFromUrl(finalUrl);
-            proxyHeaders = {
-                ...proxyHeaders,
-                Referer: proxyHeaders.Referer || m3u8Origin,
-                Origin: proxyHeaders.Origin || m3u8Origin
-            };
+            if (m3u8Origin) {
+                proxyHeaders = {
+                    ...proxyHeaders,
+                    Referer: proxyHeaders.Referer || m3u8Origin,
+                    Origin: proxyHeaders.Origin || m3u8Origin
+                };
+            }
 
             const localProxyUrl = `${serverUrl}/m3u8-proxy?url=${encodeURIComponent(finalUrl)}&headers=${encodeURIComponent(JSON.stringify(proxyHeaders))}`;
 
