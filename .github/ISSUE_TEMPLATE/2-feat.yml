@@ -1,66 +1,66 @@
 name: Feature Request
 description: Suggest a new feature or enhancement for CinePro
-title: "Feat: "
-labels: [ "🌟enhancement", "🔺needs-triage" ]
+title: 'Feat: '
+labels: ['🌟enhancement', '🔺needs-triage']
 
 body:
-  - type: markdown
-    attributes:
-      value: |
-        Hey There! 👋 Thanks for suggesting a feature to make CinePro better! 🚀
-        Before submitting your feature request, please ensure it hasn't been suggested before.
+    - type: markdown
+      attributes:
+          value: |
+              Hey There! 👋 Thanks for suggesting a feature to make CinePro better! 🚀
+              Before submitting your feature request, please ensure it hasn't been suggested before.
 
-        Please fill out this template to help us understand your suggestion better.
+              Please fill out this template to help us understand your suggestion better.
 
-        > [!NOTE]
-        > Before submitting, please check if your feature request is already suggested in the [existing issues](https://github.com/cinepro-org/backend/issues).
+              > [!NOTE]
+              > Before submitting, please check if your feature request is already suggested in the [existing issues](https://github.com/cinepro-org/backend/issues).
 
-  - type: checkboxes
-    attributes:
-      label: Prerequisites
-      description: |
-        **Please check these before submitting:**
-      options:
-        - label: I have checked the existing issues and this is not a duplicate
+    - type: checkboxes
+      attributes:
+          label: Prerequisites
+          description: |
+              **Please check these before submitting:**
+          options:
+              - label: I have checked the existing issues and this is not a duplicate
+                required: true
+              - label: I have read the [README.md](https://github.com/cinepro-org/backend/blob/main/README.md) to ensure this feature doesn't already exist
+                required: true
+              - label: This feature would benefit the majority of CinePro users
+                required: true
+              - label: I have considered the technical implications of this feature
+                required: true
+              - label: I did not answer truthfully to **ALL** the above checkboxes
+                required: false
+
+    - type: textarea
+      attributes:
+          label: Feature Description
+          description: Describe the feature you'd like to see in CinePro
+          placeholder: |
+              Provide a clear and detailed description of what you want to happen.
+              What problem does this feature solve?
+      validations:
           required: true
-        - label: I have read the [README.md](https://github.com/cinepro-org/backend/blob/main/README.md) to ensure this feature doesn't already exist
-          required: true
-        - label: This feature would benefit the majority of CinePro users
-          required: true
-        - label: I have considered the technical implications of this feature
-          required: true
-        - label: I did not answer truthfully to **ALL** the above checkboxes
+
+    - type: textarea
+      attributes:
+          label: Implementation Details
+          description: If you have technical knowledge, describe how this feature could be implemented
+          placeholder: |
+              Technical details, API endpoints, data structures, etc.
+              ```
+              Example code or pseudocode here
+              ```
+      validations:
           required: false
 
-  - type: textarea
-    attributes:
-      label: Feature Description
-      description: Describe the feature you'd like to see in CinePro
-      placeholder: |
-        Provide a clear and detailed description of what you want to happen.
-        What problem does this feature solve?
-    validations:
-      required: true
-
-  - type: textarea
-    attributes:
-      label: Implementation Details
-      description: If you have technical knowledge, describe how this feature could be implemented
-      placeholder: |
-        Technical details, API endpoints, data structures, etc.
-        ```
-        Example code or pseudocode here
-        ```
-    validations:
-      required: false
-
-  - type: textarea
-    attributes:
-      label: Additional Context
-      description: |
-        Add any other context, screenshots, or examples about the feature request here.
-      placeholder: |
-        <!-- Optional: Include mockups, links, or additional information -->
-      render: markdown
-    validations:
-      required: false
+    - type: textarea
+      attributes:
+          label: Additional Context
+          description: |
+              Add any other context, screenshots, or examples about the feature request here.
+          placeholder: |
+              <!-- Optional: Include mockups, links, or additional information -->
+          render: markdown
+      validations:
+          required: false

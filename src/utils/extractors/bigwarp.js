@@ -19,7 +19,8 @@ export async function extract_bigwarp(url) {
         const html = await response.text();
 
         // Now, ... Extractingg video sources using regex
-        const sourceRegex = /file\s*:\s*['"]([^'"]+)['"],\s*label\s*:\s*['"](\d+p?)/g;
+        const sourceRegex =
+            /file\s*:\s*['"]([^'"]+)['"],\s*label\s*:\s*['"](\d+p?)/g;
         const sources = [];
         let match;
 
@@ -58,7 +59,6 @@ export async function extract_bigwarp(url) {
             .join('&');
 
         bestSource = `${bestSource}|${headerParams}`;
-
 
         // well i checked and voila we get the file url exact so... good to go i think
         return {

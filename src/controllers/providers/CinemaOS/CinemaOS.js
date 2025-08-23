@@ -1,15 +1,15 @@
-import axios from "axios";
-import crypto from "crypto";
-import { ErrorObject } from "../../../helpers/ErrorObject.js";
+import axios from 'axios';
+import crypto from 'crypto';
+import { ErrorObject } from '../../../helpers/ErrorObject.js';
 
-const BASE_URL = "https://cinemaos.live";
+const BASE_URL = 'https://cinemaos.live';
 const USER_AGENT =
-    "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Mobile Safari/537.36";
+    'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Mobile Safari/537.36';
 
 const headers = {
     Origin: BASE_URL,
     Referer: BASE_URL,
-    "User-Agent": USER_AGENT,
+    'User-Agent': USER_AGENT
 };
 
 export async function getCinemaOS(params) {
@@ -19,11 +19,10 @@ export async function getCinemaOS(params) {
         // 1. Auth token
         const authApi = `${BASE_URL}/api/auth`;
         const authInit = (await axios.get(authApi, { headers })).data;
-        const authToken = (
-            await axios.post(authApi, authInit, { headers })
-        ).data.token;
+        const authToken = (await axios.post(authApi, authInit, { headers }))
+            .data.token;
 
-        headers["Authorization"] = `Bearer ${authToken}`;
+        headers['Authorization'] = `Bearer ${authToken}`;
 
         // 2. Get movie metadata
         const downloadData = (
@@ -34,7 +33,7 @@ export async function getCinemaOS(params) {
 
         const releaseYear = downloadData.releaseYear;
         const title = downloadData.movieTitle;
-        const imdbId = downloadData.subtitleLink.split("=").pop();
+        const imdbId = downloadData.subtitleLink.split('=').pop();
 
         // 3. Get encrypted response
         const encResponse = (
@@ -52,25 +51,26 @@ export async function getCinemaOS(params) {
 
         // 4. Prepare AES-256-GCM decrypt
         const keyHex =
-            "a1b2c3d4e4f6589012345678901477567890abcdef1234567890abcdef123456";
-        const key = Buffer.from(keyHex, "hex");
-        const ciphertext = Buffer.from(encryptedHex, "hex");
-        const iv = Buffer.from(ivHex, "hex");
-        const authTag = Buffer.from(authTagHex, "hex");
+            'a1b2c3d4e4f6589012345678901477567890abcdef1234567890abcdef123456';
+        const key = Buffer.from(keyHex, 'hex');
+        const ciphertext = Buffer.from(encryptedHex, 'hex');
+        const iv = Buffer.from(ivHex, 'hex');
+        const authTag = Buffer.from(authTagHex, 'hex');
 
-        const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv);
+        const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
         decipher.setAuthTag(authTag);
         const decrypted =
-            decipher.update(ciphertext, undefined, "utf8") + decipher.final("utf8");
+            decipher.update(ciphertext, undefined, 'utf8') +
+            decipher.final('utf8');
 
         // 5. Extract sources
         const sources = JSON.parse(decrypted).sources;
         const validEntries = Object.values(sources).filter(
-            (v) => v && typeof v === "object" && v.url
+            (v) => v && typeof v === 'object' && v.url
         );
 
         if (!validEntries.length) {
-            throw new Error("No valid sources found");
+            throw new Error('No valid sources found');
         }
 
         const videoUrl =
@@ -80,21 +80,21 @@ export async function getCinemaOS(params) {
         return {
             files: {
                 file: videoUrl,
-                type: "hls",
-                lang: "en",
+                type: 'hls',
+                lang: 'en',
                 headers: {
                     Referer: BASE_URL,
-                    "User-Agent": USER_AGENT,
-                },
+                    'User-Agent': USER_AGENT
+                }
             },
-            subtitles: [],
+            subtitles: []
         };
     } catch (error) {
         return new ErrorObject(
             `CinemaOS Error: ${error.message}`,
-            "CinemaOS",
+            'CinemaOS',
             500,
-            "Check the implementation or server status",
+            'Check the implementation or server status',
             true,
             true
         );
