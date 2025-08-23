@@ -52,9 +52,12 @@ export async function scrapeMedia(media) {
         { getMultiembed: () => getMultiembed(media) },
         { getVidsrcWtf: () => getVidsrcWtf(media) },
 
+        // It does need to fixed but it acts like it is down sometimes throws 520 or 524 so,
+        // You got my point right ?
+        { getVidZee: () => getVidZee(media) },
+
         // NEED TO FIX
         // { getXprime: () => getXprime(media) },
-        // { getVidZee: () => getVidZee(media) },
         // { getPrimewire: () => getPrimewire(media) },
 
         // SUB SEARCH
