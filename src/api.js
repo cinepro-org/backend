@@ -41,7 +41,6 @@ export async function scrapeMedia(media) {
         );
     }
     const providers = [
-
         // WORKING
         { getTwoEmbed: () => getTwoEmbed(media) },
         { getAutoembed: () => getAutoembed(media) },
@@ -49,8 +48,8 @@ export async function scrapeMedia(media) {
         { getVidSrcCC: () => getVidSrcCC(media) },
         { getVidSrc: () => getVidSrc(media) },
         { getVidrock: () => getVidRock(media) },
-        { getCinemaOS: () => getCinemaOS(media)},
-        { getMultiembed: () => getMultiembed(media)},
+        { getCinemaOS: () => getCinemaOS(media) },
+        { getMultiembed: () => getMultiembed(media) },
 
         // NEED TO FIX
         // { getXprime: () => getXprime(media) },
