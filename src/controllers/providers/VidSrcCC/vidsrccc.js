@@ -27,15 +27,15 @@ export async function getVidSrcCC(media) {
     });
     const embedHtml = await embedResponse.text();
 
-    // Debug: log parts of HTML that contain the variables
-    console.log(' HTML DEBUG ');
-    const userIdSection = embedHtml.match(/.{0,500}userId.{0,500}/);
-    const vSection = embedHtml.match(/.{0,500}var v.{0,500}/);
-    console.log(
-        'userId section:',
-        userIdSection ? userIdSection[0] : 'NOT FOUND'
-    );
-    console.log('v section:', vSection ? vSection[0] : 'NOT FOUND');
+    // // Debug: log parts of HTML that contain the variables
+    // console.log(' HTML DEBUG ');
+    // const userIdSection = embedHtml.match(/.{0,500}userId.{0,500}/);
+    // const vSection = embedHtml.match(/.{0,500}var v.{0,500}/);
+    // console.log(
+    //     'userId section:',
+    //     userIdSection ? userIdSection[0] : 'NOT FOUND'
+    // );
+    // console.log('v section:', vSection ? vSection[0] : 'NOT FOUND');
 
     // Extract userId and v value from the HTML
     const userIdMatch = embedHtml.match(/userId\s*=\s*["']([^"']+)["']/);
