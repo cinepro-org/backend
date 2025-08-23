@@ -1,100 +1,99 @@
 name: Bug Report
 description: Report a bug or issue with CinePro
-labels: [ "🐛bug", "🔺needs-triage" ]
-title: "Bug: "
+labels: ['🐛bug', '🔺needs-triage']
+title: 'Bug: '
 body:
-  - type: markdown
-    attributes:
-      value: |
-        Hey There! 👋 Thanks for reporting a bug to help make CinePro better! 🎉
-        Before you submit your bug report, please ensure that you have the newest version of CinePro installed.
-        
-        Please fill out this template to help us understand and fix the issue you're experiencing.
-        
-        > [!NOTE]
-        > Before reporting, please check if your issue is already reported in the [existing issues](https://github.com/cinepro-org/backend/issues).
-  - type: checkboxes
-    attributes:
-      label: Prerequisites
-      description: |
-        **Please check these before submitting:**
-      options:
-        - label: I have checked the existing issues and this is not a duplicate
+    - type: markdown
+      attributes:
+          value: |
+              Hey There! 👋 Thanks for reporting a bug to help make CinePro better! 🎉
+              Before you submit your bug report, please ensure that you have the newest version of CinePro installed.
+
+              Please fill out this template to help us understand and fix the issue you're experiencing.
+
+              > [!NOTE]
+              > Before reporting, please check if your issue is already reported in the [existing issues](https://github.com/cinepro-org/backend/issues).
+    - type: checkboxes
+      attributes:
+          label: Prerequisites
+          description: |
+              **Please check these before submitting:**
+          options:
+              - label: I have checked the existing issues and this is not a duplicate
+                required: true
+              - label: I have read the [README.md](https://github.com/cinepro-org/backend/blob/main/README.md) and followed the installation instructions
+                required: true
+              - label: I am using the latest version of CinePro
+                required: true
+              - label: I have tested this with a minimal setup (no additional middleware or modifications)
+                required: true
+              - label: I have included all relevant details in this report
+                required: true
+              - label: I did not answer truthfully to **ALL** the above checkboxes.
+                required: false
+
+    - type: textarea
+      attributes:
+          label: Environment
+          description: |
+              Tell us about your environment where the bug occurs.
+          placeholder: |
+              - Operating System: (e.g., Windows 11, macOS 14, Ubuntu 22.04)
+              - Node.js version: (run `node --version`)
+              - CinePro version: (from package.json)
+              - IP Information: (if applicable, e.g., using a proxy/VPN)
+          render: yaml
+      validations:
           required: true
-        - label: I have read the [README.md](https://github.com/cinepro-org/backend/blob/main/README.md) and followed the installation instructions
+
+    - type: input
+      attributes:
+          label: TMDB ID
+          description: Which TMDB ID is this issue related to? If not applicable, use 'N/A'
+          placeholder: |
+              329865 or 87108/1/8 (id/season/episode)
+      validations:
           required: true
-        - label: I am using the latest version of CinePro
+
+    - type: textarea
+      attributes:
+          label: Expected Behavior
+          description: What did you expect to happen?
+          placeholder: Describe what you expected to happen...
+      validations:
           required: true
-        - label: I have tested this with a minimal setup (no additional middleware or modifications)
+
+    - type: textarea
+      attributes:
+          label: Actual Behavior
+          description: What actually happened? Include any error messages.
+          placeholder: |
+              Describe what actually happened...
+
+              If there are error messages, include them here:
+              ```
+              Error message here
+              ```
+      validations:
           required: true
-        - label: I have included all relevant details in this report
+
+    - type: input
+      attributes:
+          label: Location Key
+          description: If applicable, provide the location key where the issue occurs. If unknown, use 'Backend'
+          placeholder: |
+              VidSrc
+      validations:
           required: true
-        - label: I did not answer truthfully to **ALL** the above checkboxes.
+
+    - type: textarea
+      attributes:
+          label: Any Additional Information
+          description: |
+              Provide any additional information that might help us understand the issue better.
+              This could include steps to reproduce, screenshots, or any other relevant details.
+          placeholder: |
+              <!-- Optional: Include any additional information here -->
+          render: markdown
+      validations:
           required: false
-
-  - type: textarea
-    attributes:
-      label: Environment
-      description: |
-        Tell us about your environment where the bug occurs.
-      placeholder: |
-        - Operating System: (e.g., Windows 11, macOS 14, Ubuntu 22.04)
-        - Node.js version: (run `node --version`)
-        - CinePro version: (from package.json)
-        - IP Information: (if applicable, e.g., using a proxy/VPN)
-      render: yaml
-    validations:
-      required: true
-
-  - type: input
-    attributes:
-      label: TMDB ID
-      description: Which TMDB ID is this issue related to? If not applicable, use 'N/A'
-      placeholder: |
-        329865 or 87108/1/8 (id/season/episode)
-    validations:
-      required: true
-
-  - type: textarea
-    attributes:
-      label: Expected Behavior
-      description: What did you expect to happen?
-      placeholder: Describe what you expected to happen...
-    validations:
-      required: true
-
-  - type: textarea
-    attributes:
-      label: Actual Behavior
-      description: What actually happened? Include any error messages.
-      placeholder: |
-        Describe what actually happened...
-        
-        If there are error messages, include them here:
-        ```
-        Error message here
-        ```
-    validations:
-      required: true
-
-  - type: input
-    attributes:
-      label: Location Key
-      description: If applicable, provide the location key where the issue occurs. If unknown, use 'Backend'
-      placeholder: |
-        VidSrc
-    validations:
-      required: true
-
-  - type: textarea
-    attributes:
-      label: Any Additional Information
-      description: |
-        Provide any additional information that might help us understand the issue better.
-        This could include steps to reproduce, screenshots, or any other relevant details.
-      placeholder: |
-        <!-- Optional: Include any additional information here -->
-      render: markdown
-    validations:
-      required: false
-

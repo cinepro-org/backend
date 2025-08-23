@@ -1,47 +1,47 @@
 {
-  "name": "cinepro-backend",
-  "version": "0.0.1-beta",
-  "description": "Backend API of CinePro (scraper)",
-  "main": "index.js",
-  "homepage": "https://cinepro.mintlify.app/",
-  "bugs": {
-    "url": "https://github.com/cinepro-org/backend/issues"
-  },
-  "type": "module",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "node --watch index.js --debug",
-    "main": "node --watch index.js",
-    "deploy": "node --watch index.js",
-    "start": "node --watch index.js"
-  },
-  "author": {
-    "name": "CinePro Dev Team and All contributors",
-    "url": "https://github.com/orgs/cinepro-org/teams/devs/"
-  },
-  "license": "SEE LICENSE ON https://cinepro.mintlify.app/general-information/license#in-a-nutshell",
-  "dependencies": {
-    "axios": "^1.7.9",
-    "base-64": "^1.0.0",
-    "cheerio": "^1.0.0",
-    "cloudflare-scraper": "^2.0.0",
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.7",
-    "express": "^4.18.2",
-    "node-cache": "^5.1.2",
-    "node-fetch": "^3.3.2",
-    "prettier": "^3.6.2",
-    "unpacker": "^1.0.1",
-    "wyzie-lib": "^2.2.5"
-  },
-  "keywords": [
-    "cinepro",
-    "movie",
-    "tv show",
-    "scraper"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/cinepro-org/backend.git"
-  }
+    "name": "cinepro-backend",
+    "version": "0.0.1-beta",
+    "description": "Backend API of CinePro (scraper)",
+    "main": "index.js",
+    "homepage": "https://cinepro.mintlify.app/",
+    "bugs": {
+        "url": "https://github.com/cinepro-org/backend/issues"
+    },
+    "type": "module",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "dev": "node --watch index.js --debug",
+        "main": "node --watch index.js",
+        "deploy": "node --watch index.js",
+        "start": "node --watch index.js"
+    },
+    "author": {
+        "name": "CinePro Dev Team and All contributors",
+        "url": "https://github.com/orgs/cinepro-org/teams/devs/"
+    },
+    "license": "SEE LICENSE ON https://cinepro.mintlify.app/general-information/license#in-a-nutshell",
+    "dependencies": {
+        "axios": "^1.7.9",
+        "base-64": "^1.0.0",
+        "cheerio": "^1.0.0",
+        "cloudflare-scraper": "^2.0.0",
+        "cors": "^2.8.5",
+        "dotenv": "^16.4.7",
+        "express": "^4.18.2",
+        "node-cache": "^5.1.2",
+        "node-fetch": "^3.3.2",
+        "prettier": "^3.6.2",
+        "unpacker": "^1.0.1",
+        "wyzie-lib": "^2.2.5"
+    },
+    "keywords": [
+        "cinepro",
+        "movie",
+        "tv show",
+        "scraper"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/cinepro-org/backend.git"
+    }
 }

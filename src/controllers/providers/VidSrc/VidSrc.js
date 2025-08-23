@@ -9,6 +9,7 @@ import { ErrorObject } from '../../../helpers/ErrorObject.js';
 
 const URI = 'https://vidsrc.xyz';
 const HOST_URL = 'https://cloudnestra.com';
+export const VIDSRC_HLS_ORIGIN = 'tmstr4.shadowlandschronicles.com';
 
 const IFRAME2_SRC_RE = /id="player_iframe" src="(?<url>[^"]+)"/;
 const IFRAME3_SRC_RE = /src: '(?<url>\/prorcp\/[^']+)'/;
