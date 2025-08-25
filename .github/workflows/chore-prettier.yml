@@ -1,4 +1,4 @@
-name: Update Data Daily
+name: '[Chore] Formatting'
 
 on:
     push:

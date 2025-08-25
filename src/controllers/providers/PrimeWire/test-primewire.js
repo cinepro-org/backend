@@ -3,7 +3,7 @@ import { getPrimewire } from './primewire.js';
 async function test() {
     const movie = {
         type: 'movie',
-        imdb: 'tt3896198'
+        imdb: 'tt2543164'
     };
 
     console.log('[Test] Fetching Primewire links for movie:', movie.imdb);

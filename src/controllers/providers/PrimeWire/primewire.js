@@ -13,6 +13,159 @@ const DS_KEY = 'JyjId97F9PVqUPuMO0';
 // blow fisher library but it did not work...
 // then looked on to the script of the primewire
 
+export async function getPrimewire(media) {
+    if (!media.imdb) {
+        return new ErrorObject(
+            'Primewire requires an IMDB ID',
+            'Primewire',
+            500,
+            'Please provide an IMDB ID from the tmdb.js file',
+            true,
+            true
+        );
+    }
+
+    const link = await lookupPage(media);
+    if (link instanceof ErrorObject) {
+        console.log('[Primewire] Lookup returned error:', link);
+        return link;
+    }
+    console.log(`[Primewire] Found page: ${link}`);
+
+    const servers = await loadServers(link);
+    if (servers instanceof ErrorObject) {
+        console.log('[Primewire] loadServers returned error:', servers);
+        return servers;
+    }
+    console.log(`[Primewire] Found ${servers.length} servers`);
+
+    const embeddableServers = await Promise.all(
+        servers.map(async (server, i) => {
+            console.log(`[Primewire] Extracting server ${i + 1}:`, server);
+            const result = await extract(server);
+            if (result instanceof ErrorObject) {
+                console.log(
+                    `[Primewire] Extract failed for server ${i + 1}:`,
+                    result
+                );
+                return result;
+            }
+            return result;
+        })
+    );
+
+    const files = embeddableServers
+        .filter((embedLink) => embedLink && embedLink.file)
+        .map((embedLink) => ({
+            file: embedLink.file,
+            type: embedLink.type,
+            lang: 'en',
+            ...(embedLink.headers && { headers: embedLink.headers })
+        }));
+
+    console.log(`[Primewire] Extracted ${files.length} files`);
+
+    return {
+        files,
+        subtitles: []
+    };
+}
+
+async function lookupPage(info) {
+    const imdbId = info.imdb;
+    const ds = sha1Hex(`${imdbId}${DS_KEY}`).slice(0, 10);
+    console.log(`[Primewire] Lookup: imdb=${imdbId}, ds=${ds}`);
+
+    try {
+        const response = await axios.get(`${URL}/filter`, {
+            params: { s: imdbId, ds }
+        });
+        const $ = cheerio.load(response.data);
+        const originalLink = $(
+            '.index_container .index_item.index_item_ie a'
+        ).attr('href');
+        console.log(`[Primewire] Original link: ${originalLink}`);
+
+        if (!originalLink) {
+            return new ErrorObject(
+                `No search results found for IMDB ID: ${imdbId}`,
+                'Primewire',
+                404,
+                'Ensure the IMDB ID is correct or the content exists on Primewire.',
+                true,
+                true
+            );
+        }
+
+        return info.type === 'tv'
+            ? `${URL}${originalLink.replace('-', '/', 1)}-season-${info.season}-episode-${info.episode}`
+            : `${URL}${originalLink}`;
+    } catch (error) {
+        console.error(`[Primewire] lookupPage error: ${error.message}`);
+        return new ErrorObject(
+            `Error fetching data for IMDB ID: ${imdbId}`,
+            'Primewire',
+            500,
+            "Check the network connection or Primewire's availability.",
+            true,
+            true
+        );
+    }
+}
+
+async function loadServers(link) {
+    try {
+        console.log(`[Primewire] Loading servers from ${link}`);
+        let website = await fetch(link);
+        website = await website.text();
+
+        const $ = cheerio.load(website);
+        const encryptedData = $('#user-data').attr('v');
+        if (!encryptedData) {
+            console.log('[Primewire] No user-data found');
+            return [];
+        }
+        const serverKeys = decryptUserData(encryptedData);
+
+        if (serverKeys.length === 0) {
+            console.log('[Primewire] No server keys found after decryption');
+            return [];
+        }
+
+        // Create URLs from decrypted keys
+        const urls = serverKeys.map((key, i) => {
+            const url = `https://primewire.tf/links/gos/${key}`;
+            console.log(`[Primewire] Server ${i + 1}: key=${key}, url=${url}`);
+            return { url, idx: key };
+        });
+
+        console.log(`[Primewire] Found ${urls.length} server candidates`);
+
+        const embeds = [];
+        for (const item of urls) {
+            try {
+                embeds.push(await fromPrimewireToProvider(item));
+            } catch (err) {
+                console.log(
+                    `[Primewire] Failed extracting from ${item.url}: ${err.message}`
+                );
+            }
+        }
+        console.log(`[Primewire] Found ${embeds.length} servers`);
+        return embeds;
+    } catch (error) {
+        console.error('[Primewire] LoadServers error:', error.message);
+        return new ErrorObject(
+            `Error loading servers for link: ${link}`,
+            'Primewire',
+            500,
+            "Check the link or Primewire's server response.",
+            true,
+            true
+        );
+    }
+}
+
 const BlowfishCipher = function (key, mode) {
     this.key = key;
     if (mode === 'encrypt' || mode === 'cbc') this.mode = mode;
@@ -670,7 +823,13 @@ function decryptUserData(encryptedData) {
             `[Primewire] Extracted ${keys.length} keys: ${keys.join(', ')}`
         );
 
-        return keys;
+        // remove keys that only contain '0'
+        const filteredKeys = keys.filter((k) => k !== '00000' && k !== '0');
+        console.log(
+            `[Primewire] Filtered ${keys.length - filteredKeys.length} keys`
+        );
+
+        return filteredKeys;
     } catch (error) {
         console.error('[Primewire] Decryption failed:', error.message);
         return new ErrorObject(
@@ -678,159 +837,6 @@ function decryptUserData(encryptedData) {
             'Primewire',
             500,
             'Check the page Structure or app.js from the Primewire, or check primewire.js file.',
-            true,
-            true
-        );
-    }
-}
-
-export async function getPrimewire(media) {
-    if (!media.imdb) {
-        return new ErrorObject(
-            'Primewire requires an IMDB ID',
-            'Primewire',
-            500,
-            'Please provide an IMDB ID from the tmdb.js file',
-            true,
-            true
-        );
-    }
-
-    const link = await lookupPage(media);
-    if (link instanceof ErrorObject) {
-        console.log('[Primewire] Lookup returned error:', link);
-        return link;
-    }
-    console.log(`[Primewire] Found page: ${link}`);
-
-    const servers = await loadServers(link);
-    if (servers instanceof ErrorObject) {
-        console.log('[Primewire] loadServers returned error:', servers);
-        return servers;
-    }
-    console.log(`[Primewire] Found ${servers.length} servers`);
-
-    const embeddableServers = await Promise.all(
-        servers.map(async (server, i) => {
-            console.log(`[Primewire] Extracting server ${i + 1}:`, server);
-            const result = await extract(server);
-            if (result instanceof ErrorObject) {
-                console.log(
-                    `[Primewire] Extract failed for server ${i + 1}:`,
-                    result
-                );
-                return result;
-            }
-            return result;
-        })
-    );
-
-    const files = embeddableServers
-        .filter((embedLink) => embedLink && embedLink.file)
-        .map((embedLink) => ({
-            file: embedLink.file,
-            type: embedLink.type,
-            lang: 'en',
-            ...(embedLink.headers && { headers: embedLink.headers })
-        }));
-
-    console.log(`[Primewire] Extracted ${files.length} files`);
-
-    return {
-        files,
-        subtitles: []
-    };
-}
-
-async function lookupPage(info) {
-    const imdbId = info.imdb;
-    const ds = sha1Hex(`${imdbId}${DS_KEY}`).slice(0, 10);
-    console.log(`[Primewire] Lookup: imdb=${imdbId}, ds=${ds}`);
-
-    try {
-        const response = await axios.get(`${URL}/filter`, {
-            params: { s: imdbId, ds }
-        });
-        const $ = cheerio.load(response.data);
-        const originalLink = $(
-            '.index_container .index_item.index_item_ie a'
-        ).attr('href');
-        console.log(`[Primewire] Original link: ${originalLink}`);
-
-        if (!originalLink) {
-            return new ErrorObject(
-                `No search results found for IMDB ID: ${imdbId}`,
-                'Primewire',
-                404,
-                'Ensure the IMDB ID is correct or the content exists on Primewire.',
-                true,
-                true
-            );
-        }
-
-        return info.type === 'tv'
-            ? `${URL}${originalLink.replace('-', '/', 1)}-season-${info.season}-episode-${info.episode}`
-            : `${URL}${originalLink}`;
-    } catch (error) {
-        console.error(`[Primewire] lookupPage error: ${error.message}`);
-        return new ErrorObject(
-            `Error fetching data for IMDB ID: ${imdbId}`,
-            'Primewire',
-            500,
-            "Check the network connection or Primewire's availability.",
-            true,
-            true
-        );
-    }
-}
-
-async function loadServers(link) {
-    try {
-        console.log(`[Primewire] Loading servers from ${link}`);
-        let website = await fetch(link);
-        website = await website.text();
-
-        const $ = cheerio.load(website);
-        const encryptedData = $('#user-data').attr('v');
-        if (!encryptedData) {
-            console.log('[Primewire] No user-data found');
-            return [];
-        }
-        const serverKeys = decryptUserData(encryptedData);
-
-        if (serverKeys.length === 0) {
-            console.log('[Primewire] No server keys found after decryption');
-            return [];
-        }
-
-        // Create URLs from decrypted keys
-        const urls = serverKeys.map((key, i) => {
-            const url = `https://primewire.tf/links/gos/${key}`;
-            console.log(`[Primewire] Server ${i + 1}: key=${key}, url=${url}`);
-            return { url, idx: key };
-        });
-
-        console.log(`[Primewire] Found ${urls.length} server candidates`);
-
-        const embeds = [];
-        for (const item of urls) {
-            try {
-                embeds.push(await fromPrimewireToProvider(item));
-            } catch (err) {
-                console.log(
-                    `[Primewire] Failed extracting from ${item.url}: ${err.message}`
-                );
-            }
-        }
-        console.log(`[Primewire] Found ${embeds.length} servers`);
-        return embeds;
-    } catch (error) {
-        console.error('[Primewire] LoadServers error:', error.message);
-        return new ErrorObject(
-            `Error loading servers for link: ${link}`,
-            'Primewire',
-            500,
-            "Check the link or Primewire's server response.",
             true,
             true
         );
