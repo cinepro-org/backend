@@ -9,6 +9,7 @@ import { ErrorObject } from './helpers/ErrorObject.js';
 import { getVidsrcWtf } from './controllers/providers/VidSrcWtf/VidSrcWtf.js';
 import { getVidZee } from './controllers/providers/VidZee/VidZee.js';
 import { getWyzie } from './controllers/subs/wyzie.js';
+import { getLibre } from './controllers/subs/libresubs.js';
 import { getCacheKey, getFromCache, setToCache } from './cache/cache.js';
 import { get111Movies } from './controllers/providers/111movies/111movies.js';
 import { getCinemaOS } from './controllers/providers/CinemaOS/CinemaOS.js';
@@ -61,7 +62,8 @@ export async function scrapeMedia(media) {
         // { getPrimewire: () => getPrimewire(media) },
 
         // SUB SEARCH
-        { getWyzie: () => getWyzie(media) }
+        { getWyzie: () => getWyzie(media) },
+        { getLibre: () => getLibre(media) }
     ];
 
     const results = await Promise.all(
