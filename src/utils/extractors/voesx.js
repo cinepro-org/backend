@@ -97,7 +97,7 @@ export async function extract_voesx(url) {
             /json">\["([^"]+)"]<\/script>\s*<script\s*src="([^"]+)/
         );
         if (jsonScriptMatch) {
-            console.log('found advanced voe encoding, decoding...');
+            console.log('found voe encoding, decoding...');
             const encodedData = jsonScriptMatch[1];
             const scriptUrl = new URL(jsonScriptMatch[2], embedUrl).href;
 
