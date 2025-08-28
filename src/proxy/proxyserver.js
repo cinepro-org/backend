@@ -256,13 +256,20 @@ export function createProxyRoutes(app) {
                         newLines.push(line);
                     }
                 } else if (line.trim() && !line.startsWith('#')) {
-                    // Handle segment URLs (existing code)
                     try {
                         const segmentUrl = new URL(line, targetUrl).href;
-                        segmentUrls.push(segmentUrl);
 
-                        const proxyUrl = `${baseProxyUrl}/ts-proxy?url=${encodeURIComponent(segmentUrl)}&headers=${encodeURIComponent(JSON.stringify(headers))}`;
-                        newLines.push(proxyUrl);
+                        // Check if this is an m3u8 file (variant playlist) or TS segment
+                        if (/\.m3u8(\?|$)/i.test(segmentUrl)) {
+                            // This is a variant playlist, route to m3u8-proxy
+                            const proxyUrl = `${baseProxyUrl}/m3u8-proxy?url=${encodeURIComponent(segmentUrl)}&headers=${encodeURIComponent(JSON.stringify(headers))}`;
+                            newLines.push(proxyUrl);
+                        } else if (/\.ts(\?|$)/i.test(segmentUrl)) {
+                            // This is a TS segment, route to ts-proxy
+                            segmentUrls.push(segmentUrl);
+                            const proxyUrl = `${baseProxyUrl}/ts-proxy?url=${encodeURIComponent(segmentUrl)}&headers=${encodeURIComponent(JSON.stringify(headers))}`;
+                            newLines.push(proxyUrl);
+                        }
                     } catch {
                         newLines.push(line);
                     }
