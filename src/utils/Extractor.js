@@ -7,6 +7,7 @@ import { extract_filelions } from './extractors/filelions.js';
 import { extract_voesx } from './extractors/voesx.js';
 import { extract_savefiles } from './extractors/savefiles.js';
 import { extract_doodstream } from './extractors/doodstream.js';
+import { extract_dropload } from './extractors/dropload.js';
 
 const streamwish =
     /(?:\/\/|\.)((?:(?:stream|flas|obey|sfast|str|embed|[mads]|cdn|asn|player|hls)?wish(?:embed|fast|only|srv)?|ajmidyad|atabkhha|atabknha|atabknhk|atabknhs|abkrzkr|abkrzkz|vidmoviesb|kharabnahs|hayaatieadhab|cilootv|tuktukcinema|doodporn|ankrzkz|volvovideo|strmwis|ankrznm|yadmalik|khadhnayad|eghjrutf|eghzrutw|playembed|egsyxurh|egtpgrvh|uqloads|javsw|cinemathek|trgsfjll|fsdcmo|anime4low|mohahhda|ma2d|dancima|swhoi|gsfqzmqu|jodwish|swdyu|katomen|iplayerhls|hlsflast|4yftwvrdz7|ghbrisk)\.(?:com|to|sbs|pro|xyz|store|top|site|online|me|shop|fun))(?:\/e\/|\/f\/|\/d\/)?([0-9a-zA-Z$:\/.]+)/;
@@ -25,6 +26,8 @@ const savefiles =
     /(?:\/\/|\.)(?:savefiles|streamhls)\.(?:com|to)\/(?:e\/)?([0-9a-zA-Z]+)/;
 const doodstream =
     /(?:\/\/|\.)((?:do*0*o*0*ds?(?:tream|ter|cdn)?|ds2(?:play|video)|v*id(?:ply|e0)|all3do|d-s|do(?:7go|ply))\.(?:[cit]om?|watch|s[ho]|cx|l[ai]|w[sf]|pm|re|yt|stream|pro|work|net))\/(?:d|e)\/([0-9a-zA-Z]+)/;
+const dropload =
+    /(?:\/\/|\.)(dropload\.io|dropload\.tv)\/(?:embed-|e\/|d\/)?([0-9a-zA-Z]+)/;
 
 export async function extract(url, DOMAIN = '') {
     if (streamwish.test(url)) {
@@ -97,6 +100,16 @@ export async function extract(url, DOMAIN = '') {
             file: data.file,
             type: data.type,
             headers: data.headers
+        };
+    } else if (dropload.test(url)) {
+        let data = await extract_dropload(url);
+        if (data instanceof ErrorObject) {
+            return data;
+        }
+        return {
+            file: data.file,
+            type: data.type,
+            quality: data.quality
         };
     }
 

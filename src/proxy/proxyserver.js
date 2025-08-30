@@ -497,6 +497,64 @@ export function createProxyRoutes(app) {
             res.status(500).json({ error: error.message });
         }
     });
+    // subtitle Proxy endpoint
+    app.get('/sub-proxy', cors(), async (req, res) => {
+        const targetUrl = req.query.url;
+        let headers = {};
+
+        try {
+            headers = JSON.parse(req.query.headers || '{}');
+        } catch (e) {
+            console.log(
+                'invalid headers JSON for subtitle proxy:',
+                req.query.headers
+            );
+        }
+
+        if (!targetUrl) {
+            return res.status(400).json({ error: 'url parameter required' });
+        }
+
+        try {
+            console.log(`subtitle proxy fetching: ${targetUrl}`);
+
+            const response = await fetch(targetUrl, {
+                headers: {
+                    'User-Agent': DEFAULT_USER_AGENT,
+                    ...headers
+                }
+            });
+
+            console.log(
+                `subtitle proxy response: ${response.status} ${response.statusText}`
+            );
+            if (!response.ok) {
+                return res.status(response.status).json({
+                    error: `subtitle fetch failed: ${response.status}`
+                });
+            }
+
+            // Copy the content type from the upstream response
+            res.setHeader(
+                'Content-Type',
+                response.headers.get('content-type') || 'text/vtt'
+            );
+            res.setHeader('Access-Control-Allow-Origin', '*');
+            res.setHeader('Access-Control-Allow-Headers', '*');
+            res.setHeader('Access-Control-Allow-Methods', '*');
+            res.setHeader('Cache-Control', 'public, max-age=3600');
+            res.setHeader(
+                'Content-Disposition',
+                'inline; filename="subtitle.vtt"'
+            );
+
+            // stream directly
+            response.body.pipe(res);
+        } catch (error) {
+            console.error('[Subtitle Proxy Error]:', error.message);
+            res.status(500).json({ error: error.message });
+        }
+    });
 }
 
 export function processApiResponse(apiResponse, serverUrl) {
@@ -551,9 +609,20 @@ export function processApiResponse(apiResponse, serverUrl) {
         }
     });
 
+    const processedSubtitles = (apiResponse.subtitles || []).map((sub) => {
+        if (!sub.url || typeof sub.url !== 'string') return sub;
+
+        const localProxyUrl = `${serverUrl}/sub-proxy?url=${encodeURIComponent(sub.url)}`;
+        return {
+            ...sub,
+            url: localProxyUrl
+        };
+    });
+
     return {
         ...apiResponse,
-        files: processedFiles
+        files: processedFiles,
+        subtitles: processedSubtitles
     };
 }
 
