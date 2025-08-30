@@ -235,7 +235,7 @@ function scrapeSourcesFromHtml(html, baseUrl) {
         html += packedData;
     }
 
-    // pattern 1: sources:[{file: "url"}]
+    // sources:[{file: "url"}]
     const sourcesPattern1 = /sources:\s*\[{\s*file:\s*["']([^"']+)["']/g;
     let match;
 
@@ -261,7 +261,7 @@ function scrapeSourcesFromHtml(html, baseUrl) {
         }
     }
 
-    // pattern 3: generic file patterns
+    // generic file patterns
     const genericPatterns = [
         /["']?file["']?\s*[:=]\s*["']([^"']+)["']/g,
         /["']?src["']?\s*[:=]\s*["']([^"']+)["']/g,
