@@ -152,3 +152,5 @@ export async function scrapeMedia(media) {
 
     return finalResult;
 }
+
+export default { scrapeMedia };
