@@ -3,3 +3,4 @@ dist
 build
 *.d.ts
 package-lock.json
+/.github/workflows/

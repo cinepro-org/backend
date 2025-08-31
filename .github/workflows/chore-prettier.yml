@@ -10,7 +10,6 @@ on:
 
 permissions:
     contents: write
-    workflows: write
 
 jobs:
     chore-prettier:
@@ -28,7 +27,7 @@ jobs:
 
             - name: Format JSON files using Prettier
               run: |
-                  prettier --write .
+                  prettier --write . --ignore-path .prettierignore
 
             - name: Commit and push changes
               run: |
