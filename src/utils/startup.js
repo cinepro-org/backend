@@ -3,6 +3,7 @@ import { ErrorObject } from '../helpers/ErrorObject.js';
 export function startup() {
     // check required env keys
     const TMDB_API_KEY = process.env.TMDB_API_KEY;
+    // console.log('Startup.js');
     if (!TMDB_API_KEY) {
         throw new ErrorObject(
             'Missing TMDB_API_KEY environment variable',
