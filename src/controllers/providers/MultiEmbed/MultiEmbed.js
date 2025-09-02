@@ -91,17 +91,20 @@ export async function getMultiembed(params) {
         );
         console.log(
             '\n=== Response 2 HTML snippet ===\n',
-            resp2.data.substring(0, 500)
+            resp2.data.substring(0, 2500)
         );
         const $ = cheerio.load(resp2.data);
 
+        // pick first vipstream source with data-id (B or S)
         const vipSource = $('li')
-            .filter((i, el) =>
-                $(el).text().toLowerCase().includes('vipstream-s')
-            )
+            .filter((i, el) => {
+                const txt = $(el).text().toLowerCase();
+                return txt.includes('vipstream') && $(el).attr('data-id');
+            })
             .first();
-        if (!vipSource || !vipSource.attr('data-id'))
-            throw new Error('No VIP source found');
+
+        if (!vipSource.length)
+            throw new Error('No VIP source (B/S) found with valid data-id');
 
         const serverId = vipSource.attr('data-server');
         const videoId = vipSource.attr('data-id');
@@ -109,57 +112,92 @@ export async function getMultiembed(params) {
         const vipUrl = `https://streamingnow.mov/playvideo.php?video_id=${videoId}&server_id=${serverId}&token=${token}&init=1`;
         const resp3 = await axios.get(vipUrl, { headers });
         const $2 = cheerio.load(resp3.data);
-        const iframeUrl = $2('iframe.source-frame.show').attr('src');
-        if (!iframeUrl) throw new Error('No iframe found');
+        let iframeUrl = $2('iframe.source-frame.show').attr('src');
+
+        // fallback: any iframe with src
+        if (!iframeUrl) {
+            iframeUrl = $2('iframe.source-frame').attr('src');
+        }
+
+        if (!iframeUrl || iframeUrl.trim() === '') {
+            throw new Error(
+                'Iframe src is empty — server may need JS init or different server'
+            );
+        }
 
         const resp4 = await axios.get(iframeUrl, { headers });
 
+        // Try hunter pack first
         const hunterMatch = resp4.data.match(
             /\(\s*function\s*\([^\)]*\)\s*\{[\s\S]*?\}\s*\(\s*(.*?)\s*\)\s*\)/
         );
 
-        if (!hunterMatch) throw new Error('Cannot find encoded HUNTER Pack');
+        let videoUrl = null;
 
-        const hunterPack = hunterMatch[1];
-        console.log('Hunter pack string:', hunterPack);
-
-        let dataArray;
-        try {
-            dataArray = new Function('return [' + hunterPack + ']')();
-        } catch (evalError) {
+        if (hunterMatch) {
+            // old method
+            console.log('Hunter pack string:', hunterMatch[1]);
+            let dataArray;
             try {
-                dataArray = eval('[' + hunterPack + ']');
-            } catch (fallbackError) {
+                dataArray = new Function('return [' + hunterMatch[1] + ']')();
+            } catch (evalError) {
+                try {
+                    dataArray = eval('[' + hunterMatch[1] + ']');
+                } catch (fallbackError) {
+                    throw new Error(
+                        `Failed to parse hunter pack: ${fallbackError.message}`
+                    );
+                }
+            }
+
+            if (!Array.isArray(dataArray) || dataArray.length < 6) {
                 throw new Error(
-                    `Failed to parse hunter pack: ${fallbackError.message}`
+                    `Invalid hunter pack structure. Expected array with 6+ elements, got: ${typeof dataArray}`
                 );
+            }
+
+            const [h, u, n, t, e, r] = dataArray;
+
+            console.log('Hunter parameters:', {
+                h: typeof h,
+                u: typeof u,
+                n: typeof n,
+                t: typeof t,
+                e: typeof e,
+                r: typeof r
+            });
+
+            const decoded = decodeHunter(h, u, n, t, e, r);
+            console.log('Decoded content preview:', decoded.substring(0, 200));
+
+            const videoMatch = decoded.match(/file:"(https?:\/\/[^"]+)"/);
+            if (videoMatch) {
+                videoUrl = videoMatch[1];
             }
         }
 
-        if (!Array.isArray(dataArray) || dataArray.length < 6) {
-            throw new Error(
-                `Invalid hunter pack structure. Expected array with 6+ elements, got: ${typeof dataArray}`
-            );
+        // If hunter pack didn’t give us a video, try direct file pattern
+        if (!videoUrl) {
+            const fileMatch = resp4.data.match(/file\s*:\s*"([^"]+)"/);
+            if (fileMatch) {
+                let rawUrl = fileMatch[1];
+                // If it's a proxy with src param, extract and decode
+                const proxySrcMatch = rawUrl.match(/src=([^&]+)/);
+                if (proxySrcMatch) {
+                    rawUrl = decodeURIComponent(proxySrcMatch[1]);
+                }
+                videoUrl = rawUrl;
+            }
         }
 
-        const [h, u, n, t, e, r] = dataArray;
-
-        console.log('Hunter parameters:', {
-            h: typeof h,
-            u: typeof u,
-            n: typeof n,
-            t: typeof t,
-            e: typeof e,
-            r: typeof r
-        });
-
-        const decoded = decodeHunter(h, u, n, t, e, r);
-        console.log('Decoded content preview:', decoded.substring(0, 200));
-
-        const videoMatch = decoded.match(/file:"(https?:\/\/[^"]+)"/);
-        if (!videoMatch)
-            throw new Error('No video URL found in decoded content');
-        const videoUrl = videoMatch[1];
+        // If still no video URL, throw
+        if (!videoUrl) {
+            console.error(
+                '\n[Multiembed] Warning: Neither hunter pack nor direct file URL found in iframe HTML preview:\n',
+                resp4.data.substring(0, 500)
+            );
+            throw new Error('No video URL found');
+        }
 
         return {
             files: {
