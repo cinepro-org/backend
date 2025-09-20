@@ -21,6 +21,9 @@ export async function getVidsrcWtf(media) {
         method: 'GET',
         headers: headers
     });
+
+    // console.log('response status:', response.status);
+
     if (!response.ok) {
         return new ErrorObject(
             'Error fetching data from VidSrcWtf',
@@ -34,7 +37,10 @@ export async function getVidsrcWtf(media) {
 
     let data = await response.json();
 
+    // console.log('raw data:', data);
+
     if (data.stream?.url === undefined || data.stream?.url === null) {
+        console.log('no stream url found in data:', data);
         return new ErrorObject(
             'No stream URL found',
             'VidSrcWtf',
@@ -44,6 +50,8 @@ export async function getVidsrcWtf(media) {
             false
         );
     }
+
+    // console.log('final stream url:', data.stream.url);
 
     return {
         files: {

@@ -4,14 +4,17 @@ import axios from 'axios';
 import { atob, Buffer } from 'buffer';
 import { URL } from 'url';
 import base64 from 'base-64';
+import got from 'cloudflare-scraper';
 import { ErrorObject } from '../../../helpers/ErrorObject.js';
 
 const URI = 'https://vidsrc.xyz';
 const HOST_URL = 'https://cloudnestra.com';
+export const VIDSRC_HLS_ORIGIN = 'tmstr4.shadowlandschronicles.com';
 
 const IFRAME2_SRC_RE = /id="player_iframe" src="(?<url>[^"]+)"/;
 const IFRAME3_SRC_RE = /src: '(?<url>\/prorcp\/[^']+)'/;
-const PARAMS_RE = /<div id="(?<id>[^"]+)" style="display:none;">(?<content>[^>]+)<\/div>/;
+const PARAMS_RE =
+    /<div id="(?<id>[^"]+)" style="display:none;">(?<content>[^>]+)<\/div>/;
 const FILE_RE = /player_parent.*?file:.*?'(.*?)'.*?cuid/;
 
 export async function getVidSrc(media) {
@@ -59,20 +62,42 @@ export async function getVidSrc(media) {
         }
         const thirdUrl = new URL(thirdUrlMatch.groups.url, HOST_URL).toString();
 
-        const iframeHtml3 = (
-            await client.get(thirdUrl, {
-                headers: {
-                    Referer: secondUrl
-                }
-            })
-        ).data;
-
-        console.log(iframeHtml3);
-
-        /*
-        * TODO: Implement cloudflare resolve.
-        * after making a too many requests in a short period to the thirdUrl it will sometimes need a cloudflare resolve. 
-        */
+        let iframeHtml3;
+        try {
+            // Try normal axios first (fastest)
+            iframeHtml3 = (
+                await client.get(thirdUrl, {
+                    headers: {
+                        Referer: secondUrl,
+                        'User-Agent':
+                            'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+                    }
+                })
+            ).data;
+            console.log('Using Axios: ', iframeHtml3);
+        } catch (err) {
+            // If blocked by Cloudflare, fallback to cloudflare-scraper
+            try {
+                const response = await got.get(thirdUrl, {
+                    headers: {
+                        Referer: secondUrl,
+                        'User-Agent':
+                            'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+                    }
+                });
+                iframeHtml3 = response.body;
+                console.log('Using Cloudfare-Scraper', iframeHtml3);
+            } catch (cfErr) {
+                return new ErrorObject(
+                    `Cloudflare block: ${cfErr.message}`,
+                    'VidSrc',
+                    403,
+                    'Blocked by Cloudflare, try again later.',
+                    true,
+                    true
+                );
+            }
+        }
 
         const paramsMatch = iframeHtml3.match(PARAMS_RE);
         if (!paramsMatch) {
@@ -102,7 +127,6 @@ export async function getVidSrc(media) {
                         true
                     );
                 }
-
             } catch (e) {
                 return new ErrorObject(
                     'No media in third iframe found',
@@ -113,7 +137,6 @@ export async function getVidSrc(media) {
                     true
                 );
             }
-
         }
         const { id: decoderId, content } = paramsMatch.groups;
 

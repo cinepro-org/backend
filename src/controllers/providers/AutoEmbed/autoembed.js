@@ -18,8 +18,8 @@ export async function getAutoembed(media) {
     let { tmdb, season, episode, type } = media;
     const url =
         type === 'tv'
-            ? `https://player.vidsrc.co/api/server?id=${tmdb}&ss=${season}&ep=${episode}`
-            : `https://player.vidsrc.co/api/server?id=${tmdb}`;
+            ? `https://test.autoembed.cc/api/server?id=${tmdb}&ss=${season}&ep=${episode}`
+            : `https://test.autoembed.cc/api/server?id=${tmdb}`;
 
     let files = [];
     let subtitles = [];
@@ -52,30 +52,46 @@ export async function getAutoembed(media) {
                 continue;
             }
             let encObj = await response.json();
+
+            // console.log(encObj);
+
             const data = decryptData(encObj.data); // Decrypt the data
-            // let data2 = decrypt(encObj.data);
-            return new ErrorObject(
-                'Data Decryption is not yet implemented',
-                'AutoEmbed/vidsrc.co',
-                500,
-                'could someone pls fix this. thanksss',
-                true,
-                false
-            );
+
+            // Extract the actual direct URL from the decrypted data
+            let directUrl = data.url;
+
+            // If the URL contains embed-proxy or other proxy patterns, extract the real URL
+            if (directUrl.includes('embed-proxy')) {
+                try {
+                    // Extract from patterns like /api/embed-proxy?url=ENCODED_URL
+                    const urlMatch = directUrl.match(/[?&]url=([^&]+)/);
+                    if (urlMatch) {
+                        directUrl = decodeURIComponent(urlMatch[1]);
+                    }
+                } catch (e) {
+                    console.log('Failed to extract direct URL:', e.message);
+                }
+            }
+
             files.push({
-                file: data.url,
-                type: data.url.includes('mp4') ? 'mp4' : 'hls',
+                file: directUrl,
+                type: directUrl.includes('mp4') ? 'mp4' : 'hls',
                 lang: currentLang
             });
 
             if (data.tracks) {
-                // TODO: implement subtitles
+                data.tracks.forEach((track) => {
+                    subtitles.push({
+                        lang: track.lang || 'unknown',
+                        url: track.file
+                    });
+                });
             }
         }
 
         return { files, subtitles };
     } catch (error) {
-        console.error('Error:', error); // Log the error for debugging
+        // console.error('Error:', error); // Log the error for debugging
         return new ErrorObject(
             `Unexpected error: ${error.message}`,
             'AutoEmbed/vidsrc.co',
@@ -88,26 +104,32 @@ export async function getAutoembed(media) {
 }
 
 // Decrypt function
-function decryptData(encryptedObject) {
-    // Convert base64 encoded string to JSON object
-    encryptedObject = JSON.parse(
-        Buffer.from(encryptedObject, 'base64').toString('utf8')
+function decryptData(encryptedObjectB64) {
+    const encryptedObject = JSON.parse(
+        Buffer.from(encryptedObjectB64, 'base64').toString('utf8')
     );
-    const { algorithm, key, iv, encryptedData } = encryptedObject;
 
-    const keyBuffer = Buffer.from(key, 'hex');
+    const { algorithm, key, iv, salt, iterations, encryptedData } =
+        encryptedObject;
+
+    // Derive the actual AES key using PBKDF2
+    const derivedKey = crypto.pbkdf2Sync(
+        key, // password
+        Buffer.from(salt, 'hex'), // salt
+        iterations, // iterations
+        32, // key length = 32 bytes (AES-256)
+        'sha256' // hash
+    );
+
     const ivBuffer = Buffer.from(iv, 'hex');
+    const decipher = crypto.createDecipheriv(algorithm, derivedKey, ivBuffer);
 
-    const decipher = crypto.createDecipheriv(algorithm, keyBuffer, ivBuffer);
+    let decrypted =
+        decipher.update(encryptedData, 'base64', 'utf8') +
+        decipher.final('utf8');
 
-    let decrypted = decipher.update(
-        Buffer.from(encryptedData, 'base64'),
-        'utf8',
-        'utf8'
-    );
-    decrypted += decipher.final('utf8');
-
-    return JSON.parse(decrypted); // Assuming decrypted data is in JSON format
+    // console.log("Decrypted:", decrypted);
+    return JSON.parse(decrypted);
 }
 
 function getCurrentPeriod() {

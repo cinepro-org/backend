@@ -13,8 +13,11 @@ import {
 } from './src/helpers/helper.js';
 import { ErrorObject } from './src/helpers/ErrorObject.js';
 import { getCacheStats } from './src/cache/cache.js';
+import { startup } from './src/utils/startup.js';
+import { fileURLToPath } from 'url';
 
 const PORT = process.env.PORT;
+// console.log(PORT);
 const allowedOrigins = ['https://cinepro.mintlify.app/']; // localhost is also allowed. (from any localhost port)
 const app = express();
 
@@ -161,14 +164,22 @@ app.get('*', (req, res) => {
         )
     );
 });
+const isMain = process.argv[1] === fileURLToPath(import.meta.url);
 
-app.listen(PORT, () => {
-    console.log(`Server is running on port http://localhost:${PORT};`);
-    if (process.argv.includes('--debug')) {
-        console.log(`Debug mode is enabled.`);
-        console.log('Cache is disabled.');
-    } else {
-        console.log('Debug mode is disabled.');
-        console.log('Cache is enabled.');
-    }
-});
+// console.log('isMain:', isMain);
+
+if (isMain) {
+    startup();
+    app.listen(PORT, () => {
+        console.log(`Server is running on port http://localhost:${PORT};`);
+        if (process.argv.includes('--debug')) {
+            console.log(`Debug mode is enabled.`);
+            console.log('Cache is disabled.');
+        } else {
+            console.log('Debug mode is disabled.');
+            console.log('Cache is enabled.');
+        }
+    });
+}
+
+export default app;

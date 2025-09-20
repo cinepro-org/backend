@@ -288,17 +288,17 @@ function encrypted(id) {
  * Generates vrf token from the wasm module.
  * I'm not sure about the vrf token expiration time. It can be cached.
  * @param {string} movieId
+ * @param userId
  * @returns {Promise<string>}
  */
 
 // we should probably try to pass the userID from the vidsrc.cc page
 
-export async function generateVRF(movieId) {
+export async function generateVRF(movieId, userId) {
     const encoder = new TextEncoder();
-    // we should probably try to pass the userID from the vidsrc.cc page
     const keyData = await crypto.subtle.digest(
         'SHA-256',
-        encoder.encode('Bh0IPAQjGH0FIwB5Bxp9MAQjEA')
+        encoder.encode(userId) // Use dynamic userId instead of hardcoded key
     );
 
     const key = await crypto.subtle.importKey(

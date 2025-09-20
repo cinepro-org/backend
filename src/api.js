@@ -9,7 +9,11 @@ import { ErrorObject } from './helpers/ErrorObject.js';
 import { getVidsrcWtf } from './controllers/providers/VidSrcWtf/VidSrcWtf.js';
 import { getVidZee } from './controllers/providers/VidZee/VidZee.js';
 import { getWyzie } from './controllers/subs/wyzie.js';
+import { getLibre } from './controllers/subs/libresubs.js';
 import { getCacheKey, getFromCache, setToCache } from './cache/cache.js';
+import { get111Movies } from './controllers/providers/111movies/111movies.js';
+import { getCinemaOS } from './controllers/providers/CinemaOS/CinemaOS.js';
+import { getMultiembed } from './controllers/providers/MultiEmbed/MultiEmbed.js';
 
 const shouldDebug = process.argv.includes('--debug');
 
@@ -38,16 +42,28 @@ export async function scrapeMedia(media) {
         );
     }
     const providers = [
+        // WORKING
         { getTwoEmbed: () => getTwoEmbed(media) },
         { getAutoembed: () => getAutoembed(media) },
-        { getPrimewire: () => getPrimewire(media) },
+        { get111Movies: () => get111Movies(media) },
         { getVidSrcCC: () => getVidSrcCC(media) },
         { getVidSrc: () => getVidSrc(media) },
         { getVidrock: () => getVidRock(media) },
-        { getXprime: () => getXprime(media) },
+        { getCinemaOS: () => getCinemaOS(media) },
+        { getMultiembed: () => getMultiembed(media) },
         { getVidsrcWtf: () => getVidsrcWtf(media) },
+
+        // It does need to fixed but it acts like it is down sometimes throws 520 or 524 so,
+        // You got my point right ?
         { getVidZee: () => getVidZee(media) },
-        { getWyzie: () => getWyzie(media) }
+
+        // NEED TO FIX
+        // { getXprime: () => getXprime(media) },
+        // { getPrimewire: () => getPrimewire(media) },
+
+        // SUB SEARCH
+        { getWyzie: () => getWyzie(media) },
+        { getLibre: () => getLibre(media) }
     ];
 
     const results = await Promise.all(
@@ -136,3 +152,5 @@ export async function scrapeMedia(media) {
 
     return finalResult;
 }
+
+export default { scrapeMedia };

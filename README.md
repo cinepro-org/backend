@@ -39,20 +39,20 @@ Both routes return a JSON object with the following structure:
 
 ```json
 {
-  "files": [
-    {
-      "file": "url",
-      "type": "file type (hls, mp4, embed)",
-      "lang": "(Specify language using an ISO standard; refer to utils/languages.js for available languages)"
-    }
-  ],
-  "subtitles": [
-    {
-      "url": "the url to the file",
-      "lang": "the language of the subtitle file (use an ISO standard)",
-      "type": "subtitleType (srt, vtt, etc.)"
-    }
-  ]
+    "files": [
+        {
+            "file": "url",
+            "type": "file type (hls, mp4, embed)",
+            "lang": "(Specify language using an ISO standard; refer to utils/languages.js for available languages)"
+        }
+    ],
+    "subtitles": [
+        {
+            "url": "the url to the file",
+            "lang": "the language of the subtitle file (use an ISO standard)",
+            "type": "subtitleType (srt, vtt, etc.)"
+        }
+    ]
 }
 ```
 
@@ -89,30 +89,30 @@ GET /movie/718930 HTTP/1.1
 
 ```json
 {
-  "files": [
-    {
-      "file": "https://example.com/file.mp4",
-      "type": "mp4",
-      "lang": "en"
-    },
-    {
-      "file": "https://example.com/file.m3u8",
-      "type": "hls",
-      "lang": "en"
-    },
-    {
-      "file": "https://example.com/embed",
-      "type": "embed",
-      "lang": "en"
-    }
-  ],
-  "subtitles": [
-    {
-      "url": "https://example.com/subtitle.srt",
-      "lang": "en",
-      "type": "srt"
-    }
-  ]
+    "files": [
+        {
+            "file": "https://example.com/file.mp4",
+            "type": "mp4",
+            "lang": "en"
+        },
+        {
+            "file": "https://example.com/file.m3u8",
+            "type": "hls",
+            "lang": "en"
+        },
+        {
+            "file": "https://example.com/embed",
+            "type": "embed",
+            "lang": "en"
+        }
+    ],
+    "subtitles": [
+        {
+            "url": "https://example.com/subtitle.srt",
+            "lang": "en",
+            "type": "srt"
+        }
+    ]
 }
 ```
 
@@ -125,26 +125,28 @@ The API is documented using the OpenAPI 3.0 specification. The specification fil
 You can use various tools to view and interact with the API documentation:
 
 1. **Swagger UI**: You can use the Swagger UI to view and test the API endpoints.
-   - Install Swagger UI globally: `npm install -g swagger-ui-cli`
-   - Run: `swagger-ui-cli serve openapi.yaml`
-   - Open your browser at the provided URL
+    - Install Swagger UI globally: `npm install -g swagger-ui-cli`
+    - Run: `swagger-ui-cli serve openapi.yaml`
+    - Open your browser at the provided URL
 
 2. **Redoc**: Another option for viewing the API documentation.
-   - Install Redoc globally: `npm install -g redoc-cli`
-   - Run: `redoc-cli serve openapi.yaml`
-   - Open your browser at the provided URL
+    - Install Redoc globally: `npm install -g redoc-cli`
+    - Run: `redoc-cli serve openapi.yaml`
+    - Open your browser at the provided URL
 
 3. **Online Editors**: You can also use online editors like [Swagger Editor](https://editor.swagger.io/) or [Stoplight Studio](https://stoplight.io/studio) by uploading the `openapi.yaml` file.
 
 ### Using the Documentation
 
 The OpenAPI specification provides detailed information about:
+
 - Available endpoints
 - Request parameters
 - Response schemas
 - Error responses
 
 This can be useful for:
+
 - Understanding the API structure
 - Generating client libraries
 - Testing the API
