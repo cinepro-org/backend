@@ -34,11 +34,19 @@ function customEncode(input) {
 }
 
 export async function get111Movies(params) {
-    const { tmdb, season, episode } = params;
-    const pageUrl =
-        season && episode
-            ? `${DOMAIN}/movie/${tmdb}?s=${season}&e=${episode}`
-            : `${DOMAIN}/movie/${tmdb}`;
+    const { tmdb, imdb, season, episode } = params;
+
+    let pageUrl;
+
+    if (season && episode) {
+        // TV
+        const id = imdb || tmdb; // prefer imdb if available
+        pageUrl = `${DOMAIN}/tv/${id}/${season}/${episode}`;
+    } else {
+        // Movie
+        const id = imdb || tmdb;
+        pageUrl = `${DOMAIN}/movie/${id}`;
+    }
 
     try {
         // Fetch page
