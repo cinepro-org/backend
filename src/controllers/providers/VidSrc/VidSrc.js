@@ -74,7 +74,6 @@ export async function getVidSrc(media) {
                     }
                 })
             ).data;
-            console.log('Using Axios: ', iframeHtml3);
         } catch (err) {
             // If blocked by Cloudflare, fallback to cloudflare-scraper
             try {
@@ -86,7 +85,6 @@ export async function getVidSrc(media) {
                     }
                 });
                 iframeHtml3 = response.body;
-                console.log('Using Cloudfare-Scraper', iframeHtml3);
             } catch (cfErr) {
                 return new ErrorObject(
                     `Cloudflare block: ${cfErr.message}`,

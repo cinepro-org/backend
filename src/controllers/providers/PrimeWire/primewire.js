@@ -27,27 +27,18 @@ export async function getPrimewire(media) {
 
     const link = await lookupPage(media);
     if (link instanceof ErrorObject) {
-        console.log('[Primewire] Lookup returned error:', link);
         return link;
     }
-    console.log(`[Primewire] Found page: ${link}`);
 
     const servers = await loadServers(link);
     if (servers instanceof ErrorObject) {
-        console.log('[Primewire] loadServers returned error:', servers);
         return servers;
     }
-    console.log(`[Primewire] Found ${servers.length} servers`);
 
     const embeddableServers = await Promise.all(
         servers.map(async (server, i) => {
-            console.log(`[Primewire] Extracting server ${i + 1}:`, server);
             const result = await extract(server);
             if (result instanceof ErrorObject) {
-                console.log(
-                    `[Primewire] Extract failed for server ${i + 1}:`,
-                    result
-                );
                 return result;
             }
             return result;
@@ -63,8 +54,6 @@ export async function getPrimewire(media) {
             ...(embedLink.headers && { headers: embedLink.headers })
         }));
 
-    console.log(`[Primewire] Extracted ${files.length} files`);
-
     return {
         files,
         subtitles: []
@@ -74,7 +63,6 @@ export async function getPrimewire(media) {
 async function lookupPage(info) {
     const imdbId = info.imdb;
     const ds = sha1Hex(`${imdbId}${DS_KEY}`).slice(0, 10);
-    console.log(`[Primewire] Lookup: imdb=${imdbId}, ds=${ds}`);
 
     try {
         const response = await axios.get(`${URL}/filter`, {
@@ -84,7 +72,6 @@ async function lookupPage(info) {
         const originalLink = $(
             '.index_container .index_item.index_item_ie a'
         ).attr('href');
-        console.log(`[Primewire] Original link: ${originalLink}`);
 
         if (!originalLink) {
             return new ErrorObject(
@@ -115,43 +102,36 @@ async function lookupPage(info) {
 
 async function loadServers(link) {
     try {
-        console.log(`[Primewire] Loading servers from ${link}`);
         let website = await fetch(link);
         website = await website.text();
 
         const $ = cheerio.load(website);
         const encryptedData = $('#user-data').attr('v');
         if (!encryptedData) {
-            console.log('[Primewire] No user-data found');
             return [];
         }
         const serverKeys = decryptUserData(encryptedData);
 
         if (serverKeys.length === 0) {
-            console.log('[Primewire] No server keys found after decryption');
             return [];
         }
 
         // Create URLs from decrypted keys
         const urls = serverKeys.map((key, i) => {
             const url = `https://primewire.tf/links/gos/${key}`;
-            console.log(`[Primewire] Server ${i + 1}: key=${key}, url=${url}`);
+
             return { url, idx: key };
         });
-
-        console.log(`[Primewire] Found ${urls.length} server candidates`);
 
         const embeds = [];
         for (const item of urls) {
             try {
                 embeds.push(await fromPrimewireToProvider(item));
             } catch (err) {
-                console.log(
-                    `[Primewire] Failed extracting from ${item.url}: ${err.message}`
-                );
+                throw err;
             }
         }
-        console.log(`[Primewire] Found ${embeds.length} servers`);
+
         return embeds;
     } catch (error) {
         console.error('[Primewire] LoadServers error:', error.message);
@@ -801,16 +781,10 @@ BlowfishCipher.pArray = [
 ];
 
 function decryptUserData(encryptedData) {
-    console.log(
-        `[Primewire] Decrypting user data: ${encryptedData.substring(0, 20)}...`
-    );
-
     try {
         // Extract key (last 10 chars) and data (rest)
         const key = encryptedData.slice(-10);
         const data = encryptedData.slice(0, -10);
-
-        console.log(`[Primewire] Decryption key: ${key}`);
 
         const blowfish = new BlowfishCipher(key, 'encrypt');
         const decoded = blowfish.base64Decode(data); // base64 decode first
@@ -819,15 +793,9 @@ function decryptUserData(encryptedData) {
 
         // Split into 5-character chunks
         const keys = trimmed.match(/.{1,5}/g) || [];
-        console.log(
-            `[Primewire] Extracted ${keys.length} keys: ${keys.join(', ')}`
-        );
 
         // remove keys that only contain '0'
         const filteredKeys = keys.filter((k) => k !== '00000' && k !== '0');
-        console.log(
-            `[Primewire] Filtered ${keys.length - filteredKeys.length} keys`
-        );
 
         return filteredKeys;
     } catch (error) {
@@ -848,7 +816,6 @@ function sha1Hex(str) {
 }
 
 async function fromPrimewireToProvider(primwireObject) {
-    console.log(`[Primewire] Fetching provider for idx=${primwireObject.idx}`);
     const response = await axios.get(primwireObject.url);
 
     let javascriptfile = response.data.match(
@@ -856,7 +823,6 @@ async function fromPrimewireToProvider(primwireObject) {
     );
     if (javascriptfile) {
         javascriptfile = javascriptfile[1];
-        console.log(`[Primewire] Found JS file: app-${javascriptfile}`);
 
         const jsfiledata = await axios.get(
             `https://primewire.tf/js/app-${javascriptfile}`
@@ -866,15 +832,12 @@ async function fromPrimewireToProvider(primwireObject) {
         );
         if (token) {
             token = token[1];
-            console.log(`[Primewire] Extracted token: ${token}`);
         }
 
         let mediaobject = await axios.get(
             `https://primewire.tf/links/go/${primwireObject.idx}?token=${token}&embed=true`
         );
-        console.log(
-            `[Primewire] Media link for idx=${primwireObject.idx}: ${mediaobject.data.link}`
-        );
+
         return mediaobject.data.link;
     }
 

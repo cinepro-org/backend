@@ -53,8 +53,6 @@ export async function getAutoembed(media) {
             }
             let encObj = await response.json();
 
-            // console.log(encObj);
-
             const data = decryptData(encObj.data); // Decrypt the data
 
             // Extract the actual direct URL from the decrypted data
@@ -69,7 +67,10 @@ export async function getAutoembed(media) {
                         directUrl = decodeURIComponent(urlMatch[1]);
                     }
                 } catch (e) {
-                    console.log('Failed to extract direct URL:', e.message);
+                    throw new Error(
+                        'Failed to extract direct URL from proxy link: ' +
+                            e.message
+                    );
                 }
             }
 
@@ -128,7 +129,6 @@ function decryptData(encryptedObjectB64) {
         decipher.update(encryptedData, 'base64', 'utf8') +
         decipher.final('utf8');
 
-    // console.log("Decrypted:", decrypted);
     return JSON.parse(decrypted);
 }
 
@@ -205,7 +205,7 @@ function decryptWithPassword(e) {
             })
             .toString(ex().enc.Utf8);
     if (!o) throw Error('Decryption failed: Invalid key or malformed data.');
-    return (console.log('Decrypted JSON String:', o), JSON.parse(o));
+    return JSON.parse(o);
 }
 
 // Utility function for encryption

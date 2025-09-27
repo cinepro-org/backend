@@ -6,8 +6,6 @@ import { ErrorObject } from '../../helpers/ErrorObject.js';
 // https://github.com/Gujal00/ResolveURL/blob/master/script.module.resolveurl/lib/resolveurl/plugins/savefiles.py
 export async function extract_savefiles(url) {
     try {
-        console.log('starting savefiles extraction for:', url);
-
         // extract hostname from url
         const hostname = url.match(/https?:\/\/([^\/]+)/)?.[1];
         if (!hostname) {
@@ -27,7 +25,6 @@ export async function extract_savefiles(url) {
         const match = url.match(pattern);
 
         if (!match) {
-            console.log('url does not match savefiles pattern');
             return new ErrorObject(
                 'URL pattern not supported',
                 'SaveFiles',
@@ -38,12 +35,10 @@ export async function extract_savefiles(url) {
             );
         }
 
-        console.log('url pattern matched, extracting media id');
         const mediaId = match[1];
 
         // construct the target url
         const targetUrl = `https://${hostname}/${mediaId}`;
-        console.log('constructed target url:', targetUrl);
 
         // setup headers
         const headers = {
@@ -54,13 +49,10 @@ export async function extract_savefiles(url) {
             Connection: 'keep-alive'
         };
 
-        console.log('fetching page...');
-
         // fetch the page
         const response = await fetch(targetUrl, { headers });
 
         if (!response.ok) {
-            console.log('fetch failed with status:', response.status);
             return new ErrorObject(
                 `failed to fetch savefiles url: status ${response.status}`,
                 'SaveFiles',
@@ -72,13 +64,11 @@ export async function extract_savefiles(url) {
         }
 
         const html = await response.text();
-        console.log('got html response, length:', html.length);
 
         // scrape sources accordingly to the python plugin
         const sources = scrapeSourcesFromHtml(html, url);
 
         if (!sources || sources.length === 0) {
-            console.log('no video sources found');
             return new ErrorObject(
                 'no video sources found',
                 'SaveFiles',
@@ -89,15 +79,8 @@ export async function extract_savefiles(url) {
             );
         }
 
-        console.log('found sources:', sources.length);
-
         // pick the best quality source (first one usually highest)
         const selectedSource = sources[0];
-        console.log(
-            'selected source:',
-            selectedSource.label,
-            selectedSource.url
-        );
 
         return {
             file: selectedSource.url,
@@ -120,7 +103,6 @@ export async function extract_savefiles(url) {
 // helper function to scrape video sources from html
 function scrapeSourcesFromHtml(html, baseUrl) {
     const sources = [];
-    console.log('scraping sources from html...');
 
     // pattern from the python plugin: sources:\s*\[{\s*file\s*:\s*['"](?P<url>[^'"]+)
     const sourcesPattern = /sources:\s*\[\{\s*file\s*:\s*['"]([^'"]+)/g;
@@ -133,7 +115,6 @@ function scrapeSourcesFromHtml(html, baseUrl) {
                 url: url,
                 label: extractQualityLabel(url)
             });
-            console.log('found source with pattern:', url);
         }
     }
 

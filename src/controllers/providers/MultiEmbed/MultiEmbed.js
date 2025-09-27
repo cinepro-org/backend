@@ -89,10 +89,6 @@ export async function getMultiembed(params) {
             new URLSearchParams({ token }),
             { headers }
         );
-        console.log(
-            '\n=== Response 2 HTML snippet ===\n',
-            resp2.data.substring(0, 2500)
-        );
         const $ = cheerio.load(resp2.data);
 
         // pick first vipstream source with data-id (B or S)
@@ -136,7 +132,6 @@ export async function getMultiembed(params) {
 
         if (hunterMatch) {
             // old method
-            console.log('Hunter pack string:', hunterMatch[1]);
             let dataArray;
             try {
                 dataArray = new Function('return [' + hunterMatch[1] + ']')();
@@ -158,17 +153,7 @@ export async function getMultiembed(params) {
 
             const [h, u, n, t, e, r] = dataArray;
 
-            console.log('Hunter parameters:', {
-                h: typeof h,
-                u: typeof u,
-                n: typeof n,
-                t: typeof t,
-                e: typeof e,
-                r: typeof r
-            });
-
             const decoded = decodeHunter(h, u, n, t, e, r);
-            console.log('Decoded content preview:', decoded.substring(0, 200));
 
             const videoMatch = decoded.match(/file:"(https?:\/\/[^"]+)"/);
             if (videoMatch) {

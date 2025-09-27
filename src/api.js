@@ -38,7 +38,7 @@ export async function scrapeMedia(media) {
     // If no cache or bypassed, time to do the actual workkkk
     if (shouldDebug) {
         console.log(
-            `${shouldDebug ? 'Cache bypassed' : 'No cache Found'} for ${cacheKey}, work starts now...`
+            `[CACHE] ${shouldDebug ? 'Cache bypassed' : 'No cache Found'} for ${cacheKey}, work starts now...`
         );
     }
     const providers = [
@@ -141,12 +141,12 @@ export async function scrapeMedia(media) {
         setToCache(cacheKey, finalResult);
         if (shouldDebug) {
             console.log(
-                `Cached result for ${cacheKey}, next request will be much faster`
+                `[CACHE] Cached result for ${cacheKey}, next request will be much faster`
             );
         }
     } else if (shouldDebug) {
         console.log(
-            `Not caching result for ${cacheKey} - cache is bypassed for debugging`
+            `[CACHE] Not caching result for ${cacheKey} - cache is bypassed for debugging`
         );
     }
 

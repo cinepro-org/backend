@@ -4,8 +4,6 @@ import { ErrorObject } from '../../helpers/ErrorObject.js';
 
 export async function extract_voesx(url) {
     try {
-        console.log('starting voesx extraction for:', url);
-
         // extract hostname from url
         const hostname = url.match(/https?:\/\/([^\/]+)/)?.[1];
         if (!hostname) {
@@ -25,7 +23,6 @@ export async function extract_voesx(url) {
 
         const match = url.match(pattern);
         if (!match) {
-            console.log('url does not match voesx pattern');
             return new ErrorObject(
                 'url pattern not supported',
                 'VoeSX',
@@ -36,12 +33,10 @@ export async function extract_voesx(url) {
             );
         }
 
-        console.log('url pattern matched, extracting media id');
         const mediaId = match[2];
 
         // construct the embed url
         const embedUrl = `https://${hostname}/e/${mediaId}`;
-        console.log('constructed embed url:', embedUrl);
 
         // setup headers
         const headers = {
@@ -52,13 +47,10 @@ export async function extract_voesx(url) {
             Connection: 'keep-alive'
         };
 
-        console.log('fetching embed page...');
-
         // fetch the embed page
         const response = await fetch(embedUrl, { headers });
 
         if (!response.ok) {
-            console.log('fetch failed with status:', response.status);
             return new ErrorObject(
                 `failed to fetch voesx url: status ${response.status}`,
                 'VoeSX',
@@ -70,24 +62,18 @@ export async function extract_voesx(url) {
         }
 
         let html = await response.text();
-        console.log('got html response, length:', html.length);
 
         // handle redirect if currentUrl is present
         if (html.includes('const currentUrl')) {
-            console.log('found redirect, following...');
             const redirectMatch = html.match(
                 /window\.location\.href\s*=\s*'([^']+)'/
             );
             if (redirectMatch) {
                 const redirectUrl = redirectMatch[1];
-                console.log('redirecting to:', redirectUrl);
+
                 const redirectResponse = await fetch(redirectUrl, { headers });
                 if (redirectResponse.ok) {
                     html = await redirectResponse.text();
-                    console.log(
-                        'got redirected html response, length:',
-                        html.length
-                    );
                 }
             }
         }
@@ -97,11 +83,9 @@ export async function extract_voesx(url) {
             /json">\["([^"]+)"]<\/script>\s*<script\s*src="([^"]+)/
         );
         if (jsonScriptMatch) {
-            console.log('found voe encoding, decoding...');
             const encodedData = jsonScriptMatch[1];
             const scriptUrl = new URL(jsonScriptMatch[2], embedUrl).href;
 
-            console.log('fetching decode script:', scriptUrl);
             const scriptResponse = await fetch(scriptUrl, { headers });
             if (scriptResponse.ok) {
                 const scriptContent = await scriptResponse.text();
@@ -110,7 +94,6 @@ export async function extract_voesx(url) {
                 );
                 if (replMatch) {
                     const decodedData = voeDecode(encodedData, replMatch[1]);
-                    console.log('successfully decoded voe data');
 
                     if (decodedData) {
                         const sources = [];
@@ -139,10 +122,6 @@ export async function extract_voesx(url) {
                                 return bNum - aNum;
                             });
 
-                            console.log(
-                                'found sources via advanced decode:',
-                                sources.length
-                            );
                             return {
                                 file: sources[0].url,
                                 type: getVideoType(sources[0].url),
@@ -155,11 +134,10 @@ export async function extract_voesx(url) {
         }
 
         // fallback to basic scraping patterns
-        console.log('trying basic scraping patterns...');
+
         const sources = scrapeBasicSources(html);
 
         if (!sources || sources.length === 0) {
-            console.log('no video sources found');
             return new ErrorObject(
                 'no video sources found',
                 'VoeSX',
@@ -170,15 +148,7 @@ export async function extract_voesx(url) {
             );
         }
 
-        console.log('found sources via basic scraping:', sources.length);
-
         // pick the best quality source
-        const selectedSource = sources[0];
-        console.log(
-            'selected source:',
-            selectedSource.label,
-            selectedSource.url
-        );
 
         return {
             file: selectedSource.url,
@@ -201,7 +171,6 @@ export async function extract_voesx(url) {
 // helper function to decode voe encrypted data
 function voeDecode(ct, luts) {
     try {
-        console.log('decoding voe data...');
         // parse lookup table
         const lut = luts
             .slice(2, -2)
@@ -242,7 +211,6 @@ function voeDecode(ct, luts) {
         // reverse and decode again
         txt = b64decode(txt.split('').reverse().join(''));
 
-        console.log('voe decode successful');
         return JSON.parse(txt);
     } catch (error) {
         console.error('voe decode failed:', error);
@@ -253,7 +221,6 @@ function voeDecode(ct, luts) {
 // helper function to scrape basic video sources
 function scrapeBasicSources(html) {
     const sources = [];
-    console.log('scraping basic video sources...');
 
     // pattern 1: mp4 with video_height
     const pattern1 =
@@ -264,7 +231,6 @@ function scrapeBasicSources(html) {
             url: match[1],
             label: match[2].replace(/["']/g, '') + 'p'
         });
-        console.log('found source with pattern 1:', match[1]);
     }
 
     // pattern 2: hls streams
@@ -274,7 +240,6 @@ function scrapeBasicSources(html) {
             url: match[1],
             label: 'hls'
         });
-        console.log('found source with pattern 2:', match[1]);
     }
 
     // pattern 3: hls with video_height
@@ -284,7 +249,6 @@ function scrapeBasicSources(html) {
             url: match[1],
             label: match[2].replace(/["']/g, '') + 'p'
         });
-        console.log('found source with pattern 3:', match[1]);
     }
 
     // remove duplicates and sort by quality

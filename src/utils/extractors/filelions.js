@@ -7,8 +7,6 @@ import { ErrorObject } from '../../helpers/ErrorObject.js';
 
 export async function extract_filelions(url) {
     try {
-        console.log('starting filelions extraction for:', url);
-
         // extract hostname from url
         const hostname = url.match(/https?:\/\/([^\/]+)/)?.[1];
         if (!hostname) {
@@ -39,8 +37,6 @@ export async function extract_filelions(url) {
             );
         }
 
-        console.log('extracted media id from url');
-
         // handle referer if present in media_id ($$)
         let mediaId = match[1];
         let referer = false;
@@ -49,12 +45,10 @@ export async function extract_filelions(url) {
             const parts = mediaId.split('$$');
             mediaId = parts[0];
             referer = new URL(parts[1]).origin + '/';
-            console.log('found referer in media id:', referer);
         }
 
         // construct the embed url
         const embedUrl = `https://${hostname}/v/${mediaId}`;
-        console.log('constructed embed url:', embedUrl);
 
         // setup headers
         const headers = {
@@ -70,13 +64,10 @@ export async function extract_filelions(url) {
             headers['Referer'] = referer;
         }
 
-        console.log('fetching embed page...');
-
         // fetch the embed page
         const response = await fetch(embedUrl, { headers });
 
         if (!response.ok) {
-            console.log('fetch failed with status:', response.status);
             return new ErrorObject(
                 `failed to fetch filelions url: status ${response.status}`,
                 'FileLions',
@@ -88,7 +79,6 @@ export async function extract_filelions(url) {
         }
 
         const html = await response.text();
-        console.log('got html response, length:', html.length);
 
         // load html with cheerio
         const $ = cheerio.load(html);
@@ -97,7 +87,6 @@ export async function extract_filelions(url) {
         const sources = scrapeSourcesFromHtml(html, url);
 
         if (!sources || sources.length === 0) {
-            console.log('no video sources found');
             return new ErrorObject(
                 'no video sources found',
                 'FileLions',
@@ -108,16 +97,9 @@ export async function extract_filelions(url) {
             );
         }
 
-        console.log('found sources:', sources.length);
-
         // pick the best quality source (idk but what my eyes have seen so far it seems first one
         // should be the best bet)
         const selectedSource = sources[0];
-        console.log(
-            'selected source:',
-            selectedSource.label,
-            selectedSource.url
-        );
 
         return {
             file: selectedSource.url,
@@ -168,9 +150,7 @@ function getPackedData(html) {
                         packedData += unpacked;
                     }
                 }
-            } catch (e) {
-                console.log('Failed to unpack JS:', e);
-            }
+            } catch (e) {}
         }
     }
     return packedData;
@@ -179,7 +159,6 @@ function getPackedData(html) {
 // helper function to scrape video sources from html (based on the python plugin)
 function scrapeSourcesFromHtml(html, baseUrl) {
     const sources = [];
-    console.log('scraping sources from html...');
 
     // add packed data extraction
     html += getPackedData(html);
@@ -192,7 +171,6 @@ function scrapeSourcesFromHtml(html, baseUrl) {
             url: match[1].replace(/\\\//g, '/'),
             label: 'unknown'
         });
-        console.log('found source with pattern 1:', match[1]);
     }
 
     // second (pattern) : "hls2": "url" or "hls4": "url"
@@ -202,7 +180,6 @@ function scrapeSourcesFromHtml(html, baseUrl) {
             url: match[1].replace(/\\\//g, '/'),
             label: 'hls'
         });
-        console.log('found source with pattern 2:', match[1]);
     }
 
     // third (pattern) : jwplayer setup sources i think this
@@ -214,7 +191,6 @@ function scrapeSourcesFromHtml(html, baseUrl) {
             url: match[1].replace(/\\\//g, '/'),
             label: 'jwplayer'
         });
-        console.log('found source with pattern 3:', match[1]);
     }
 
     // fourth pattern for base64 encoded sources
@@ -230,11 +206,10 @@ function scrapeSourcesFromHtml(html, baseUrl) {
                     url: urlMatch[0],
                     label: 'base64'
                 });
-                console.log('found source with base64 pattern:', urlMatch[0]);
             }
         } catch (e) {
             // invalid base64, skip
-            console.log('invalid base64 pattern:', e);
+
             return;
         }
     }
@@ -255,7 +230,6 @@ function scrapeSourcesFromHtml(html, baseUrl) {
                     url: url,
                     label: extractQualityLabel(url)
                 });
-                console.log('found source with generic pattern:', url);
             }
         }
     }

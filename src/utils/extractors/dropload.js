@@ -6,14 +6,11 @@ import { ErrorObject } from '../../helpers/ErrorObject.js';
 // https://github.com/Gujal00/ResolveURL/blob/master/script.module.resolveurl/lib/resolveurl/plugins/dropload.py
 export async function extract_dropload(url) {
     try {
-        console.log('starting dropload extraction for:', url);
-
         // extract hostname and media id from url
         const urlMatch = url.match(
             /(?:\/\/|\.)(dropload\.io|dropload\.tv)\/(?:embed-|e\/|d\/)?([0-9a-zA-Z]+)/
         );
         if (!urlMatch) {
-            console.log('url does not match dropload pattern');
             return new ErrorObject(
                 'url pattern not supported',
                 'DropLoad',
@@ -27,11 +24,8 @@ export async function extract_dropload(url) {
         const hostname = urlMatch[1];
         const mediaId = urlMatch[2];
 
-        console.log('extracted hostname:', hostname, 'media id:', mediaId);
-
         // construct the embed url
         const embedUrl = `https://${hostname}/e/${mediaId}`;
-        console.log('constructed embed url:', embedUrl);
 
         // setup headers
         const headers = {
@@ -42,13 +36,10 @@ export async function extract_dropload(url) {
             Connection: 'keep-alive'
         };
 
-        console.log('fetching embed page...');
-
         // fetch the embed page
         const response = await fetch(embedUrl, { headers });
 
         if (!response.ok) {
-            console.log('fetch failed with status:', response.status);
             return new ErrorObject(
                 `failed to fetch dropload url: status ${response.status}`,
                 'DropLoad',
@@ -60,34 +51,15 @@ export async function extract_dropload(url) {
         }
 
         const html = await response.text();
-        console.log('got html response, length:', html.length);
 
         // also check for any script tags that might contain video urls
-        console.log('checking for script tags with video data...');
+
         const scriptMatches = html.match(/<script[^>]*>(.*?)<\/script>/gs);
-        if (scriptMatches) {
-            console.log('found', scriptMatches.length, 'script tags');
-            for (let i = 0; i < scriptMatches.length; i++) {
-                if (
-                    scriptMatches[i].includes('file') ||
-                    scriptMatches[i].includes('source') ||
-                    scriptMatches[i].includes('mp4') ||
-                    scriptMatches[i].includes('m3u8')
-                ) {
-                    console.log(
-                        'script tag',
-                        i,
-                        'contains potential video references'
-                    );
-                }
-            }
-        }
 
         // scrape sources using multiple patterns
         const sources = scrapeSourcesFromHtml(html, embedUrl);
 
         if (!sources || sources.length === 0) {
-            console.log('no video sources found');
             return new ErrorObject(
                 'no video sources found',
                 'DropLoad',
@@ -98,15 +70,8 @@ export async function extract_dropload(url) {
             );
         }
 
-        console.log('found sources:', sources.length);
-
         // pick the best quality source
         const selectedSource = sources[0];
-        console.log(
-            'selected source:',
-            selectedSource.label,
-            selectedSource.url
-        );
 
         return {
             file: selectedSource.url,
@@ -133,18 +98,14 @@ function getPackedData(html) {
 
     while ((match = packedRegex.exec(html)) !== null) {
         const packedCode = match[1];
-        console.log('found packed code, attempting to unpack...');
 
         if (detectPacked(packedCode)) {
             try {
                 const unpacked = unpackPacked(packedCode);
                 if (unpacked) {
                     packedData += unpacked;
-                    console.log('successfully unpacked code');
                 }
-            } catch (e) {
-                console.log('failed to unpack code:', e.message);
-            }
+            } catch (e) {}
         }
     }
 
@@ -178,7 +139,6 @@ function unpackPacked(source) {
         const count = parseInt(countStr);
 
         if (symtab.length !== count) {
-            console.log('malformed packed data');
             return null;
         }
 
@@ -193,11 +153,9 @@ function unpackPacked(source) {
 
         // replace words in payload
         const result = payload.replace(/\b\w+\b/g, lookup);
-        console.log('unpacked payload length:', result.length);
 
         return result;
     } catch (e) {
-        console.log('error unpacking:', e.message);
         return null;
     }
 }
@@ -226,12 +184,10 @@ function isBlockedUrl(url) {
 
 function scrapeSourcesFromHtml(html, baseUrl) {
     const sources = [];
-    console.log('scraping sources from html...');
 
     // check for packed javascript first
     const packedData = getPackedData(html);
     if (packedData) {
-        console.log('found packed data, analyzing...');
         html += packedData;
     }
 
@@ -245,7 +201,6 @@ function scrapeSourcesFromHtml(html, baseUrl) {
             url: url,
             label: extractQualityLabel(url)
         });
-        console.log('found source with pattern 1:', url);
     }
 
     // jwplayer setup with file
@@ -257,7 +212,6 @@ function scrapeSourcesFromHtml(html, baseUrl) {
                 url: url,
                 label: extractQualityLabel(url)
             });
-            console.log('found source with jwplayer pattern:', url);
         }
     }
 
@@ -277,7 +231,6 @@ function scrapeSourcesFromHtml(html, baseUrl) {
                     url: url,
                     label: extractQualityLabel(url)
                 });
-                console.log('found source with generic pattern:', url);
             }
         }
     }

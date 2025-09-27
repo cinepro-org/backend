@@ -36,26 +36,20 @@ export async function getVidZee(media) {
 
     let allFiles = [];
     for (const url of urls) {
-        console.log('fetching:', url);
-
         try {
             const response = await fetch(url, {
                 method: 'GET',
                 headers: headers
             });
-            console.log('response status:', response.status);
 
             if (!response.ok) {
-                console.log('response not ok for:', url);
                 // skip to the next server
                 continue;
             }
 
             let data = await response.json();
-            console.log('raw data from', url, ':', data);
 
             if (data.url !== undefined && data.url.length > 0) {
-                console.log('found ' + data.url.length + ' files');
                 const files = data.url.map((file) => ({
                     lang: file.lang || 'en',
                     file: file.link,
@@ -66,15 +60,13 @@ export async function getVidZee(media) {
                 }));
                 allFiles = allFiles.concat(files);
             } else {
-                console.log('no urls found in data from:', url);
             }
         } catch (err) {
-            console.log('error while processing url:', url, err.message);
+            continue;
         }
     }
 
     if (allFiles.length === 0) {
-        console.log('no stream urls found after all servers');
         return new ErrorObject(
             'No stream URL found',
             'VidZee',
@@ -84,8 +76,6 @@ export async function getVidZee(media) {
             false
         );
     }
-
-    console.log('total files ', allFiles.length);
 
     return {
         files: allFiles,

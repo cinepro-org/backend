@@ -55,10 +55,7 @@ export async function getVidSrcCC(media) {
     const userId = userIdMatch[1];
     const v = vMatch[1];
 
-    logDebugInfo('Extracted parameters', { userId, v });
-
     let vrfToken = await generateVRF(media.tmdb, userId);
-    logDebugInfo('Generated VRF token', vrfToken);
 
     let origin;
     let firstUrl;
@@ -70,7 +67,6 @@ export async function getVidSrcCC(media) {
         firstUrl = `${DOMAIN}${media.tmdb}/servers?id=${media.tmdb}&type=tv&v=${v}&vrf=${vrfToken}&season=${media.season}&episode=${media.episode}&imdbId=${media.imdbId}`;
         origin = `${DOMAIN.replace('api/', '')}embed/tv/${media.tmdb}/${media.season}/${media.episode}`;
     }
-    logDebugInfo('First URL', firstUrl);
 
     const headers = {
         'User-Agent':
@@ -80,11 +76,7 @@ export async function getVidSrcCC(media) {
     };
 
     let firstResponse = await fetch(firstUrl, { headers });
-    logDebugInfo('First response status', firstResponse.status);
 
-    if (!firstResponse.ok) {
-        logDebugInfo('First response error', await firstResponse.text());
-    }
     if (firstResponse.status !== 200) {
         return new ErrorObject(
             'Failed to fetch first response',

@@ -1,6 +1,7 @@
 import cors from 'cors';
 import fetch from 'node-fetch';
 import { VIDSRC_HLS_ORIGIN } from '../controllers/providers/VidSrc/VidSrc.js';
+import { ErrorObject } from '../helpers/ErrorObject.js';
 
 // Add cache system similar to pstream
 const CACHE_MAX_SIZE = 2000;
@@ -31,8 +32,6 @@ function cleanupCache() {
         for (const [url] of toRemove) {
             segmentCache.delete(url);
         }
-
-        console.log(`Cache cleanup: removed ${toRemove.length} old entries`);
     }
 
     return segmentCache.size;
@@ -75,14 +74,8 @@ async function prefetchSegment(url, headers) {
             }
         });
 
-        console.log(
-            `Response For Prefetching Segment(.ts) : ${response.status} ${response.statusText}`
-        );
-        console.log('Response Headers for Prefetching Segment (.ts)');
-        response.headers.forEach((v, k) => console.log(`   ${k}: ${v}`));
-        console.log();
         if (!response.ok) {
-            console.log(`Failed to prefetch: ${response.status}`);
+            // failed to prefetch
             return;
         }
 
@@ -98,10 +91,10 @@ async function prefetchSegment(url, headers) {
             headers: responseHeaders,
             timestamp: Date.now()
         });
-
-        console.log(`Cached segment: ${url}`);
     } catch (error) {
-        console.log(`Prefetch error: ${error.message}`);
+        if (process.argv.includes('--debug')) {
+            console.log(`Prefetch error: ${error.message}`);
+        }
     }
 }
 
@@ -176,7 +169,9 @@ export function createProxyRoutes(app) {
         try {
             headers = JSON.parse(req.query.headers || '{}');
         } catch (e) {
-            console.log('Invalid headers JSON');
+            if (process.argv.includes('--debug')) {
+                console.log('Invalid headers JSON');
+            }
         }
 
         if (!targetUrl) {
@@ -184,8 +179,6 @@ export function createProxyRoutes(app) {
         }
 
         try {
-            console.log(`[M3U8] Fetching: ${targetUrl}`);
-
             const response = await fetch(targetUrl, {
                 headers: {
                     'User-Agent': DEFAULT_USER_AGENT,
@@ -193,12 +186,16 @@ export function createProxyRoutes(app) {
                 }
             });
 
-            console.log(
-                `[M3U8] Response: ${response.status} ${response.statusText}`
-            );
-            console.log('[M3U8] Request Headers', headers);
-            console.log('[M3U8] Response Headers');
-            response.headers.forEach((v, k) => console.log(`   ${k}: ${v}`));
+            if (process.argv.includes('--debug')) {
+                console.log(
+                    `[M3U8] Response: ${response.status} ${response.statusText}`
+                );
+                console.log('[M3U8] Request Headers', headers);
+                console.log('[M3U8] Response Headers');
+                response.headers.forEach((v, k) =>
+                    console.log(`   ${k}: ${v}`)
+                );
+            }
             if (!response.ok) {
                 return res.status(response.status).json({
                     error: `M3U8 fetch failed: ${response.status}`
@@ -280,15 +277,16 @@ export function createProxyRoutes(app) {
 
             // Prefetch segments if cache enabled
             if (segmentUrls.length > 0 && !isCacheDisabled()) {
-                console.log(
-                    `Starting prefetch of ${segmentUrls.length} segments`
-                );
                 cleanupCache();
 
                 // Prefetch in background, don't wait
                 Promise.all(
                     segmentUrls.map((url) => prefetchSegment(url, headers))
-                ).catch((err) => console.log('Prefetch error:', err.message));
+                ).catch((err) => {
+                    if (process.argv.includes('--debug')) {
+                        console.log('Prefetch error:', err.message);
+                    }
+                });
             }
 
             // Set proper headers
@@ -308,8 +306,16 @@ export function createProxyRoutes(app) {
 
             res.send(newLines.join('\n'));
         } catch (error) {
-            console.log('[M3U8 Error]:', error.message);
-            res.status(500).json({ error: error.message });
+            res.status(500).json(
+                new ErrorObject(
+                    `M3U8 Proxy unexpected error: ${error.message}`,
+                    'M3U8 Proxy',
+                    500,
+                    'Check implementation or site status',
+                    true,
+                    true
+                ).toJSON()
+            );
         }
     });
 
@@ -321,7 +327,10 @@ export function createProxyRoutes(app) {
         try {
             headers = JSON.parse(req.query.headers || '{}');
         } catch (e) {
-            console.log('Invalid headers JSON');
+            console.log(
+                'Invalid headers JSON for TS proxy:',
+                req.query.headers
+            );
         }
 
         if (!targetUrl) {
@@ -389,7 +398,16 @@ export function createProxyRoutes(app) {
             response.body.pipe(res);
         } catch (error) {
             console.log('[TS Error]:', error.message);
-            res.status(500).json({ error: error.message });
+            res.status(500).json(
+                new ErrorObject(
+                    `TS Proxy unexpected error: ${error.message}`,
+                    'TS Proxy',
+                    500,
+                    'Check implementation or site status',
+                    true,
+                    true
+                ).toJSON()
+            );
         }
     });
 
@@ -494,7 +512,16 @@ export function createProxyRoutes(app) {
             res.send(newLines.join('\n'));
         } catch (error) {
             console.error('[HLS Proxy Error]:', error.message);
-            res.status(500).json({ error: error.message });
+            res.status(500).json(
+                new ErrorObject(
+                    `HLS Proxy unexpected error: ${error.message}`,
+                    'HLS Proxy',
+                    500,
+                    'Check implementation or site status',
+                    true,
+                    true
+                ).toJSON()
+            );
         }
     });
     // subtitle Proxy endpoint
@@ -552,7 +579,16 @@ export function createProxyRoutes(app) {
             response.body.pipe(res);
         } catch (error) {
             console.error('[Subtitle Proxy Error]:', error.message);
-            res.status(500).json({ error: error.message });
+            res.status(500).json(
+                new ErrorObject(
+                    `Subtitle Proxy unexpected error: ${error.message}`,
+                    'Subtitle Proxy',
+                    500,
+                    'Check implementation or site status',
+                    true,
+                    true
+                ).toJSON()
+            );
         }
     });
 }
