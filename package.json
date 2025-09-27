@@ -1,6 +1,6 @@
 {
     "name": "cinepro-backend",
-    "version": "0.0.1-beta",
+    "version": "1.0.0",
     "description": "Backend API of CinePro (scraper)",
     "main": "index.js",
     "homepage": "https://cinepro.mintlify.app/",
