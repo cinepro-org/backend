@@ -1,0 +1,467 @@
+openapi: 3.0.3
+info:
+    title: CinePro API
+    description: |
+        CinePro Backend is an open-source movie and TV show scraper API that provides various streaming sources for movies and TV shows.
+
+        **Important Notice:**
+        - This project is for educational purposes only
+        - We do not host any content - only provide links to existing content
+        - Not meant for public hosting - personal use only
+        - No ads, no tracking
+
+        **Features:**
+        - Movie and TV show scraping
+        - Multiple provider support
+        - Subtitle support
+        - Caching system for performance
+        - Error handling with detailed responses
+    version: 1.0.0
+    license:
+        name: License/Usage Policy - Personal and Non-Commercial Use Only
+        url: https://github.com/cinepro-org/backend/#license
+    contact:
+        name: CinePro Team
+        url: https://github.com/cinepro-org/backend/graphs/contributors
+
+servers:
+    - url: http://localhost:3000
+      description: Local development server
+
+paths:
+    /:
+        get:
+            tags:
+                - General
+            summary: Get API information
+            description: Returns general information about the API, available routes, and license information
+            responses:
+                '200':
+                    description: API information
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    home:
+                                        type: string
+                                        example: 'CinePro API'
+                                    routes:
+                                        type: object
+                                        properties:
+                                            MOVIE:
+                                                type: string
+                                                example: '/movie/:tmdbID'
+                                            TV:
+                                                type: string
+                                                example: '/tv/:tmdbID?s=seasonNumber&e=episodeNumber'
+                                    information:
+                                        type: string
+                                        description: Educational purpose disclaimer
+                                    license:
+                                        type: string
+                                        description: License information
+                                    source:
+                                        type: string
+                                        format: uri
+                                        example: 'https://GitHub.com/cinepro-org/backend'
+
+    /movie/{tmdbId}:
+        get:
+            tags:
+                - Movies
+            summary: Get movie streaming sources
+            description: |
+                Retrieves streaming sources and subtitles for a movie using TMDB ID.
+                The API scrapes multiple providers to find available streaming links.
+            parameters:
+                - name: tmdbId
+                  in: path
+                  required: true
+                  description: The Movie Database (TMDB) ID of the movie
+                  schema:
+                      type: string
+                      pattern: '^[0-9]+$'
+                  example: '155'
+            responses:
+                '200':
+                    description: Movie sources retrieved successfully
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/MediaResponse'
+                '405':
+                    description: Invalid movie ID
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                            example:
+                                error: true
+                                message: 'Invalid movie id'
+                                location_key: 'user'
+                                'what could be the cause?': 'The movie ID should be a valid TMDB ID (numeric)'
+                '404':
+                    description: Movie not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                '500':
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+
+    /movie/:
+        get:
+            tags:
+                - Movies
+            summary: Invalid movie endpoint
+            description: This endpoint always returns an error as it requires a movie ID
+            responses:
+                '405':
+                    description: Movie ID is required
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                            example:
+                                error: true
+                                message: 'Invalid movie id'
+                                location_key: 'user'
+                                'what could be the cause?': 'The movie ID should be a valid TMDB ID (numeric)'
+
+    /tv/{tmdbId}:
+        get:
+            tags:
+                - TV Shows
+            summary: Get TV show episode streaming sources
+            description: |
+                Retrieves streaming sources and subtitles for a TV show episode using TMDB ID.
+                Requires season and episode parameters.
+            parameters:
+                - name: tmdbId
+                  in: path
+                  required: true
+                  description: The Movie Database (TMDB) ID of the TV show
+                  schema:
+                      type: string
+                      pattern: '^[0-9]+$'
+                  example: '1399'
+                - name: s
+                  in: query
+                  required: true
+                  description: Season number
+                  schema:
+                      type: string
+                      pattern: '^[0-9]+$'
+                  example: '1'
+                - name: e
+                  in: query
+                  required: true
+                  description: Episode number
+                  schema:
+                      type: string
+                      pattern: '^[0-9]+$'
+                  example: '1'
+            responses:
+                '200':
+                    description: TV show episode sources retrieved successfully
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/MediaResponse'
+                '405':
+                    description: Invalid TV show ID or missing parameters
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                            example:
+                                error: true
+                                message: 'Invalid TV id'
+                                location_key: 'user'
+                                'what could be the cause?': 'The TV ID should be a valid TMDB ID (numeric), and season/episode should be provided'
+                '404':
+                    description: TV show or episode not found
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                '500':
+                    description: Internal server error
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+
+    /tv/:
+        get:
+            tags:
+                - TV Shows
+            summary: Invalid TV endpoint
+            description: This endpoint always returns an error as it requires a TV show ID
+            responses:
+                '405':
+                    description: TV show ID is required
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                            example:
+                                error: true
+                                message: 'Invalid TV id'
+                                location_key: 'user'
+                                'what could be the cause?': 'The TV ID should be a valid TMDB ID (numeric), and season/episode should be provided'
+
+    /cache-stats:
+        get:
+            tags:
+                - Cache
+            summary: Get cache statistics
+            description: |
+                Returns statistics about the caching system performance.
+                Shows cache hits, misses, and other relevant metrics.
+            responses:
+                '200':
+                    description: Cache statistics
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    cacheEnabled:
+                                        type: boolean
+                                        example: true
+                                    ttl:
+                                        type: string
+                                        example: '3 hours (10800 seconds)'
+                                    hits:
+                                        type: integer
+                                        description: Number of cache hits
+                                    misses:
+                                        type: integer
+                                        description: Number of cache misses
+                                    keys:
+                                        type: integer
+                                        description: Number of cached items
+                                    ksize:
+                                        type: integer
+                                        description: Approximate size of keys
+                                    vsize:
+                                        type: integer
+                                        description: Approximate size of values
+
+components:
+    schemas:
+        MediaResponse:
+            type: object
+            properties:
+                files:
+                    type: array
+                    description: Array of streaming sources
+                    items:
+                        $ref: '#/components/schemas/StreamingSource'
+                subtitles:
+                    type: array
+                    description: Array of subtitle sources
+                    items:
+                        $ref: '#/components/schemas/Subtitle'
+                errors:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/DebugError'
+
+            required:
+                - files
+                - subtitles
+
+        StreamingSource:
+            type: object
+            properties:
+                file:
+                    type: string
+                    format: uri
+                    description: Direct link to the streaming source through proxy
+                    example: 'https://example.com/stream.m3u8'
+                type:
+                    type: string
+                    description: File type or streaming protocol
+                    enum: [mp4, hls]
+                    example: 'hls'
+                lang:
+                    type: string
+                    description: Language code
+                    example: 'en'
+                headers:
+                    type: object
+                    description: Required headers for accessing the stream
+                    additionalProperties:
+                        type: string
+            required:
+                - file
+                - type
+
+        Subtitle:
+            type: object
+            properties:
+                url:
+                    type: string
+                    format: uri
+                    description: URL to the subtitle file
+                    example: 'https://example.com/subtitles.vtt'
+                lang:
+                    type: string
+                    description: Language code (ISO 639-1)
+                    example: 'en'
+                type:
+                    type: string
+                    description: Subtitle format
+                    enum: [vtt, srt, ass, ssa]
+                    example: 'vtt'
+            required:
+                - url
+                - lang
+                - type
+
+        ErrorResponse:
+            type: object
+            properties:
+                error:
+                    type: boolean
+                    example: true
+                message:
+                    type: string
+                    description: Error message
+                    example: 'Invalid movie id'
+                location_key:
+                    type: string
+                    description: Component or provider that generated the error
+                    example: 'user'
+                'what could be the cause?':
+                    type: string
+                    description: Hint about the possible cause of the error
+                    example: 'The movie ID should be a valid TMDB ID (numeric)'
+            required:
+                - error
+                - message
+
+        DebugError:
+            type: object
+            description: Debug error information (only available in debug mode)
+            properties:
+                error:
+                    type: boolean
+                    example: true
+                hint:
+                    type: string
+                    description: Possible cause or solution hint
+                    example: 'Check the implementation or server status'
+                location_key:
+                    type: string
+                    description: Provider or component that caused the error
+                    example: '111Movies'
+                message:
+                    type: string
+                    description: Error message
+                    example: 'Unexpected error: Request failed with status code 404'
+                reportTo:
+                    type: string
+                    description: Issue reporting instructions
+                    example: 'Please report this error and as many details as possible to us by using this link: https://github.com/cinepro-org/backend/issues/new/choose'
+                response:
+                    type: integer
+                    description: HTTP response code
+                    example: 500
+
+    responses:
+        InvalidId:
+            description: Invalid ID provided
+            content:
+                application/json:
+                    schema:
+                        $ref: '#/components/schemas/ErrorResponse'
+                    examples:
+                        invalidMovieId:
+                            summary: Invalid movie ID
+                            value:
+                                error: true
+                                message: 'Invalid movie id'
+                                location_key: 'user'
+                                'what could be the cause?': 'The movie ID should be a valid TMDB ID (numeric)'
+                        invalidTvId:
+                            summary: Invalid TV show ID
+                            value:
+                                error: true
+                                message: 'Invalid TV id'
+                                location_key: 'user'
+                                'what could be the cause?': 'The TV ID should be a valid TMDB ID (numeric), and season/episode should be provided'
+
+        NotFound:
+            description: Resource not found
+            content:
+                application/json:
+                    schema:
+                        $ref: '#/components/schemas/ErrorResponse'
+                    examples:
+                        routeNotFound:
+                            summary: Route not found
+                            value:
+                                error: true
+                                message: 'Route not found'
+                                location_key: 'user'
+                                'what could be the cause?': 'The requested endpoint does not exist'
+                        mediaNotFound:
+                            summary: Media not found
+                            value:
+                                error: true
+                                message: 'Media not found'
+                                location_key: 'TMDB'
+                                'what could be the cause?': 'The requested media does not exist in TMDB database'
+
+        ServerError:
+            description: Internal server error
+            content:
+                application/json:
+                    schema:
+                        $ref: '#/components/schemas/ErrorResponse'
+                    examples:
+                        providerError:
+                            summary: Provider error
+                            value:
+                                error: true
+                                message: 'Failed to scrape sources'
+                                location_key: 'Vidrock'
+                                'what could be the cause?': 'Failed to fetch sources from provider. Check the URL or server status.'
+                        tmdbError:
+                            summary: TMDB API error
+                            value:
+                                error: true
+                                message: 'TMDB API request failed'
+                                location_key: 'TMDB'
+                                'what could be the cause?': 'TMDB API might be down or API key is invalid'
+                        unexpectedError:
+                            summary: Unexpected error
+                            value:
+                                error: true
+                                message: 'Unexpected error: Connection timeout'
+                                location_key: 'MultiEmbed'
+                                'what could be the cause?': 'Check implementation or site status'
+
+tags:
+    - name: General
+      description: General API information and health checks
+    - name: Movies
+      description: Movie streaming sources and information
+    - name: TV Shows
+      description: TV show episode streaming sources and information
+    - name: Cache
+      description: Cache management and statistics
+
+security: []
+
+externalDocs:
+    description: GitHub Repository
+    url: https://github.com/cinepro-org/backend
