@@ -121,8 +121,6 @@ function handleCors(req, res) {
 // M3U8 proxy function based on the working implementation
 async function proxyM3U8(targetUrl, headers, res, serverUrl) {
     try {
-        console.log('[M3U8 Proxy] Fetching:', targetUrl);
-
         const response = await fetch(targetUrl, {
             headers: {
                 'User-Agent': DEFAULT_USER_AGENT,
@@ -131,14 +129,12 @@ async function proxyM3U8(targetUrl, headers, res, serverUrl) {
         });
 
         if (!response.ok) {
-            console.log('[M3U8 Proxy] Error:', response.status, response.statusText);
             res.writeHead(response.status);
             res.end(`M3U8 fetch failed: ${response.status}`);
             return;
         }
 
         const m3u8Content = await response.text();
-        console.log('[M3U8 Proxy] Original content length:', m3u8Content.length);
 
         // Process M3U8 content line by line - key difference from our previous implementation
         const processedLines = m3u8Content
@@ -186,7 +182,6 @@ async function proxyM3U8(targetUrl, headers, res, serverUrl) {
                             return `${serverUrl}/ts-proxy?url=${encodeURIComponent(segmentUrl)}`;
                         }
                     } catch (e) {
-                        console.log('[M3U8 Proxy] URL parse error for line:', line, e.message);
                         return line; // Return original if URL parsing fails
                     }
                 }
@@ -195,7 +190,6 @@ async function proxyM3U8(targetUrl, headers, res, serverUrl) {
             });
 
         const processedContent = processedLines.join('\n');
-        console.log('[M3U8 Proxy] Processed content length:', processedContent.length);
 
         // Set proper headers
         res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
@@ -215,8 +209,6 @@ async function proxyM3U8(targetUrl, headers, res, serverUrl) {
 // TS/Segment proxy function based on the working implementation
 async function proxyTs(targetUrl, headers, req, res) {
     try {
-        console.log('[TS Proxy] Fetching:', targetUrl);
-
         // Handle range requests for video playback
         const fetchHeaders = {
             'User-Agent': DEFAULT_USER_AGENT,
@@ -226,17 +218,13 @@ async function proxyTs(targetUrl, headers, req, res) {
         // Forward range header if present
         if (req.headers.range) {
             fetchHeaders['Range'] = req.headers.range;
-            console.log('[TS Proxy] Range request:', req.headers.range);
         }
 
         const response = await fetch(targetUrl, {
             headers: fetchHeaders
         });
 
-        console.log('[TS Proxy] Response:', response.status, response.statusText);
-
         if (!response.ok) {
-            console.log('[TS Proxy] Error fetching segment:', targetUrl, '→', response.status);
             res.writeHead(response.status);
             res.end(`TS fetch failed: ${response.status}`);
             return;
@@ -291,14 +279,13 @@ export function createProxyRoutes(app) {
     app.get('/m3u8-proxy', (req, res) => {
         if (handleCors(req, res)) return;
         
-        console.log('[M3U8 Proxy] Request received:', req.query.url);
         const targetUrl = req.query.url;
         let headers = {};
 
         try {
             headers = JSON.parse(req.query.headers || '{}');
         } catch (e) {
-            console.log('[M3U8 Proxy] Invalid headers JSON:', req.query.headers);
+            // Invalid headers JSON
         }
 
         if (!targetUrl) {
@@ -319,14 +306,13 @@ export function createProxyRoutes(app) {
     app.get('/ts-proxy', (req, res) => {
         if (handleCors(req, res)) return;
         
-        console.log('[TS Proxy] Request received:', req.query.url);
         const targetUrl = req.query.url;
         let headers = {};
 
         try {
             headers = JSON.parse(req.query.headers || '{}');
         } catch (e) {
-            console.log('[TS Proxy] Invalid headers JSON:', req.query.headers);
+            // Invalid headers JSON
         }
 
         if (!targetUrl) {
@@ -348,7 +334,7 @@ export function createProxyRoutes(app) {
         try {
             headers = JSON.parse(req.query.headers || '{}');
         } catch (e) {
-            console.log('[HLS Proxy] Invalid headers JSON:', req.query.headers);
+            // Invalid headers JSON
         }
 
         if (!targetUrl) {
@@ -374,7 +360,7 @@ export function createProxyRoutes(app) {
         try {
             headers = JSON.parse(req.query.headers || '{}');
         } catch (e) {
-            console.log('[Sub Proxy] Invalid headers JSON:', req.query.headers);
+            // Invalid headers JSON
         }
 
         if (!targetUrl) {
@@ -382,8 +368,6 @@ export function createProxyRoutes(app) {
             res.end(JSON.stringify({ error: 'url parameter required' }));
             return;
         }
-
-        console.log('[Sub Proxy] Fetching:', targetUrl);
 
         fetch(targetUrl, {
             headers: {
