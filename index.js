@@ -17,7 +17,7 @@ import { startup } from './src/utils/startup.js';
 import { fileURLToPath } from 'url';
 
 const PORT = process.env.PORT;
-const allowedOrigins = ['https://cinepro.mintlify.app/']; // localhost is also allowed. (from any localhost port)
+const allowedOrigins = process.env.ALLOWED_ORIGINS; // localhost is also allowed. (from any localhost port)
 const app = express();
 
 app.use(
@@ -150,7 +150,7 @@ app.get('/cache-stats', (req, res) => {
     });
 });
 
-app.get('*', (req, res) => {
+app.get('/{*any}', (req, res) => {
     handleErrorResponse(
         res,
         new ErrorObject(
