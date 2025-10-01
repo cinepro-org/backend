@@ -16,7 +16,7 @@ jobs:
             - name: Checkout repository
               uses: actions/checkout@v3
               with:
-                  ref: main
+                  ref: dev
 
             - name: Set up Node.js
               uses: actions/setup-node@v3
@@ -39,7 +39,7 @@ jobs:
                   git add package.json package-lock.json
                   if ! git diff --cached --quiet; then
                     git commit -m "chore: update dependencies"
-                    git push origin HEAD:main
+                    git push origin HEAD:dev
                   else
                     echo "No changes to commit👍👍"
                   fi
@@ -52,7 +52,7 @@ jobs:
             - name: Checkout repository
               uses: actions/checkout@v3
               with:
-                  ref: main
+                  ref: dev
 
             - name: Install Prettier
               run: |
@@ -69,7 +69,7 @@ jobs:
                   git add -A
                   if ! git diff --cached --quiet; then
                     git commit -m "chore: format files with prettier"
-                    git push origin HEAD:main
+                    git push origin HEAD:dev
                   else
                     echo "No changes to commit👍👍"
                   fi
