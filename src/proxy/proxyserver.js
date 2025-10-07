@@ -106,10 +106,16 @@ function extractOriginalUrl(proxyUrl) {
 // Enhanced CORS middleware based on the working implementation
 function handleCors(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Range, Accept, Origin, X-Requested-With');
+    res.setHeader(
+        'Access-Control-Allow-Methods',
+        'GET, POST, PUT, DELETE, OPTIONS'
+    );
+    res.setHeader(
+        'Access-Control-Allow-Headers',
+        'Content-Type, Authorization, Range, Accept, Origin, X-Requested-With'
+    );
     res.setHeader('Access-Control-Max-Age', '86400');
-    
+
     if (req.method === 'OPTIONS') {
         res.writeHead(204);
         res.end();
@@ -137,57 +143,55 @@ async function proxyM3U8(targetUrl, headers, res, serverUrl) {
         const m3u8Content = await response.text();
 
         // Process M3U8 content line by line - key difference from our previous implementation
-        const processedLines = m3u8Content
-            .split('\n')
-            .map(line => {
-                line = line.trim();
-                
-                // Skip empty lines and comments (except special ones)
-                if (!line || (line.startsWith('#') && !line.includes('URI='))) {
-                    return line;
-                }
+        const processedLines = m3u8Content.split('\n').map((line) => {
+            line = line.trim();
 
-                // Handle URI in #EXT-X-MEDIA tags (for audio/subtitle tracks)
-                if (line.startsWith('#EXT-X-MEDIA:') && line.includes('URI=')) {
-                    const uriMatch = line.match(/URI="([^"]+)"/);
-                    if (uriMatch) {
-                        const mediaUrl = new URL(uriMatch[1], targetUrl).href;
-                        const proxyUrl = `${serverUrl}/m3u8-proxy?url=${encodeURIComponent(mediaUrl)}`;
-                        return line.replace(uriMatch[1], proxyUrl);
-                    }
-                    return line;
-                }
-
-                // Handle encryption keys
-                if (line.startsWith('#EXT-X-KEY:') && line.includes('URI=')) {
-                    const uriMatch = line.match(/URI="([^"]+)"/);
-                    if (uriMatch) {
-                        const keyUrl = new URL(uriMatch[1], targetUrl).href;
-                        const proxyUrl = `${serverUrl}/ts-proxy?url=${encodeURIComponent(keyUrl)}`;
-                        return line.replace(uriMatch[1], proxyUrl);
-                    }
-                    return line;
-                }
-
-                // Handle segment URLs (non-comment lines)
-                if (!line.startsWith('#')) {
-                    try {
-                        const segmentUrl = new URL(line, targetUrl).href;
-                        
-                        // Check if it's another m3u8 file (master playlist)
-                        if (line.includes('.m3u8') || line.includes('m3u8')) {
-                            return `${serverUrl}/m3u8-proxy?url=${encodeURIComponent(segmentUrl)}`;
-                        } else {
-                            // It's a media segment
-                            return `${serverUrl}/ts-proxy?url=${encodeURIComponent(segmentUrl)}`;
-                        }
-                    } catch (e) {
-                        return line; // Return original if URL parsing fails
-                    }
-                }
-
+            // Skip empty lines and comments (except special ones)
+            if (!line || (line.startsWith('#') && !line.includes('URI='))) {
                 return line;
-            });
+            }
+
+            // Handle URI in #EXT-X-MEDIA tags (for audio/subtitle tracks)
+            if (line.startsWith('#EXT-X-MEDIA:') && line.includes('URI=')) {
+                const uriMatch = line.match(/URI="([^"]+)"/);
+                if (uriMatch) {
+                    const mediaUrl = new URL(uriMatch[1], targetUrl).href;
+                    const proxyUrl = `${serverUrl}/m3u8-proxy?url=${encodeURIComponent(mediaUrl)}`;
+                    return line.replace(uriMatch[1], proxyUrl);
+                }
+                return line;
+            }
+
+            // Handle encryption keys
+            if (line.startsWith('#EXT-X-KEY:') && line.includes('URI=')) {
+                const uriMatch = line.match(/URI="([^"]+)"/);
+                if (uriMatch) {
+                    const keyUrl = new URL(uriMatch[1], targetUrl).href;
+                    const proxyUrl = `${serverUrl}/ts-proxy?url=${encodeURIComponent(keyUrl)}`;
+                    return line.replace(uriMatch[1], proxyUrl);
+                }
+                return line;
+            }
+
+            // Handle segment URLs (non-comment lines)
+            if (!line.startsWith('#')) {
+                try {
+                    const segmentUrl = new URL(line, targetUrl).href;
+
+                    // Check if it's another m3u8 file (master playlist)
+                    if (line.includes('.m3u8') || line.includes('m3u8')) {
+                        return `${serverUrl}/m3u8-proxy?url=${encodeURIComponent(segmentUrl)}`;
+                    } else {
+                        // It's a media segment
+                        return `${serverUrl}/ts-proxy?url=${encodeURIComponent(segmentUrl)}`;
+                    }
+                } catch (e) {
+                    return line; // Return original if URL parsing fails
+                }
+            }
+
+            return line;
+        });
 
         const processedContent = processedLines.join('\n');
 
@@ -195,10 +199,9 @@ async function proxyM3U8(targetUrl, headers, res, serverUrl) {
         res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
         res.setHeader('Content-Length', Buffer.byteLength(processedContent));
         res.setHeader('Cache-Control', 'no-cache');
-        
+
         res.writeHead(200);
         res.end(processedContent);
-
     } catch (error) {
         console.error('[M3U8 Proxy Error]:', error.message);
         res.writeHead(500);
@@ -214,7 +217,7 @@ async function proxyTs(targetUrl, headers, req, res) {
             'User-Agent': DEFAULT_USER_AGENT,
             ...headers
         };
-        
+
         // Forward range header if present
         if (req.headers.range) {
             fetchHeaders['Range'] = req.headers.range;
@@ -231,20 +234,30 @@ async function proxyTs(targetUrl, headers, req, res) {
         }
 
         // Set response headers
-        const contentType = response.headers.get('content-type') || 'video/mp2t';
+        const contentType =
+            response.headers.get('content-type') || 'video/mp2t';
         res.setHeader('Content-Type', contentType);
-        
+
         // Forward important headers from upstream
         if (response.headers.get('content-length')) {
-            res.setHeader('Content-Length', response.headers.get('content-length'));
+            res.setHeader(
+                'Content-Length',
+                response.headers.get('content-length')
+            );
         }
         if (response.headers.get('content-range')) {
-            res.setHeader('Content-Range', response.headers.get('content-range'));
+            res.setHeader(
+                'Content-Range',
+                response.headers.get('content-range')
+            );
         }
         if (response.headers.get('accept-ranges')) {
-            res.setHeader('Accept-Ranges', response.headers.get('accept-ranges'));
+            res.setHeader(
+                'Accept-Ranges',
+                response.headers.get('accept-ranges')
+            );
         }
-        
+
         // Set status code for range requests
         if (response.status === 206) {
             res.writeHead(206);
@@ -254,7 +267,6 @@ async function proxyTs(targetUrl, headers, req, res) {
 
         // Stream the response directly
         response.body.pipe(res);
-
     } catch (error) {
         console.error('[TS Proxy Error]:', error.message);
         res.writeHead(500);
@@ -266,19 +278,21 @@ export function createProxyRoutes(app) {
     // Test endpoint to verify proxy is working
     app.get('/proxy/test', (req, res) => {
         if (handleCors(req, res)) return;
-        
+
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ 
-            status: 'Proxy server is working',
-            timestamp: new Date().toISOString(),
-            userAgent: req.headers['user-agent']
-        }));
+        res.end(
+            JSON.stringify({
+                status: 'Proxy server is working',
+                timestamp: new Date().toISOString(),
+                userAgent: req.headers['user-agent']
+            })
+        );
     });
-    
+
     // Simplified M3U8 Proxy endpoint based on working implementation
     app.get('/m3u8-proxy', (req, res) => {
         if (handleCors(req, res)) return;
-        
+
         const targetUrl = req.query.url;
         let headers = {};
 
@@ -295,7 +309,8 @@ export function createProxyRoutes(app) {
         }
 
         // Get server URL for building proxy URLs
-        const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
+        const protocol =
+            req.headers['x-forwarded-proto'] || req.protocol || 'http';
         const host = req.headers.host;
         const serverUrl = `${protocol}://${host}`;
 
@@ -305,7 +320,7 @@ export function createProxyRoutes(app) {
     // Simplified TS/Segment Proxy endpoint
     app.get('/ts-proxy', (req, res) => {
         if (handleCors(req, res)) return;
-        
+
         const targetUrl = req.query.url;
         let headers = {};
 
@@ -327,7 +342,7 @@ export function createProxyRoutes(app) {
     // HLS Proxy endpoint (alternative endpoint)
     app.get('/proxy/hls', (req, res) => {
         if (handleCors(req, res)) return;
-        
+
         const targetUrl = req.query.link;
         let headers = {};
 
@@ -343,7 +358,8 @@ export function createProxyRoutes(app) {
             return;
         }
 
-        const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
+        const protocol =
+            req.headers['x-forwarded-proto'] || req.protocol || 'http';
         const host = req.headers.host;
         const serverUrl = `${protocol}://${host}`;
 
@@ -353,7 +369,7 @@ export function createProxyRoutes(app) {
     // Subtitle Proxy endpoint
     app.get('/sub-proxy', (req, res) => {
         if (handleCors(req, res)) return;
-        
+
         const targetUrl = req.query.url;
         let headers = {};
 
@@ -375,24 +391,27 @@ export function createProxyRoutes(app) {
                 ...headers
             }
         })
-        .then(response => {
-            if (!response.ok) {
-                res.writeHead(response.status);
-                res.end(`Subtitle fetch failed: ${response.status}`);
-                return;
-            }
+            .then((response) => {
+                if (!response.ok) {
+                    res.writeHead(response.status);
+                    res.end(`Subtitle fetch failed: ${response.status}`);
+                    return;
+                }
 
-            res.setHeader('Content-Type', response.headers.get('content-type') || 'text/vtt');
-            res.setHeader('Cache-Control', 'public, max-age=3600');
-            
-            res.writeHead(200);
-            response.body.pipe(res);
-        })
-        .catch(error => {
-            console.error('[Sub Proxy Error]:', error.message);
-            res.writeHead(500);
-            res.end(`Subtitle Proxy error: ${error.message}`);
-        });
+                res.setHeader(
+                    'Content-Type',
+                    response.headers.get('content-type') || 'text/vtt'
+                );
+                res.setHeader('Cache-Control', 'public, max-age=3600');
+
+                res.writeHead(200);
+                response.body.pipe(res);
+            })
+            .catch((error) => {
+                console.error('[Sub Proxy Error]:', error.message);
+                res.writeHead(500);
+                res.end(`Subtitle Proxy error: ${error.message}`);
+            });
     });
 }
 
@@ -409,9 +428,14 @@ export function processApiResponse(apiResponse, serverUrl) {
         finalUrl = extractOriginalUrl(finalUrl);
 
         // proxy ALL URLs through our system
-        if (finalUrl.includes('.m3u8') || finalUrl.includes('m3u8') || 
-            (!finalUrl.includes('.mp4') && !finalUrl.includes('.mkv') && 
-             !finalUrl.includes('.webm') && !finalUrl.includes('.avi'))) {
+        if (
+            finalUrl.includes('.m3u8') ||
+            finalUrl.includes('m3u8') ||
+            (!finalUrl.includes('.mp4') &&
+                !finalUrl.includes('.mkv') &&
+                !finalUrl.includes('.webm') &&
+                !finalUrl.includes('.avi'))
+        ) {
             // Use M3U8 proxy for HLS streams and unknown formats
             const m3u8Origin = getOriginFromUrl(finalUrl);
             if (m3u8Origin) {
