@@ -50,9 +50,19 @@ export async function get111Movies(params) {
 
     try {
         // Fetch page
-        const res = await axios.get(pageUrl, { headers });
+        console.log(pageUrl);
+        const res = await axios.get(pageUrl, {
+            headers: {
+                'User-Agent': userAgent,
+                Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.9',
+                Referer: DOMAIN,
+                'Cache-Control': 'no-cache'
+            }
+        });
         const responseText = res.data;
 
+        console.log(responseText);
         const match = responseText.match(/{\"data\":\"(.*?)\"/);
         if (!match) {
             throw new Error('No data found!');
