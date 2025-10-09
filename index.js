@@ -31,6 +31,7 @@ app.use(
         }
     })
 );
+
 createProxyRoutes(app);
 
 app.get('/', (req, res) => {
@@ -67,8 +68,10 @@ app.get('/movie/:tmdbId', async (req, res) => {
     if (output instanceof ErrorObject) {
         return handleErrorResponse(res, output);
     }
-    const serverUrl = `${req.protocol}://${req.get('host')}`;
-    const processedOutput = processApiResponse(output, serverUrl);
+    const processedOutput = processApiResponse(
+        output,
+        `${req.protocol}://${req.get('host')}`
+    );
 
     res.status(200).json(processedOutput);
 });
@@ -105,8 +108,10 @@ app.get('/tv/:tmdbId', async (req, res) => {
     if (output instanceof ErrorObject) {
         return handleErrorResponse(res, output);
     }
-    const serverUrl = `${req.protocol}://${req.get('host')}`;
-    const processedOutput = processApiResponse(output, serverUrl);
+    const processedOutput = processApiResponse(
+        output,
+        `${req.protocol}://${req.get('host')}`
+    );
 
     res.status(200).json(processedOutput);
 });
