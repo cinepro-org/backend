@@ -17,7 +17,7 @@ import { startup } from './src/utils/startup.js';
 import { fileURLToPath } from 'url';
 
 const PORT = process.env.PORT;
-const allowedOrigins = ['https://cinepro.mintlify.app/']; // localhost is also allowed. (from any localhost port)
+const allowedOrigins = process.env.ALLOWED_ORIGINS; // localhost is also allowed. (from any localhost port)
 const app = express();
 
 app.use(
@@ -31,6 +31,7 @@ app.use(
         }
     })
 );
+
 createProxyRoutes(app);
 
 app.get('/', (req, res) => {
@@ -67,8 +68,10 @@ app.get('/movie/:tmdbId', async (req, res) => {
     if (output instanceof ErrorObject) {
         return handleErrorResponse(res, output);
     }
-    const serverUrl = `${req.protocol}://${req.get('host')}`;
-    const processedOutput = processApiResponse(output, serverUrl);
+    const processedOutput = processApiResponse(
+        output,
+        `${req.protocol}://${req.get('host')}`
+    );
 
     res.status(200).json(processedOutput);
 });
@@ -105,8 +108,10 @@ app.get('/tv/:tmdbId', async (req, res) => {
     if (output instanceof ErrorObject) {
         return handleErrorResponse(res, output);
     }
-    const serverUrl = `${req.protocol}://${req.get('host')}`;
-    const processedOutput = processApiResponse(output, serverUrl);
+    const processedOutput = processApiResponse(
+        output,
+        `${req.protocol}://${req.get('host')}`
+    );
 
     res.status(200).json(processedOutput);
 });
@@ -150,7 +155,7 @@ app.get('/cache-stats', (req, res) => {
     });
 });
 
-app.get('*', (req, res) => {
+app.get('/{*any}', (req, res) => {
     handleErrorResponse(
         res,
         new ErrorObject(
