@@ -19,13 +19,13 @@ This repository contains the logic for the Backend of CinePro. It is an **open-s
 
 ## API Documentation
 
-The API is documented using the OpenAPI 3.0 specification. The specification file is located at [`openapi.yaml`](./openapi.yaml) in the project root.
+The API is documented using the OpenAPI 3.0 specification. The specification file is located at [`openapi.yml`](./openapi.yml) in the project root.
 
 ### Viewing the Documentation
 
 You can use various tools to view and interact with the API documentation:
 
-**Online Editors**: You can also use online editors like [Swagger Editor](https://editor.swagger.io/) or [Stoplight Studio](https://stoplight.io/studio) by uploading the [`openapi.yaml`](./openapi.yaml) file.
+**Online Editors**: You can also use online editors like [Swagger Editor](https://editor.swagger.io/) or [Stoplight Studio](https://stoplight.io/studio) by uploading the [`openapi.yml`](./openapi.yml) file.
 
 ### Using the Documentation
 

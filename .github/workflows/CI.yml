@@ -7,6 +7,7 @@ on:
 
 permissions:
     contents: write
+    pull-requests: write
 
 jobs:
     chore-dependencies:
@@ -16,7 +17,8 @@ jobs:
             - name: Checkout repository
               uses: actions/checkout@v3
               with:
-                  ref: main
+                  ref: dev
+                  token: ${{ secrets.GITHUB_TOKEN }}
 
             - name: Set up Node.js
               uses: actions/setup-node@v3
@@ -32,17 +34,40 @@ jobs:
                   npx npm-check-updates -u
                   npm install
 
-            - name: Commit and push changes
-              run: |
-                  git config user.name "GitHub Actions"
-                  git config user.email "github-actions@users.noreply.github.com"
-                  git add package.json package-lock.json
-                  if ! git diff --cached --quiet; then
-                    git commit -m "chore: update dependencies"
-                    git push origin HEAD:main
-                  else
-                    echo "No changes to commit👍👍"
-                  fi
+            - name: Create Pull Request
+              uses: peter-evans/create-pull-request@v7
+              with:
+                  token: ${{ secrets.GITHUB_TOKEN }}
+                  branch: auto/update-deps
+                  base: dev
+                  title: 'chore: update dependencies'
+                  body: |
+                      ## 🔄 Automated Dependency Update
+
+                      This PR updates project dependencies to their latest versions.
+
+                      ### Changes
+                      - Updated package.json dependencies
+                      - Updated package-lock.json lockfile
+
+                      ### Notes
+                      - Automated by GitHub Actions
+                  commit-message: 'chore: update dependencies to latest versions'
+                  author: 'github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>'
+                  labels: |
+                      chore
+                      dependencies
+                  assignees: An0n-00
+                  draft: false
+                  delete-branch: true
+                  maintainer-can-modify: true
+
+            - name: Auto-merge PR
+              if: success()
+              uses: pascalgn/automerge-action@v0.16.3
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  MERGE_METHOD: squash
 
     chore-prettier:
         runs-on: ubuntu-latest
@@ -52,7 +77,8 @@ jobs:
             - name: Checkout repository
               uses: actions/checkout@v3
               with:
-                  ref: main
+                  ref: dev
+                  token: ${{ secrets.GITHUB_TOKEN }}
 
             - name: Install Prettier
               run: |
@@ -62,14 +88,38 @@ jobs:
               run: |
                   prettier --write . --ignore-path .prettierignore
 
-            - name: Commit and push changes
-              run: |
-                  git config user.name "GitHub Actions"
-                  git config user.email "github-actions@users.noreply.github.com"
-                  git add -A
-                  if ! git diff --cached --quiet; then
-                    git commit -m "chore: format files with prettier"
-                    git push origin HEAD:main
-                  else
-                    echo "No changes to commit👍👍"
-                  fi
+            - name: Create Pull Request
+              uses: peter-evans/create-pull-request@v7
+              with:
+                  token: ${{ secrets.GITHUB_TOKEN }}
+                  branch: auto/format-prettier
+                  base: dev
+                  title: 'chore: format files with prettier'
+                  body: |
+                      ## 🎨 Automated Code Formatting
+
+                      This PR applies Prettier formatting to maintain consistent code style.
+
+                      ### Changes
+                      - Applied Prettier formatting rules
+                      - Fixed code style inconsistencies
+
+                      ### Notes
+                      - Automated by GitHub Actions
+                      - No functional changes, style only
+                  commit-message: 'chore: apply prettier formatting for consistent code style'
+                  author: 'github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>'
+                  labels: |
+                      chore
+                      🎨formatting
+                  assignees: An0n-00
+                  draft: false
+                  delete-branch: true
+                  maintainer-can-modify: true
+
+            - name: Auto-merge PR
+              if: success()
+              uses: pascalgn/automerge-action@v0.16.3
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  MERGE_METHOD: squash
