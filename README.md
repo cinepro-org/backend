@@ -17,15 +17,17 @@ This repository contains the logic for the Backend of CinePro. It is an **open-s
 > [!Warning]
 > Since this project is still in development, some features might not work as expected. TV shows are not fully supported yet. It will come after the movie scraping is done.
 
+**Found a bug?** If you encounter bugs, errors, or unexpected behavior, please open a new issue (use one of our bug templates) — or reply to this comment on our Discussions page so we can follow up: https://github.com/cinepro-org/Discussions/discussions/1#discussioncomment-14706483
+
 ## API Documentation
 
-The API is documented using the OpenAPI 3.0 specification. The specification file is located at [`openapi.yaml`](./openapi.yaml) in the project root.
+The API is documented using the OpenAPI 3.0 specification. The specification file is located at [`openapi.yml`](./openapi.yml) in the project root.
 
 ### Viewing the Documentation
 
 You can use various tools to view and interact with the API documentation:
 
-**Online Editors**: You can also use online editors like [Swagger Editor](https://editor.swagger.io/) or [Stoplight Studio](https://stoplight.io/studio) by uploading the [`openapi.yaml`](./openapi.yaml) file.
+**Online Editors**: You can also use online editors like [Swagger Editor](https://editor.swagger.io/) or [Stoplight Studio](https://stoplight.io/studio) by uploading the [`openapi.yml`](./openapi.yml) file.
 
 ### Using the Documentation
 
@@ -68,6 +70,8 @@ We have several Bug templates and Feature Request templates to make it easier fo
 If you want to contribute code, please fork the repository and create a new branch for your feature or bugfix.
 
 Feel free to open issues or submit pull requests. Please make sure to follow the existing code style and include tests for any new functionality. To read more about contributing, please refer to the [CONTRIBUTING.md](.github/CONTRIBUTING.md) file.
+
+**Found a bug?** If you encounter bugs, errors, or unexpected behavior, please open a new issue (use one of our bug templates) — or reply to this comment on our Discussions page so we can follow up: https://github.com/cinepro-org/Discussions/discussions/1#discussioncomment-14706483
 
 ## Notice
 
