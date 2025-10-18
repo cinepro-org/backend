@@ -19,7 +19,6 @@ This repository contains the logic for the Backend of CinePro. It is an **open-s
 
 **Found a bug?** If you encounter bugs, errors, or unexpected behavior, please open a new issue (use one of our bug templates) — or reply to this comment on our Discussions page so we can follow up: https://github.com/cinepro-org/Discussions/discussions/1#discussioncomment-14706483
 
-
 ## API Documentation
 
 The API is documented using the OpenAPI 3.0 specification. The specification file is located at [`openapi.yml`](./openapi.yml) in the project root.
@@ -73,7 +72,6 @@ If you want to contribute code, please fork the repository and create a new bran
 Feel free to open issues or submit pull requests. Please make sure to follow the existing code style and include tests for any new functionality. To read more about contributing, please refer to the [CONTRIBUTING.md](.github/CONTRIBUTING.md) file.
 
 **Found a bug?** If you encounter bugs, errors, or unexpected behavior, please open a new issue (use one of our bug templates) — or reply to this comment on our Discussions page so we can follow up: https://github.com/cinepro-org/Discussions/discussions/1#discussioncomment-14706483
-
 
 ## Notice
 
