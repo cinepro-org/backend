@@ -973,9 +973,9 @@ async function fromPrimewireToProvider(primwireObject) {
 
         // Step 4: Make the actual media link request
         const mediaUrl = `https://primewire.tf/links/go/${primwireObject.idx}`;
-        // console.log(
-        //     `[Primewire Debug] Fetching media URL: ${mediaUrl}?token=${token}`
-        // );
+        console.log(
+            `[Primewire Debug] Fetching media URL: ${mediaUrl}?token=${token}`
+        );
 
         let mediaobject;
         try {
@@ -1006,7 +1006,7 @@ async function fromPrimewireToProvider(primwireObject) {
             });
         }
 
-        // console.log(`[Primewire Debug] Media response:`, mediaobject.data);
+        console.log(`[Primewire Debug] Media response:`, mediaobject.data);
 
         // Step 5: Extract the final link from response
         if (mediaobject.data && mediaobject.data.link) {
