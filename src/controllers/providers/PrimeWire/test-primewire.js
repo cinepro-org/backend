@@ -3,7 +3,7 @@ import { getPrimewire } from './primewire.js';
 async function test() {
     const movie = {
         type: 'movie',
-        imdb: 'tt13186306'
+        imdb: 'tt0454876' // life of pi (a must watch movie folks)
     };
 
     console.log('[Test] Fetching Primewire links for movie:', movie.imdb);

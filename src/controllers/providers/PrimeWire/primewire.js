@@ -116,10 +116,43 @@ async function loadServers(link) {
             return [];
         }
 
-        // Create URLs from decrypted keys
-        const urls = serverKeys.map((key, i) => {
-            const url = `https://primewire.tf/links/gos/${key}`;
+        // Filter out invalid keys before creating URLs
+        const validKeys = serverKeys.filter((key) => {
+            // Skip keys that are:
+            // - Only zeros (000, 00000, etc.)
+            // - Less than 3 characters
+            // - Only contain numbers (valid keys usually have letters)
+            if (!key || key.length < 3) {
+                // console.log(`[Primewire] Filtering out too-short key: ${key}`);
+                return false;
+            }
+            if (/^0+$/.test(key)) {
+                // console.log(`[Primewire] Filtering out zero-only key: ${key}`);
+                return false;
+            }
+            // Valid keys from your debug output are alphanumeric like: O3edw, yooGr, dfLSj
+            // So we can check if key has at least one letter
+            if (!/[a-zA-Z]/.test(key)) {
+                // console.log(
+                //     `[Primewire] Filtering out number-only key: ${key}`
+                // );
+                return false;
+            }
+            return true;
+        });
 
+        // console.log(
+        //     `[Primewire] Filtered ${serverKeys.length - validKeys.length} invalid keys, ${validKeys.length} valid keys remaining`
+        // );
+
+        if (validKeys.length === 0) {
+            // console.log('[Primewire] No valid keys found after filtering');
+            return [];
+        }
+
+        // Create URLs from valid decrypted keys only
+        const urls = validKeys.map((key, i) => {
+            const url = `https://primewire.tf/links/gos/${key}`;
             return { url, idx: key };
         });
 
@@ -128,7 +161,11 @@ async function loadServers(link) {
             try {
                 embeds.push(await fromPrimewireToProvider(item));
             } catch (err) {
-                throw err;
+                console.error(
+                    `[Primewire] Skipping failed link ${item.idx}:`,
+                    err.message
+                );
+                // Don't throw - just continue to next link
             }
         }
 
@@ -816,40 +853,197 @@ function sha1Hex(str) {
 }
 
 async function fromPrimewireToProvider(primwireObject) {
-    const response = await axios.get(primwireObject.url);
-
-    let javascriptfile = response.data.match(
-        /<script async type="text\/javascript" src="\/js\/app-(.+?)\">/
-    );
-    if (javascriptfile) {
-        javascriptfile = javascriptfile[1];
-
-        const jsfiledata = await axios.get(
-            `https://primewire.tf/js/app-${javascriptfile}`
-        );
-        let token = jsfiledata.data.match(
-            /return Object\(r\.useEffect\)\(\(function\(\)\{var t,n;t="(.+?)"/
-        );
-        if (token) {
-            token = token[1];
-        }
-
-        let mediaobject = await axios.get(
-            `https://primewire.tf/links/go/${primwireObject.idx}?token=${token}&embed=true`
-        );
-
-        return mediaobject.data.link;
+    // Early validation - skip invalid keys immediately
+    if (
+        !primwireObject.idx ||
+        primwireObject.idx.length !== 5 ||
+        !/[a-zA-Z]/.test(primwireObject.idx) ||
+        /^0+$/.test(primwireObject.idx)
+    ) {
+        console.log(`[Primewire] Skipping invalid key: ${primwireObject.idx}`);
+        throw new Error(`Invalid key format: ${primwireObject.idx}`);
     }
 
-    console.error(
-        `[Primewire] Failed extracting provider for idx=${primwireObject.idx}`
-    );
-    throw new ErrorObject(
-        'Failed to extract media link from Primewire',
-        'Primewire',
-        500,
-        "Check the response format or Primewire's availability.",
-        true,
-        true
-    );
+    try {
+        // Step 1: Fetch the initial redirect page
+        const response = await axios.get(primwireObject.url, {
+            maxRedirects: 5,
+            validateStatus: function (status) {
+                return status >= 200 && status < 400;
+            },
+            headers: {
+                'User-Agent':
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            }
+        });
+
+        // console.log(`[Primewire Debug] Fetched ${primwireObject.url}`);
+        // console.log(
+        //     `[Primewire Debug] Response length: ${response.data.length}`
+        // );
+
+        // Look for all script tags to debug
+        const scriptTags = response.data.match(
+            /<script[^>]*src="[^"]*"[^>]*>/g
+        );
+        if (scriptTags) {
+            // console.log(
+            //     `[Primewire Debug] Found ${scriptTags.length} script tags`
+            // );
+            const appJsTags = scriptTags.filter((tag) =>
+                tag.includes('/js/app-')
+            );
+            // console.log(`[Primewire Debug] App.js tags:`, appJsTags);
+        }
+
+        // Step 2: Extract the app.js file version from the page
+        let javascriptfile = response.data.match(
+            /<script[^>]*src="\/js\/app-([^"?]+)\.js[^"]*"/
+        );
+
+        if (!javascriptfile) {
+            javascriptfile = response.data.match(
+                /<script[^>]*src="\/js\/app-([^"?]+)/
+            );
+        }
+
+        if (!javascriptfile) {
+            javascriptfile = response.data.match(/\/js\/app-([a-f0-9]+)\.js/);
+        }
+
+        if (!javascriptfile || !javascriptfile[1]) {
+            console.error(
+                `[Primewire] Could not find app.js reference for idx=${primwireObject.idx}`
+            );
+            // console.log(
+            //     `[Primewire Debug] First 1000 chars of response:`,
+            //     response.data.substring(0, 1000)
+            // );
+            throw new Error('App.js not found in page');
+        }
+
+        javascriptfile = javascriptfile[1];
+        // console.log(
+        //     `[Primewire Debug] Extracted app.js version: ${javascriptfile}`
+        // );
+
+        // Step 3: Fetch the JavaScript file to extract the token
+        const jsUrl = `https://primewire.tf/js/app-${javascriptfile}.js`;
+        // console.log(`[Primewire Debug] Fetching: ${jsUrl}`);
+
+        const jsfiledata = await axios.get(jsUrl, {
+            headers: {
+                'User-Agent':
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+        });
+
+        // console.log(
+        //     `[Primewire Debug] JS file length: ${jsfiledata.data.length}`
+        // );
+
+        // Step 3b: Extract token
+        let token = jsfiledata.data.match(
+            /return Object\(r\.useEffect\)\(\(function\(\)\{var t,n;t="([^"]+)"/
+        );
+
+        if (!token) {
+            token = jsfiledata.data.match(
+                /useEffect[^\{]*\{[^\}]*var [^;]*;[^=]*="([^"]+)"/
+            );
+        }
+
+        if (!token) {
+            token = jsfiledata.data.match(/\{var t,n;t="([^"]+)"/);
+        }
+
+        if (!token || !token[1]) {
+            console.error(
+                `[Primewire] Could not extract token from app.js for idx=${primwireObject.idx}`
+            );
+            // console.log(
+            //     `[Primewire Debug] First 2000 chars of JS:`,
+            //     jsfiledata.data.substring(0, 2000)
+            // );
+            throw new Error('Token not found in app.js');
+        }
+
+        token = token[1];
+        // console.log(`[Primewire Debug] Extracted token: ${token}`);
+
+        // Step 4: Make the actual media link request
+        const mediaUrl = `https://primewire.tf/links/go/${primwireObject.idx}`;
+        // console.log(
+        //     `[Primewire Debug] Fetching media URL: ${mediaUrl}?token=${token}`
+        // );
+
+        let mediaobject;
+        try {
+            mediaobject = await axios.get(mediaUrl, {
+                params: {
+                    token: token,
+                    embed: 'true'
+                },
+                headers: {
+                    Referer: `https://www.primewire.tf/movie/944483-life-of-pi`,
+                    'User-Agent':
+                        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                }
+            });
+        } catch (embedError) {
+            // console.log(
+            //     `[Primewire] Embed endpoint failed (${embedError.response?.status}), trying without embed`
+            // );
+            mediaobject = await axios.get(mediaUrl, {
+                params: {
+                    token: token
+                },
+                headers: {
+                    Referer: `https://www.primewire.tf/movie/944483-life-of-pi`,
+                    'User-Agent':
+                        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                }
+            });
+        }
+
+        // console.log(`[Primewire Debug] Media response:`, mediaobject.data);
+
+        // Step 5: Extract the final link from response
+        if (mediaobject.data && mediaobject.data.link) {
+            return mediaobject.data.link;
+        } else if (
+            typeof mediaobject.data === 'string' &&
+            mediaobject.data.startsWith('http')
+        ) {
+            return mediaobject.data;
+        } else {
+            console.error(
+                `[Primewire] Invalid response format for idx=${primwireObject.idx}:`,
+                mediaobject.data
+            );
+            throw new Error('Invalid response format from media endpoint');
+        }
+    } catch (error) {
+        console.error(
+            `[Primewire] Failed extracting provider for idx=${primwireObject.idx}:`,
+            error.message
+        );
+        if (error.response) {
+            console.error(
+                `[Primewire] Response status: ${error.response.status}`
+            );
+            console.error(
+                `[Primewire] Response data:`,
+                error.response.data?.substring?.(0, 500)
+            );
+        }
+        throw new ErrorObject(
+            `Failed to extract media link from Primewire: ${error.message}`,
+            'Primewire',
+            500,
+            "Check the response format or Primewire's availability.",
+            true,
+            true
+        );
+    }
 }
