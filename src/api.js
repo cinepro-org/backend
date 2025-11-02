@@ -45,22 +45,23 @@ export async function scrapeMedia(media) {
         // WORKING
         { getTwoEmbed: () => getTwoEmbed(media) },
         { getAutoembed: () => getAutoembed(media) },
-        { get111Movies: () => get111Movies(media) },
         { getVidSrcCC: () => getVidSrcCC(media) },
-        { getVidSrc: () => getVidSrc(media) },
-        { getVidrock: () => getVidRock(media) },
-        { getCinemaOS: () => getCinemaOS(media) },
+        // { getVidSrc: () => getVidSrc(media) },
+        // { getVidrock: () => getVidRock(media) },
+        // { getCinemaOS: () => getCinemaOS(media) },
         { getMultiembed: () => getMultiembed(media) },
-        { getVidsrcWtf: () => getVidsrcWtf(media) },
+        // { getPrimewire: () => getPrimewire(media) },
 
-        // It does need to fixed but it acts like it is down sometimes throws 520 or 524 so,
+        // It does need to be fixed but it acts like it is down sometimes throws 520 or 524 so,
         // You got my point right ?
         { getVidZee: () => getVidZee(media) },
 
-        // NEED TO FIX
+        // The Ones That are using Cloudfare so no way to make it work
+        // { get111Movies: () => get111Movies(media) },
         // { getXprime: () => getXprime(media) },
-        // { getPrimewire: () => getPrimewire(media) },
 
+        // Need to Fix which can be fixed
+        // { getVidsrcWtf: () => getVidsrcWtf(media) },
         // SUB SEARCH
         { getWyzie: () => getWyzie(media) },
         { getLibre: () => getLibre(media) }

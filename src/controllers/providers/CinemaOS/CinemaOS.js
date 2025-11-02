@@ -14,36 +14,67 @@ const headers = {
 
 export async function getCinemaOS(params) {
     const { tmdb } = params;
+    console.log('CinemaOS: Starting with tmdb:', tmdb);
 
     try {
-        // 1. Auth token
-        const authApi = `${BASE_URL}/api/auth`;
-        const authInit = (await axios.get(authApi, { headers })).data;
-        const authToken = (await axios.post(authApi, authInit, { headers }))
-            .data.token;
+        // 1. Get movie metadata directly (no auth needed)
+        const downloadUrl = `${BASE_URL}/api/downloadLinks?type=movie&tmdbId=${tmdb}`;
+        console.log('CinemaOS: Requesting metadata from:', downloadUrl);
 
-        headers['Authorization'] = `Bearer ${authToken}`;
+        const downloadData = (await axios.get(downloadUrl, { headers })).data
+            .data[0];
 
-        // 2. Get movie metadata
-        const downloadData = (
-            await axios.get(
-                `${BASE_URL}/api/downloadLinks?type=movie&tmdbId=${tmdb}`
-            )
-        ).data.data[0];
+        console.log(
+            'CinemaOS: Metadata received:',
+            downloadData ? 'YES' : 'NO'
+        );
 
         const releaseYear = downloadData.releaseYear;
         const title = downloadData.movieTitle;
         const imdbId = downloadData.subtitleLink.split('=').pop();
 
+        console.log(
+            'CinemaOS: Extracted - Title:',
+            title,
+            'Year:',
+            releaseYear,
+            'IMDb:',
+            imdbId
+        );
+
         // 3. Get encrypted response
+        // Construct URL with only valid parameters
+        const params = new URLSearchParams({
+            type: 'movie',
+            tmdbId: tmdb,
+            imdbId: imdbId
+        });
+
+        // Only add if they exist
+        if (title) params.append('t', title);
+        if (releaseYear) params.append('ry', releaseYear);
+
+        const cinemaUrl = `${BASE_URL}/api/cinemaos?${params.toString()}`;
+        console.log('CinemaOS: Requesting encrypted data from:', cinemaUrl);
+
+        // Try with additional headers that might be required
+        const cinemaHeaders = {
+            ...headers,
+            Accept: 'application/json',
+            'Content-Type': 'application/json'
+        };
+
         const encResponse = (
-            await axios.get(
-                `${BASE_URL}/api/cinemaos?type=movie&tmdbId=${tmdb}&imdbId=${imdbId}&t=${encodeURIComponent(
-                    title
-                )}&ry=${releaseYear}`,
-                { headers }
-            )
+            await axios.get(cinemaUrl, {
+                headers: cinemaHeaders,
+                timeout: 30000 // 30 second timeout
+            })
         ).data.data;
+
+        console.log(
+            'CinemaOS: Encrypted response received:',
+            encResponse ? 'YES' : 'NO'
+        );
 
         const encryptedHex = encResponse.encrypted;
         const ivHex = encResponse.cin;
@@ -90,6 +121,11 @@ export async function getCinemaOS(params) {
             subtitles: []
         };
     } catch (error) {
+        console.log('CinemaOS: Error occurred');
+        console.log('CinemaOS: Error message:', error.message);
+        console.log('CinemaOS: Error status:', error.response?.status);
+        console.log('CinemaOS: Error data:', error.response?.data);
+
         return new ErrorObject(
             `CinemaOS Error: ${error.message}`,
             'CinemaOS',
