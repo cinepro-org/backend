@@ -1,10 +1,11 @@
-import { getCinemaOS } from './CinemaOS1.js';
+import { getCinemaOS } from './CinemaOS.js';
 
 async function testCinemaOS() {
-    console.log('=== Testing CinemaOS HTML Extraction ===\n');
+    console.log('=== Testing CinemaOS Provider ===\n');
 
+    // Test with movie from Python example
     const movieMedia = {
-        tmdb: '755898' // War of the Worlds (2025) - from your HTML
+        tmdb: '1061474' // Movie from Python code
     };
 
     console.log('Testing with movie TMDB ID:', movieMedia.tmdb);
@@ -12,14 +13,21 @@ async function testCinemaOS() {
     try {
         const result = await getCinemaOS(movieMedia);
 
-        if (result.error) {
-            console.log('Error:', result.message);
+        if (result.message) {
+            console.log('\n❌ Error:', result.message);
+            console.log('Hint:', result.hint);
         } else {
-            console.log('Success!');
-            console.log('Video URL:', result.files.file);
+            console.log('\n✅ Success! Found', result.files.length, 'sources');
+            console.log('\nSources:');
+            result.files.forEach((file, index) => {
+                console.log(`\n[${index + 1}] ${file.file}`);
+                console.log(`    Type: ${file.type}`);
+                console.log(`    Language: ${file.lang}`);
+            });
         }
     } catch (error) {
-        console.error('Unexpected error:', error.message);
+        console.error('\n❌ Unexpected error:', error.message);
+        console.error(error.stack);
     }
 }
 
