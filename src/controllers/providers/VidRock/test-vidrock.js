@@ -1,18 +1,32 @@
-import { getVidRock } from './vidrock.js';
+import { getVidRock } from './Vidrock.js';
 
 async function test() {
-    // Example movie media object
-    const movie = {
+    console.log('Testing VidRock scraper...\n');
+    
+    // Test with the movie from the Python example
+    const media = {
+        tmdb: '533535', // Deadpool & Wolverine
         type: 'movie',
-        tmdb: 603692 // John Wick: Chapter 4
+        title: 'Deadpool & Wolverine',
+        releaseYear: 2024
     };
 
-    console.log('[Test] Fetching Vidrock links for movie:', movie.tmdb);
-
-    const result = await getVidRock(movie);
-
-    console.log('=== Vidrock Result ===');
-    console.dir(result, { depth: null });
+    try {
+        console.log('Testing with:', media);
+        const result = await getVidRock(media);
+        
+        if (result.files) {
+            console.log('\n✅ Success! Found', result.files.length, 'sources');
+            console.log('Result:', JSON.stringify(result, null, 2));
+        } else {
+            console.log('\n❌ Error:', result);
+        }
+    } catch (error) {
+        console.error('\n❌ Error:', error.message);
+        if (error.stack) {
+            console.error('Stack:', error.stack);
+        }
+    }
 }
 
-test().catch((err) => console.error('[Test] Uncaught error:', err));
+test();

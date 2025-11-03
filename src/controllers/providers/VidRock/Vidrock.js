@@ -1,14 +1,16 @@
+import { webcrypto } from 'crypto';
 import { languageMap } from '../../../utils/languages.js';
 import { ErrorObject } from '../../../helpers/ErrorObject.js';
 
 const DOMAIN = 'https://vidrock.net';
+const PASSPHRASE = 'x7k9mPqT2rWvY8zA5bC3nF6hJ2lK4mN9';
 
 export async function getVidRock(media) {
     console.log('[getVidRock] Function called');
     console.log('[getVidRock] Media input:', JSON.stringify(media, null, 2));
 
     // media should contain: { type, tmdb, season?, episode? }
-    const link = getLink(media);
+    const link = await getLink(media);
     console.log('[getVidRock] Generated link from getLink():', link);
 
     try {
@@ -142,30 +144,84 @@ export async function getVidRock(media) {
     }
 }
 
-const getLink = (media) => {
+/**
+ * Encrypt item ID using AES-CBC with fixed passphrase
+ * Matches Python: cipher = AES.new(key, AES.MODE_CBC, iv)
+ */
+async function encryptItemId(itemId) {
+    try {
+        const textEncoder = new TextEncoder();
+        
+        // Key is the passphrase
+        const keyData = textEncoder.encode(PASSPHRASE);
+        
+        // IV is first 16 bytes of the key
+        const iv = keyData.slice(0, 16);
+        
+        // Import the key for AES-CBC
+        const key = await webcrypto.subtle.importKey(
+            'raw',
+            keyData,
+            { name: 'AES-CBC' },
+            false,
+            ['encrypt']
+        );
+        
+        // Pad the item ID to AES block size (16 bytes)
+        // PKCS7 padding: add (16 - length % 16) bytes, each with value (16 - length % 16)
+        const itemIdBytes = textEncoder.encode(itemId);
+        const paddingLength = 16 - (itemIdBytes.length % 16);
+        const paddedData = new Uint8Array(itemIdBytes.length + paddingLength);
+        paddedData.set(itemIdBytes);
+        paddedData.fill(paddingLength, itemIdBytes.length);
+        
+        // Encrypt using AES-CBC
+        const encrypted = await webcrypto.subtle.encrypt(
+            { name: 'AES-CBC', iv: iv },
+            key,
+            paddedData
+        );
+        
+        // Base64 encode and make URL-safe (similar to VidSrcCC approach)
+        const encryptedArray = new Uint8Array(encrypted);
+        const binaryString = String.fromCharCode(...encryptedArray);
+        const base64 = Buffer.from(binaryString, 'binary').toString('base64');
+        
+        // Convert to URL-safe base64: + -> -, / -> _, remove padding =
+        return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+    } catch (error) {
+        console.error('[encryptItemId] Encryption error:', error);
+        throw error;
+    }
+}
+
+async function getLink(media) {
     console.log('[getLink] Starting link generation');
-    console.log(
-        '[getLink] Input media object:',
-        JSON.stringify(media, null, 2)
-    );
+    console.log('[getLink] Input media object:', JSON.stringify(media, null, 2));
 
-    // Vidrock uses simple base64 encoding of the TMDB ID
-    const tmdbString = media.tmdb.toString();
-    console.log('[getLink] TMDB ID as string:', tmdbString);
-
-    const encoded = btoa(tmdbString);
-    console.log('[getLink] Base64 encoded ID:', encoded);
-
-    let finalUrl;
+    // Build item ID based on type
+    let itemId;
+    let itemType;
+    
     if (media.type === 'tv') {
-        // For TV shows, you need season and episode
-        finalUrl = `https://vidrock.net/api/tv/${encoded}/${media.season}/${media.episode}`;
-        console.log('[getLink] Generated TV URL:', finalUrl);
+        // For TV: "tmdb_season_episode"
+        itemId = `${media.tmdb}_${media.season}_${media.episode}`;
+        itemType = 'tv';
+        console.log('[getLink] TV item ID:', itemId);
     } else {
-        finalUrl = `https://vidrock.net/api/movie/${encoded}`;
-        console.log('[getLink] Generated Movie URL:', finalUrl);
+        // For movie: just the tmdb ID
+        itemId = media.tmdb.toString();
+        itemType = 'movie';
+        console.log('[getLink] Movie item ID:', itemId);
     }
 
-    console.log('[getLink] Final URL to fetch:', finalUrl);
+    // Encrypt the item ID using AES-CBC
+    const encrypted = await encryptItemId(itemId);
+    console.log('[getLink] Encrypted item ID:', encrypted);
+
+    // Build final URL
+    const finalUrl = `${DOMAIN}/api/${itemType}/${encrypted}`;
+    console.log('[getLink] Final URL:', finalUrl);
+
     return finalUrl;
-};
+}

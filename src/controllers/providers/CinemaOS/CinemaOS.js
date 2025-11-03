@@ -42,22 +42,29 @@ export async function getCinemaOS(params) {
             imdbId
         );
 
-        // 3. Get encrypted response
-        // Construct URL with only valid parameters
-        const params = new URLSearchParams({
+        // 2. Generate HMAC signature
+        const secretKey = 'a8f7e9c2d4b6a1f3e8c9d2b4a7f6e9c2d4b6a1f3e8c9d2b4a7f6e9c2d4b6a1f3';
+        const messageString = `media|episodeId:|seasonId:|tmdbId:${tmdb}`;
+        const hmacSignature = crypto
+            .createHmac('sha256', secretKey)
+            .update(messageString)
+            .digest('hex');
+
+        console.log('CinemaOS: Generated HMAC signature:', hmacSignature);
+
+        // 3. Get encrypted response with signature
+        const apiParams = new URLSearchParams({
             type: 'movie',
             tmdbId: tmdb,
-            imdbId: imdbId
+            imdbId: imdbId,
+            t: title,
+            ry: releaseYear,
+            secret: hmacSignature
         });
 
-        // Only add if they exist
-        if (title) params.append('t', title);
-        if (releaseYear) params.append('ry', releaseYear);
-
-        const cinemaUrl = `${BASE_URL}/api/cinemaos?${params.toString()}`;
+        const cinemaUrl = `${BASE_URL}/api/cinemaos?${apiParams.toString()}`;
         console.log('CinemaOS: Requesting encrypted data from:', cinemaUrl);
 
-        // Try with additional headers that might be required
         const cinemaHeaders = {
             ...headers,
             Accept: 'application/json',
@@ -67,7 +74,7 @@ export async function getCinemaOS(params) {
         const encResponse = (
             await axios.get(cinemaUrl, {
                 headers: cinemaHeaders,
-                timeout: 30000 // 30 second timeout
+                timeout: 30000
             })
         ).data.data;
 
@@ -79,11 +86,20 @@ export async function getCinemaOS(params) {
         const encryptedHex = encResponse.encrypted;
         const ivHex = encResponse.cin;
         const authTagHex = encResponse.mao;
+        const saltHex = encResponse.salt;
 
-        // 4. Prepare AES-256-GCM decrypt
-        const keyHex =
-            'a1b2c3d4e4f6589012345678901477567890abcdef1234567890abcdef123456';
-        const key = Buffer.from(keyHex, 'hex');
+        console.log('CinemaOS: Salt received:', saltHex ? 'YES' : 'NO');
+
+        // 4. Derive key using PBKDF2 with salt
+        const password = Buffer.from('a1b2c3d4e4f6588658455678901477567890abcdef1234567890abcdef123456', 'utf8');
+        const salt = Buffer.from(saltHex, 'hex');
+        
+        // PBKDF2 with SHA-256, 100000 iterations, 32 bytes output (256-bit key)
+        const key = crypto.pbkdf2Sync(password, salt, 100000, 32, 'sha256');
+
+        console.log('CinemaOS: Derived decryption key');
+
+        // 5. Prepare AES-256-GCM decrypt
         const ciphertext = Buffer.from(encryptedHex, 'hex');
         const iv = Buffer.from(ivHex, 'hex');
         const authTag = Buffer.from(authTagHex, 'hex');
@@ -94,30 +110,32 @@ export async function getCinemaOS(params) {
             decipher.update(ciphertext, undefined, 'utf8') +
             decipher.final('utf8');
 
-        // 5. Extract sources
+        // 6. Extract sources
         const sources = JSON.parse(decrypted).sources;
         const validEntries = Object.values(sources).filter(
             (v) => v && typeof v === 'object' && v.url
         );
 
+        console.log('CinemaOS: Found', validEntries.length, 'valid sources');
+
         if (!validEntries.length) {
             throw new Error('No valid sources found');
         }
 
-        const videoUrl =
-            validEntries[Math.floor(Math.random() * validEntries.length)].url;
+        // Return all valid sources
+        const files = validEntries.map(entry => ({
+            file: entry.url,
+            type: 'hls',
+            lang: 'en',
+            headers: {
+                Referer: BASE_URL,
+                'User-Agent': USER_AGENT
+            }
+        }));
 
-        // 6. Return in provider format
+        // 7. Return in provider format
         return {
-            files: {
-                file: videoUrl,
-                type: 'hls',
-                lang: 'en',
-                headers: {
-                    Referer: BASE_URL,
-                    'User-Agent': USER_AGENT
-                }
-            },
+            files: files,
             subtitles: []
         };
     } catch (error) {
