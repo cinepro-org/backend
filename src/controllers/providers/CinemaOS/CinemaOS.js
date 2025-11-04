@@ -43,7 +43,8 @@ export async function getCinemaOS(params) {
         );
 
         // 2. Generate HMAC signature
-        const secretKey = 'a8f7e9c2d4b6a1f3e8c9d2b4a7f6e9c2d4b6a1f3e8c9d2b4a7f6e9c2d4b6a1f3';
+        const secretKey =
+            'a8f7e9c2d4b6a1f3e8c9d2b4a7f6e9c2d4b6a1f3e8c9d2b4a7f6e9c2d4b6a1f3';
         const messageString = `media|episodeId:|seasonId:|tmdbId:${tmdb}`;
         const hmacSignature = crypto
             .createHmac('sha256', secretKey)
@@ -91,9 +92,12 @@ export async function getCinemaOS(params) {
         console.log('CinemaOS: Salt received:', saltHex ? 'YES' : 'NO');
 
         // 4. Derive key using PBKDF2 with salt
-        const password = Buffer.from('a1b2c3d4e4f6588658455678901477567890abcdef1234567890abcdef123456', 'utf8');
+        const password = Buffer.from(
+            'a1b2c3d4e4f6588658455678901477567890abcdef1234567890abcdef123456',
+            'utf8'
+        );
         const salt = Buffer.from(saltHex, 'hex');
-        
+
         // PBKDF2 with SHA-256, 100000 iterations, 32 bytes output (256-bit key)
         const key = crypto.pbkdf2Sync(password, salt, 100000, 32, 'sha256');
 
@@ -123,7 +127,7 @@ export async function getCinemaOS(params) {
         }
 
         // Return all valid sources
-        const files = validEntries.map(entry => ({
+        const files = validEntries.map((entry) => ({
             file: entry.url,
             type: 'hls',
             lang: 'en',
