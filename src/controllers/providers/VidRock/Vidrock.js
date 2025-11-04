@@ -151,13 +151,13 @@ export async function getVidRock(media) {
 async function encryptItemId(itemId) {
     try {
         const textEncoder = new TextEncoder();
-        
+
         // Key is the passphrase
         const keyData = textEncoder.encode(PASSPHRASE);
-        
+
         // IV is first 16 bytes of the key
         const iv = keyData.slice(0, 16);
-        
+
         // Import the key for AES-CBC
         const key = await webcrypto.subtle.importKey(
             'raw',
@@ -166,7 +166,7 @@ async function encryptItemId(itemId) {
             false,
             ['encrypt']
         );
-        
+
         // Pad the item ID to AES block size (16 bytes)
         // PKCS7 padding: add (16 - length % 16) bytes, each with value (16 - length % 16)
         const itemIdBytes = textEncoder.encode(itemId);
@@ -174,19 +174,19 @@ async function encryptItemId(itemId) {
         const paddedData = new Uint8Array(itemIdBytes.length + paddingLength);
         paddedData.set(itemIdBytes);
         paddedData.fill(paddingLength, itemIdBytes.length);
-        
+
         // Encrypt using AES-CBC
         const encrypted = await webcrypto.subtle.encrypt(
             { name: 'AES-CBC', iv: iv },
             key,
             paddedData
         );
-        
+
         // Base64 encode and make URL-safe (similar to VidSrcCC approach)
         const encryptedArray = new Uint8Array(encrypted);
         const binaryString = String.fromCharCode(...encryptedArray);
         const base64 = Buffer.from(binaryString, 'binary').toString('base64');
-        
+
         // Convert to URL-safe base64: + -> -, / -> _, remove padding =
         return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
     } catch (error) {
@@ -197,12 +197,15 @@ async function encryptItemId(itemId) {
 
 async function getLink(media) {
     console.log('[getLink] Starting link generation');
-    console.log('[getLink] Input media object:', JSON.stringify(media, null, 2));
+    console.log(
+        '[getLink] Input media object:',
+        JSON.stringify(media, null, 2)
+    );
 
     // Build item ID based on type
     let itemId;
     let itemType;
-    
+
     if (media.type === 'tv') {
         // For TV: "tmdb_season_episode"
         itemId = `${media.tmdb}_${media.season}_${media.episode}`;
