@@ -17,17 +17,21 @@ import { startup } from './src/utils/startup.js';
 import { fileURLToPath } from 'url';
 
 const PORT = process.env.PORT;
-const allowedOrigins = process.env.ALLOWED_ORIGINS; // localhost is also allowed. (from any localhost port)
+const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || []; // localhost is also allowed. (from any localhost port)
 const app = express();
 
 app.use(
     cors({
         origin: (origin, callback) => {
-            !origin ||
-            allowedOrigins.includes(origin) ||
-            /^http:\/\/localhost/.test(origin)
-                ? callback(null, true)
-                : callback(new Error('Not allowed by CORS'));
+            if (
+                !origin ||
+                allowedOrigins.some((o) => origin.includes(o)) ||
+                /^http:\/\/localhost/.test(origin)
+            ) {
+                callback(null, true);
+            } else {
+                callback(new Error('Not allowed by CORS'));
+            }
         }
     })
 );
