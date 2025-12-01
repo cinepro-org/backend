@@ -17,7 +17,16 @@ import { startup } from './src/utils/startup.js';
 import { fileURLToPath } from 'url';
 
 const PORT = process.env.PORT;
-const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || []; // localhost is also allowed. (from any localhost port)
+const parseAllowedOrigins = (allowedOrigins) => {
+    if (!allowedOrigins) return [];
+    const stripped = allowedOrigins.trim().replace(/^\[|\]$/g, '');
+    return stripped
+        .split(',')
+        .map((s) => s.trim().replace(/^\"|\"$|^\'|\'$/g, ''))
+        .filter(Boolean);
+};
+// localhost is also allowed. (from any localhost port)
+const allowedOrigins = parseAllowedOrigins(process.env.ALLOWED_ORIGINS) || [];
 const app = express();
 
 app.use(
