@@ -2,7 +2,13 @@ import dotenv from 'dotenv';
 import { strings } from '../strings.js';
 import { ErrorObject } from './ErrorObject.js';
 
-dotenv.config();
+dotenv.config({ quiet: true });
+// Ensure that the TMDB API key is set in the environment variables
+if (!process.env.TMDB_API_KEY) {
+    throw new Error('TMDB_API_KEY is not set in the environment variables');
+}
+
+// Fetch the TMDB API key from environment variables
 const apiKey = process.env.TMDB_API_KEY;
 
 /**
