@@ -15,6 +15,9 @@ import { get111Movies } from './controllers/providers/111movies/111movies.js';
 import { getCinemaOS } from './controllers/providers/CinemaOS/CinemaOS.js';
 import { getMultiembed } from './controllers/providers/MultiEmbed/MultiEmbed.js';
 
+import { getUembed } from './controllers/providers/Uembed/uembed.js'; 
+
+
 const shouldDebug = process.argv.includes('--debug');
 
 export async function scrapeMedia(media) {
@@ -43,6 +46,7 @@ export async function scrapeMedia(media) {
     }
     const providers = [
         // WORKING
+        { getUembed: () => getUembed(media) },
         { getTwoEmbed: () => getTwoEmbed(media) },
         { getAutoembed: () => getAutoembed(media) },
         { getVidSrcCC: () => getVidSrcCC(media) },
