@@ -2,12 +2,31 @@ import axios from 'axios';
 import { atob, Buffer } from 'buffer';
 import { URL } from 'url';
 import base64 from 'base-64';
-import got from 'cloudflare-scraper';
+// import got from 'cloudflare-scraper';
 import { ErrorObject } from '../../../helpers/ErrorObject.js';
 
 const URI = 'https://vidsrc-embed.ru';
 const HOST_URL = 'https://cloudnestra.com';
 export const VIDSRC_HLS_ORIGIN = 'tmstr4.shadowlandschronicles.com';
+
+// Replace template placeholders in URLs like {v1}, {v2}, etc. with the actual domain
+function replaceTemplateVars(url) {
+    if (!url || typeof url !== 'string') return url;
+
+    // Replace patterns like tmstr4.{v1}, tmstr4.{v2}, etc. with the correct domain
+    let result = url.replace(/tmstr4\.\{v[1-5]\}/g, 'tmstr4.shadowlandschronicles.com');
+
+    // Replace patterns like app2.{v5} with the correct domain
+    result = result.replace(/app2\.\{v[1-5]\}/g, 'app2.shadowlandschronicles.com');
+
+    // Catch any remaining {vN} patterns
+    result = result.replace(/\{v[1-5]\}/g, 'shadowlandschronicles.com');
+
+    // Fix malformed tmstr.. patterns (empty placeholder result)
+    result = result.replace(/tmstr\.\./g, 'tmstr4.shadowlandschronicles.com');
+
+    return result;
+}
 
 const IFRAME2_SRC_RE = /id="player_iframe" src="(?<url>[^"]+)"/;
 const IFRAME3_SRC_RE = /src: '(?<url>\/prorcp\/[^']+)'/;
@@ -112,8 +131,9 @@ export async function getVidSrc(media) {
             );
         } catch (err) {
             console.log('[VidSrc] Axios failed, error:', err.message);
-            console.log('[VidSrc] Trying cloudflare-scraper fallback');
+            // console.log('[VidSrc] Trying cloudflare-scraper fallback');
             // If blocked by Cloudflare, fallback to cloudflare-scraper
+            /*
             try {
                 const response = await got.get(thirdUrl, {
                     headers: {
@@ -140,6 +160,16 @@ export async function getVidSrc(media) {
                     true
                 );
             }
+            */
+            console.log('[VidSrc] Cloudflare-scraper fallback disabled.');
+            return new ErrorObject(
+                `Cloudflare block: ${err.message}`,
+                'VidSrc',
+                403,
+                'Blocked by Cloudflare, try again later.',
+                true,
+                true
+            );
         }
 
         console.log('[VidSrc] Third iframe HTML length:', iframeHtml3.length);
@@ -163,11 +193,12 @@ export async function getVidSrc(media) {
                     sourceHLS ? 'Found' : 'Not found'
                 );
                 if (sourceHLS) {
-                    console.log('[VidSrc] Found HLS source:', sourceHLS[1]);
+                    const hlsUrl = replaceTemplateVars(sourceHLS[1]);
+                    console.log('[VidSrc] Found HLS source:', hlsUrl);
                     return {
                         files: [
                             {
-                                file: sourceHLS[1],
+                                file: hlsUrl,
                                 type: 'hls',
                                 lang: 'en',
                                 headers: {
@@ -249,16 +280,18 @@ export async function getVidSrc(media) {
                     true
                 );
         }
-        console.log('[VidSrc] Successfully decoded URL:', decoded);
+        const finalUrl = replaceTemplateVars(decoded);
+        console.log('[VidSrc] Successfully decoded URL:', finalUrl);
 
         return {
             files: [
                 {
-                    file: decoded,
+                    file: finalUrl,
                     type: 'hls',
                     lang: 'en',
                     headers: {
-                        Referer: secondUrl
+                        Referer: secondUrl,
+                        Origin: secondUrl
                     }
                 }
             ],

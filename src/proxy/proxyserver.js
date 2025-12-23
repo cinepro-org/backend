@@ -1,5 +1,5 @@
 import fetch from 'node-fetch';
-import { extractOriginalUrl, getOriginFromUrl } from './parser.js';
+import { extractOriginalUrl } from './parser.js';
 import { handleCors } from './handleCors.js';
 import { proxyM3U8 } from './m3u8proxy.js';
 import { proxyTs } from './proxyTs.js';
@@ -27,50 +27,78 @@ export function createProxyRoutes(app) {
     app.get('/m3u8-proxy', (req, res) => {
         if (handleCors(req, res)) return;
 
-        const targetUrl = req.query.url;
-        let headers = {};
-
         try {
-            headers = JSON.parse(req.query.headers || '{}');
-        } catch (e) {
-            // Invalid headers JSON
+            const targetUrl = req.query.url;
+            let headers = {};
+
+            try {
+                headers = JSON.parse(req.query.headers || '{}');
+            } catch (e) {
+                console.warn('[Proxy] Failed to parse headers JSON:', e.message);
+            }
+
+            if (!targetUrl) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'URL parameter required' }));
+                return;
+            }
+
+            // Get server URL for building proxy URLs
+            const protocol =
+                req.headers['x-forwarded-proto'] || req.protocol || 'http';
+            const host = req.headers.host;
+            const serverUrl = `${protocol}://${host}`;
+
+            proxyM3U8(targetUrl, headers, res, serverUrl).catch(err => {
+                console.error('[M3U8 Proxy Internal Error]:', err);
+                if (!res.headersSent) {
+                    res.writeHead(500);
+                    res.end(`Internal M3U8 Proxy Error: ${err.message}`);
+                }
+            });
+        } catch (error) {
+            console.error('[M3U8 Proxy Route Error]:', error);
+            if (!res.headersSent) {
+                res.writeHead(500);
+                res.end(`M3U8 Route Error: ${error.message}`);
+            }
         }
-
-        if (!targetUrl) {
-            res.writeHead(400, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ error: 'URL parameter required' }));
-            return;
-        }
-
-        // Get server URL for building proxy URLs
-        const protocol =
-            req.headers['x-forwarded-proto'] || req.protocol || 'http';
-        const host = req.headers.host;
-        const serverUrl = `${protocol}://${host}`;
-
-        proxyM3U8(targetUrl, headers, res, serverUrl);
     });
 
     // Simplified TS/Segment Proxy endpoint
     app.get('/ts-proxy', (req, res) => {
         if (handleCors(req, res)) return;
 
-        const targetUrl = req.query.url;
-        let headers = {};
-
         try {
-            headers = JSON.parse(req.query.headers || '{}');
-        } catch (e) {
-            // Invalid headers JSON
-        }
+            const targetUrl = req.query.url;
+            let headers = {};
 
-        if (!targetUrl) {
-            res.writeHead(400, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ error: 'URL parameter required' }));
-            return;
-        }
+            try {
+                headers = JSON.parse(req.query.headers || '{}');
+            } catch (e) {
+                console.warn('[Proxy] Failed to parse headers JSON:', e.message);
+            }
 
-        proxyTs(targetUrl, headers, req, res).then((r) => r);
+            if (!targetUrl) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'URL parameter required' }));
+                return;
+            }
+
+            proxyTs(targetUrl, headers, req, res).then((r) => r).catch(err => {
+                console.error('[TS Proxy Internal Error]:', err);
+                if (!res.headersSent) {
+                    res.writeHead(500);
+                    res.end(`Internal TS Proxy Error: ${err.message}`);
+                }
+            });
+        } catch (error) {
+            console.error('[TS Proxy Route Error]:', error);
+            if (!res.headersSent) {
+                res.writeHead(500);
+                res.end(`TS Route Error: ${error.message}`);
+            }
+        }
     });
 
     // HLS Proxy endpoint (alternative endpoint)
@@ -162,6 +190,9 @@ export function processApiResponse(apiResponse, serverUrl) {
         finalUrl = extractOriginalUrl(finalUrl);
 
         // proxy ALL URLs through our system
+        // Create proxy headers strictly from what is provided
+        // Do NOT invent Origin or Referer if not present. Trust the extractor.
+
         if (
             finalUrl.includes('.m3u8') ||
             finalUrl.includes('m3u8') ||
@@ -171,14 +202,6 @@ export function processApiResponse(apiResponse, serverUrl) {
                 !finalUrl.includes('.avi'))
         ) {
             // Use M3U8 proxy for HLS streams and unknown formats
-            const m3u8Origin = getOriginFromUrl(finalUrl);
-            if (m3u8Origin) {
-                proxyHeaders = {
-                    ...proxyHeaders,
-                    Referer: proxyHeaders.Referer || m3u8Origin,
-                    Origin: proxyHeaders.Origin || m3u8Origin
-                };
-            }
 
             const localProxyUrl = `${serverUrl}/m3u8-proxy?url=${encodeURIComponent(finalUrl)}&headers=${encodeURIComponent(JSON.stringify(proxyHeaders))}`;
 
@@ -190,14 +213,6 @@ export function processApiResponse(apiResponse, serverUrl) {
             };
         } else {
             // Use TS proxy for direct video files (.mp4, .mkv, .webm, .avi)
-            const videoOrigin = getOriginFromUrl(finalUrl);
-            if (videoOrigin) {
-                proxyHeaders = {
-                    ...proxyHeaders,
-                    Referer: proxyHeaders.Referer || videoOrigin,
-                    Origin: proxyHeaders.Origin || videoOrigin
-                };
-            }
 
             const localProxyUrl = `${serverUrl}/ts-proxy?url=${encodeURIComponent(finalUrl)}&headers=${encodeURIComponent(JSON.stringify(proxyHeaders))}`;
 

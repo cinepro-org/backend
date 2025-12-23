@@ -13,9 +13,24 @@ export function getOriginFromUrl(url) {
     }
 }
 
+// List of trusted proxy domains - don't strip their URLs
+// const TRUSTED_PROXY_DOMAINS = [
+//     'vidrock.store',
+//     'vaporeen.workers.dev',
+//     'queenselti.me',
+//     '67streams.online'
+// ];
+
 function extractOriginalUrl(proxyUrl) {
     try {
         const url = new URL(proxyUrl);
+
+        // // Check if this is a trusted proxy domain - if so, return as-is
+        // for (const domain of TRUSTED_PROXY_DOMAINS) {
+        //     if (url.hostname.includes(domain)) {
+        //         return proxyUrl;
+        //     }
+        // }
 
         // Pattern 1: /proxy/encodedUrl (like hls1.vid1.site/proxy/...)
         if (url.pathname.includes('/proxy/')) {
@@ -60,3 +75,4 @@ function extractOriginalUrl(proxyUrl) {
 }
 
 export { extractOriginalUrl };
+

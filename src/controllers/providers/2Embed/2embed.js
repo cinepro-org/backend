@@ -264,7 +264,9 @@ async function resolve(url, referer) {
                 const docheck = unpackedJS.includes('"hls2":"https');
 
                 if (docheck) {
-                    const fileRegex = /links=.*hls2\":\"(.*?)\"};/;
+                    // Fixed regex: capture the URL value between quotes, stopping at the first quote
+                    // Old regex was matching too much: /links=.*hls2\":\"(.*?)\"};/
+                    const fileRegex = /"hls2":"(https?:\/\/[^"]+)"/;
 
                     const matchUri = unpackedJS.match(fileRegex);
 

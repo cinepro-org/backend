@@ -1,5 +1,5 @@
 import express from 'express';
-import { scrapeMedia } from './src/api.js';
+import { scrapeMedia, getProviderStats } from './src/api.js';
 import {
     createProxyRoutes,
     processApiResponse
@@ -44,6 +44,10 @@ app.use(
         }
     })
 );
+
+// app.use(cors({
+//     origin: '*' // This explicitly allows all origins
+// }));
 
 createProxyRoutes(app);
 
@@ -165,6 +169,15 @@ app.get('/cache-stats', (req, res) => {
         ...stats,
         cacheEnabled: true,
         ttl: '3 hours (10800 seconds)'
+    });
+});
+
+// Provider health stats endpoint - monitor which providers are working
+app.get('/provider-stats', (req, res) => {
+    const stats = getProviderStats();
+    res.status(200).json({
+        timestamp: new Date().toISOString(),
+        providers: stats
     });
 });
 

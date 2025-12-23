@@ -44,7 +44,8 @@ export async function extract_streamwish(url, referer) {
                 let fileRegex;
                 let matchUri;
                 if (unpackedJS.includes('"hls2":"https')) {
-                    fileRegex = /links=.*hls2":"(.*?)"};/;
+                    // Fixed regex: capture just the URL, not the rest of the JSON
+                    fileRegex = /"hls2":"(https?:\/\/[^"]+)"/;
                     matchUri = unpackedJS.match(fileRegex);
                 } else {
                     fileRegex = /sources\s*:\s*\[\s*\{\s*file\s*:\s*"([^"]+)"/;
@@ -52,13 +53,6 @@ export async function extract_streamwish(url, referer) {
                 }
 
                 if (matchUri && matchUri[1]) {
-                    if (matchUri[1].match('",\\"hls4\\":\\"')) {
-                        matchUri[1] = matchUri[1].replace(
-                            /",\\hls4\\":\\".*?"/,
-                            ''
-                        );
-                        return matchUri[1];
-                    }
                     return matchUri[1];
                 } else {
                     return new ErrorObject(
