@@ -31,11 +31,15 @@ import {
 } from './utils/providerHealth.js';
 import { validateAndFilterFiles, quickValidate } from './utils/sourceValidator.js';
 
+import { getUembed } from './controllers/providers/Uembed/uembed.js';
+
+
 const shouldDebug = process.argv.includes('--debug');
 
 // Provider configuration with default timeouts
 const PROVIDER_CONFIG = {
     // Video providers (Tier 1 - most reliable)
+    getUembed: { fn: getUembed, tier: 1, defaultTimeout: 20000 },
     getFmovies4u: { fn: getFmovies4u, tier: 1, defaultTimeout: 30000 },
     getVidstorm: { fn: getVidstorm, tier: 1, defaultTimeout: 20000 },
     getTwoEmbed: { fn: getTwoEmbed, tier: 1, defaultTimeout: 20000 },
@@ -135,6 +139,7 @@ export async function scrapeMedia(media) {
     if (shouldDebug) {
         console.log(`[SCRAPE] Starting scrape for ${cacheKey}`);
     }
+
 
     // Separate video providers from subtitle providers
     const videoProviders = Object.entries(PROVIDER_CONFIG)

@@ -10,10 +10,10 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon --watch index.js --inspect=9229 --signal SIGINT index.js",
-    "start": "node index.js",
-    "main": "node index.js",
-    "deploy": "node index.js"
+    "dev": "node --watch index.js --debug",
+    "main": "node --watch index.js",
+    "deploy": "node --watch index.js",
+    "start": "node --watch index.js"
   },
   "author": {
     "name": "CinePro Dev Team and All contributors",
@@ -30,12 +30,12 @@
     "cors": "^2.8.5",
     "crypto-js": "^4.2.0",
     "dotenv": "^17.2.3",
-    "express": "^5.1.0",
+    "express": "^5.2.1",
     "node-cache": "^5.1.2",
     "node-fetch": "^3.3.2",
-    "prettier": "^3.7.3",
+    "prettier": "^3.7.4",
     "unpacker": "^1.0.1",
-    "wyzie-lib": "^2.2.5"
+    "wyzie-lib": "^2.2.6"
   },
   "devDependencies": {
     "nodemon": "^2.0.22"
