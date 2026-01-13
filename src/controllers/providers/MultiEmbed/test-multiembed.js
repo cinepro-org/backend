@@ -2,8 +2,8 @@ import { getMultiembed } from './MultiEmbed.js';
 
 async function runTest() {
     try {
-        // war of the worlds imdb
-        const imdbId = 'tt13186306';
+        // DeadPool and Wolverine imdb
+        const imdbId = 'tt0298130';
 
         console.log('Testing Multiembed with imdbId:', imdbId);
 

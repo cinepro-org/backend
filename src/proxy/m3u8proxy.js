@@ -72,10 +72,38 @@ export async function proxyM3U8(targetUrl, headers, res, serverUrl) {
 
         const processedContent = processedLines.join('\n');
 
-        // Set proper headers
+        // set proper headers for m3u8 manifest
         res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
         res.setHeader('Content-Length', Buffer.byteLength(processedContent));
-        res.setHeader('Cache-Control', 'no-cache');
+
+        // cache strategy for manifests
+        // master playlists can be cached longer (60 seconds)
+        // media playlists should be cached shorter (10 seconds) for live content
+        // for vod content, longer cache is acceptable
+        const isMasterPlaylist = processedContent.includes('#EXT-X-STREAM-INF');
+        const isVod = processedContent.includes('#EXT-X-ENDLIST');
+
+        if (isVod) {
+            // vod content - manifest doesn't change, cache for 5 minutes
+            res.setHeader('Cache-Control', 'public, max-age=300');
+        } else if (isMasterPlaylist) {
+            // master playlist - cache for 1 minute
+            res.setHeader('Cache-Control', 'public, max-age=60');
+        } else {
+            // media playlist for live content - cache for 10 seconds
+            res.setHeader('Cache-Control', 'public, max-age=10');
+        }
+
+        // add etag for cache validation
+        const etag = `"${Buffer.from(processedContent).toString('base64').substring(0, 32)}"`;
+        res.setHeader('ETag', etag);
+
+        // enable cors for manifest
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader(
+            'Access-Control-Expose-Headers',
+            'Content-Length, Content-Type, Cache-Control'
+        );
 
         res.writeHead(200);
         res.end(processedContent);

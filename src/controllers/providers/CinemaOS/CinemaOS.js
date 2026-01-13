@@ -2,6 +2,11 @@ import axios from 'axios';
 import crypto from 'crypto';
 import { ErrorObject } from '../../../helpers/ErrorObject.js';
 
+/* ================= DEBUG ================= */
+const DEBUG = true;
+const dbg = (...args) => DEBUG && console.log('[CinemaOS][debug]', ...args);
+/* ========================================= */
+
 const BASE_URL = 'https://cinemaos.live';
 const USER_AGENT =
     'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Mobile Safari/537.36';
@@ -14,119 +19,122 @@ const headers = {
 
 export async function getCinemaOS(params) {
     const { tmdb } = params;
-    console.log('CinemaOS: Starting with tmdb:', tmdb);
+    dbg('TMDB ID:', tmdb);
 
     try {
-        // 1. Get movie metadata directly (no auth needed)
+        // Metadata
         const downloadUrl = `${BASE_URL}/api/downloadLinks?type=movie&tmdbId=${tmdb}`;
-        console.log('CinemaOS: Requesting metadata from:', downloadUrl);
+        dbg('Metadata URL:', downloadUrl);
 
-        const downloadData = (await axios.get(downloadUrl, { headers })).data
-            .data[0];
+        const metaResp = await axios.get(downloadUrl, { headers });
+        const downloadData = metaResp?.data?.data?.[0];
 
-        console.log(
-            'CinemaOS: Metadata received:',
-            downloadData ? 'YES' : 'NO'
-        );
+        dbg('Metadata received:', !!downloadData);
+
+        if (!downloadData) {
+            throw new Error('No metadata returned');
+        }
 
         const releaseYear = downloadData.releaseYear;
         const title = downloadData.movieTitle;
-        const imdbId = downloadData.subtitleLink.split('=').pop();
+        const imdbId = downloadData.subtitleLink?.split('=').pop();
 
-        console.log(
-            'CinemaOS: Extracted - Title:',
+        dbg('Parsed metadata:', {
             title,
-            'Year:',
             releaseYear,
-            'IMDb:',
             imdbId
-        );
+        });
 
-        // 2. Generate HMAC signature
+        // Hmac
         const secretKey =
             'a8f7e9c2d4b6a1f3e8c9d2b4a7f6e9c2d4b6a1f3e8c9d2b4a7f6e9c2d4b6a1f3';
         const messageString = `media|episodeId:|seasonId:|tmdbId:${tmdb}`;
+
         const hmacSignature = crypto
             .createHmac('sha256', secretKey)
             .update(messageString)
             .digest('hex');
 
-        console.log('CinemaOS: Generated HMAC signature:', hmacSignature);
+        dbg('HMAC generated');
 
-        // 3. Get encrypted response with signature
+        // Encrypted Payload
         const apiParams = new URLSearchParams({
             type: 'movie',
             tmdbId: tmdb,
-            imdbId: imdbId,
+            imdbId,
             t: title,
             ry: releaseYear,
             secret: hmacSignature
         });
 
         const cinemaUrl = `${BASE_URL}/api/cinemaos?${apiParams.toString()}`;
-        console.log('CinemaOS: Requesting encrypted data from:', cinemaUrl);
+        dbg('CinemaOS URL:', cinemaUrl);
 
-        const cinemaHeaders = {
-            ...headers,
-            Accept: 'application/json',
-            'Content-Type': 'application/json'
-        };
+        const encResp = await axios.get(cinemaUrl, {
+            headers: {
+                ...headers,
+                Accept: 'application/json',
+                'Content-Type': 'application/json'
+            },
+            timeout: 30000
+        });
 
-        const encResponse = (
-            await axios.get(cinemaUrl, {
-                headers: cinemaHeaders,
-                timeout: 30000
-            })
-        ).data.data;
+        const encData = encResp?.data?.data;
+        dbg('Encrypted payload received:', !!encData);
 
-        console.log(
-            'CinemaOS: Encrypted response received:',
-            encResponse ? 'YES' : 'NO'
-        );
+        if (!encData) {
+            throw new Error('Empty encrypted response');
+        }
 
-        const encryptedHex = encResponse.encrypted;
-        const ivHex = encResponse.cin;
-        const authTagHex = encResponse.mao;
-        const saltHex = encResponse.salt;
+        const { encrypted, cin, mao, salt } = encData;
 
-        console.log('CinemaOS: Salt received:', saltHex ? 'YES' : 'NO');
+        dbg('Encrypted fields present:', {
+            encrypted: !!encrypted,
+            iv: !!cin,
+            authTag: !!mao,
+            salt: !!salt
+        });
 
-        // 4. Derive key using PBKDF2 with salt
+        // key derivation
         const password = Buffer.from(
             'a1b2c3d4e4f6588658455678901477567890abcdef1234567890abcdef123456',
             'utf8'
         );
-        const salt = Buffer.from(saltHex, 'hex');
+        const saltBuf = Buffer.from(salt, 'hex');
 
-        // PBKDF2 with SHA-256, 100000 iterations, 32 bytes output (256-bit key)
-        const key = crypto.pbkdf2Sync(password, salt, 100000, 32, 'sha256');
+        const key = crypto.pbkdf2Sync(password, saltBuf, 100000, 32, 'sha256');
 
-        console.log('CinemaOS: Derived decryption key');
+        dbg('Decryption key derived');
 
-        // 5. Prepare AES-256-GCM decrypt
-        const ciphertext = Buffer.from(encryptedHex, 'hex');
-        const iv = Buffer.from(ivHex, 'hex');
-        const authTag = Buffer.from(authTagHex, 'hex');
+        // Decrypt
+        const decipher = crypto.createDecipheriv(
+            'aes-256-gcm',
+            key,
+            Buffer.from(cin, 'hex')
+        );
 
-        const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
-        decipher.setAuthTag(authTag);
+        decipher.setAuthTag(Buffer.from(mao, 'hex'));
+
         const decrypted =
-            decipher.update(ciphertext, undefined, 'utf8') +
+            decipher.update(Buffer.from(encrypted, 'hex'), undefined, 'utf8') +
             decipher.final('utf8');
 
-        // 6. Extract sources
-        const sources = JSON.parse(decrypted).sources;
+        dbg('Decryption successful');
+
+        // SOURCES
+        const parsed = JSON.parse(decrypted);
+        const sources = parsed?.sources || {};
+
         const validEntries = Object.values(sources).filter(
             (v) => v && typeof v === 'object' && v.url
         );
 
-        console.log('CinemaOS: Found', validEntries.length, 'valid sources');
+        dbg('Valid sources found:', validEntries.length);
 
         if (!validEntries.length) {
             throw new Error('No valid sources found');
         }
 
-        // Return all valid sources
         const files = validEntries.map((entry) => ({
             file: entry.url,
             type: 'hls',
@@ -137,16 +145,16 @@ export async function getCinemaOS(params) {
             }
         }));
 
-        // 7. Return in provider format
+        dbg('Returning sources');
+
         return {
-            files: files,
+            files,
             subtitles: []
         };
     } catch (error) {
-        console.log('CinemaOS: Error occurred');
-        console.log('CinemaOS: Error message:', error.message);
-        console.log('CinemaOS: Error status:', error.response?.status);
-        console.log('CinemaOS: Error data:', error.response?.data);
+        console.error('[CinemaOS] Error:', error.message);
+        dbg('Status:', error.response?.status);
+        dbg('Response data:', error.response?.data);
 
         return new ErrorObject(
             `CinemaOS Error: ${error.message}`,

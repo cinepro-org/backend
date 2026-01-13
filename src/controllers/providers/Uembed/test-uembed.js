@@ -1,19 +1,18 @@
-import { getVidRock } from './Vidrock.js';
+import { getUembed } from './uembed.js';
 
-async function test() {
-    console.log('Testing VidRock scraper...\n');
+// function to test the uembed
+async function testUembed() {
+    console.log('Testing UEmbed scraper...\n');
 
-    // Test with the movie
+    // Test with the movie from the Python example
     const media = {
-        tmdb: '533535', // Deadpool & Wolverine
-        type: 'movie',
-        title: 'Deadpool & Wolverine',
-        releaseYear: 2024
+        tmdb: '565', // Deadpool & Wolverine
+        type: 'movie'
     };
 
     try {
         console.log('Testing with:', media);
-        const result = await getVidRock(media);
+        const result = await getUembed(media);
 
         if (result.files) {
             console.log('\nSuccess! Found', result.files.length, 'sources');
@@ -29,4 +28,4 @@ async function test() {
     }
 }
 
-test();
+testUembed();
