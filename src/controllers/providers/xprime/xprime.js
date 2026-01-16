@@ -1,7 +1,7 @@
 import { ErrorObject } from '../../../helpers/ErrorObject.js';
 import { languageMap } from '../../../utils/languages.js';
 
-const DOMAIN = 'https://xprime.tv/';
+const DOMAIN = 'https://xprime.stream/';
 const BACKEND_DOMAIN = 'https://backend.xprime.tv/';
 
 export async function getXprime(media) {
