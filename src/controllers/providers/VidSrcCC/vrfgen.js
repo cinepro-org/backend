@@ -48,12 +48,24 @@ async function generateVRF(movieId, userId) {
         }
 
         const vrfToken = await response.text();
+        dbg('raw vrf response:', vrfToken);
 
         if (!vrfToken || vrfToken.trim() === '') {
             throw new Error('empty vrf token received');
         }
 
-        dbg('vrf token obtained, length:', vrfToken.length);
+        // validate vrf token format (should be URL-safe base64-like string)
+        const trimmedToken = vrfToken.trim();
+        if (!/^[A-Za-z0-9_-]+$/.test(trimmedToken)) {
+            dbg('vrf token contains unexpected characters');
+        }
+
+        dbg(
+            'vrf token obtained, length:',
+            trimmedToken.length,
+            'first 30 chars:',
+            trimmedToken.substring(0, 30)
+        );
 
         // cache the token with expiry
         vrfCache.set(cacheKey, {
