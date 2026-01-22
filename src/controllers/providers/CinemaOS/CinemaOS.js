@@ -2,10 +2,9 @@ import axios from 'axios';
 import crypto from 'crypto';
 import { ErrorObject } from '../../../helpers/ErrorObject.js';
 
-/* ================= DEBUG ================= */
+// debug
 const DEBUG = true;
 const dbg = (...args) => DEBUG && console.log('[CinemaOS][debug]', ...args);
-/* ========================================= */
 
 const BASE_URL = 'https://cinemaos.live';
 const USER_AGENT =

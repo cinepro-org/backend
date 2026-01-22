@@ -5,17 +5,20 @@ import { ErrorObject } from '../../../helpers/ErrorObject.js';
 const DOMAIN = 'https://vidsrc.cc/api/';
 
 // Function to log Coz lowkey hate writing console.log everytime
-function logDebugInfo(step, data) {
-    console.log(`[VidSrcCC Debug] ${step}:`, data);
-}
+const DEBUG = true;
+const dbg = (...args) => DEBUG && console.log('[vidsrccc]', ...args);
 
 export async function getVidSrcCC(media) {
+    dbg('starting extraction for', media.type, 'tmdb:', media.tmdb);
+
     // You may still need to handle the Cloudflare clearance token logic
     // fetch the embed page to extract userId
     const embedUrl =
         media.type !== 'tv'
             ? `https://vidsrc.cc/v2/embed/movie/${media.tmdb}`
             : `https://vidsrc.cc/v2/embed/tv/${media.tmdb}/${media.season}/${media.episode}`;
+
+    dbg('fetching embed page:', embedUrl);
 
     const embedResponse = await fetch(embedUrl, {
         headers: {
@@ -55,7 +58,11 @@ export async function getVidSrcCC(media) {
     const userId = userIdMatch[1];
     const v = vMatch[1];
 
+    dbg('extracted userId:', userId, 'v:', v);
+
     let vrfToken = await generateVRF(media.tmdb, userId);
+
+    dbg('vrf token generated:', vrfToken.substring(0, 20) + '...');
 
     let origin;
     let firstUrl;
@@ -64,10 +71,12 @@ export async function getVidSrcCC(media) {
         firstUrl = `${DOMAIN}${media.tmdb}/servers?id=${media.tmdb}&type=movie&v=${v}&vrf=${vrfToken}&imdbId=${media.imdbId}`;
         origin = `${DOMAIN.replace('api/', '')}embed/movie/${media.tmdb}`;
     } else {
+        // add season and episode parameters for tv shows
         firstUrl = `${DOMAIN}${media.tmdb}/servers?id=${media.tmdb}&type=tv&v=${v}&vrf=${vrfToken}&season=${media.season}&episode=${media.episode}&imdbId=${media.imdbId}`;
         origin = `${DOMAIN.replace('api/', '')}embed/tv/${media.tmdb}/${media.season}/${media.episode}`;
     }
 
+    dbg('first api url:', firstUrl);
     const headers = {
         'User-Agent':
             'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
@@ -76,6 +85,9 @@ export async function getVidSrcCC(media) {
     };
 
     let firstResponse = await fetch(firstUrl, { headers });
+
+    dbg('first response status:', firstResponse.status);
+    dbg('first response', firstResponse);
 
     if (firstResponse.status !== 200) {
         return new ErrorObject(
@@ -94,11 +106,17 @@ export async function getVidSrcCC(media) {
         hashes.push(server.hash);
     });
 
+    dbg('found', hashes.length, 'server hashes');
+
     let vidsrcCCSources = [];
 
     for (let hash of hashes) {
+        dbg('processing hash:', hash);
+
         let secondUrl = `${DOMAIN}source/${hash}?opensubtitles=true`;
         let secondResponse = await fetch(secondUrl, { headers });
+        dbg('source response status:', secondResponse.status);
+
         if (!secondResponse.ok) {
             return new ErrorObject(
                 'Failed to fetch second response',
@@ -113,12 +131,16 @@ export async function getVidSrcCC(media) {
         let secondData = await secondResponse.json();
 
         if (secondData.success) {
+            dbg('source data retrieved successfully');
+
             vidsrcCCSources.push(secondData.data);
         }
     }
 
     // gather all the subtitles
     let subtitles = [];
+    dbg('processing subtitles from', vidsrcCCSources.length, 'sources');
+
     // Only proceed if the source has subtitles
     for (let source of vidsrcCCSources) {
         if (source.subtitles) {
@@ -144,6 +166,8 @@ export async function getVidSrcCC(media) {
             });
         }
     }
+
+    dbg('returning', files.length, 'files and', subtitles.length, 'subtitles');
 
     return {
         files: files.map((file) => ({
