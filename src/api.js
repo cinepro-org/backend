@@ -117,7 +117,7 @@ export async function scrapeMedia(media) {
         .flatMap(({ data }) => data.subtitles)
         .filter(
             (sub, index, self) =>
-                sub.url && self.findIndex((s) => s.url === sub.url) === index
+                sub?.url && self.findIndex((s) => s.url === sub.url) === index
         );
     // Here comes the big boy to loook for nothing okay here you go
     // We need finalResult coz you can't cache what doesn't exist yet - lowkey just consolidating the return logic
