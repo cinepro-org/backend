@@ -1,4 +1,16 @@
-# CinePro Backend
+<div align="center">
+
+# ⚠️ THIS REPO HAS MOVED TO: https://github.com/cinepro-org/core ⚠️
+
+## ⚠️ Please be patient while we port the providers and redo the logic. This process may take some time! ⚠️
+
+</div>
+
+---
+
+> The old docs are following:
+
+## CinePro Backend
 
 ## Description
 
