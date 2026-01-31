@@ -16,7 +16,7 @@ import { getCacheStats } from './src/cache/cache.js';
 import { startup } from './src/utils/startup.js';
 import { fileURLToPath } from 'url';
 
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 5000;
 const parseAllowedOrigins = (allowedOrigins) => {
     if (!allowedOrigins) return [];
     const stripped = allowedOrigins.trim().replace(/^\[|\]$/g, '');

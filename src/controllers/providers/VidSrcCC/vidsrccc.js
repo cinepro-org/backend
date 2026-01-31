@@ -1,15 +1,17 @@
 import { languageMap } from '../../../utils/languages.js';
 import { generateVRF } from './vrfgen.js';
 import { ErrorObject } from '../../../helpers/ErrorObject.js';
+import { extractCFTokens } from './cloudflare-bypass.js';
 
 const DOMAIN = 'https://vidsrc.cc/api/';
 
 // Function to log Coz lowkey hate writing console.log everytime
-function logDebugInfo(step, data) {
-    console.log(`[VidSrcCC Debug] ${step}:`, data);
-}
+const DEBUG = true;
+const dbg = (...args) => DEBUG && console.log('[vidsrccc]', ...args);
 
 export async function getVidSrcCC(media) {
+    dbg('starting extraction for', media.type, 'tmdb:', media.tmdb);
+
     // You may still need to handle the Cloudflare clearance token logic
     // fetch the embed page to extract userId
     const embedUrl =
@@ -17,25 +19,25 @@ export async function getVidSrcCC(media) {
             ? `https://vidsrc.cc/v2/embed/movie/${media.tmdb}`
             : `https://vidsrc.cc/v2/embed/tv/${media.tmdb}/${media.season}/${media.episode}`;
 
+    dbg('fetching embed page:', embedUrl);
+
     const embedResponse = await fetch(embedUrl, {
         headers: {
             'User-Agent':
-                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36',
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
             Referer: 'https://vidsrc.cc/',
             Origin: 'https://vidsrc.cc'
         }
     });
     const embedHtml = await embedResponse.text();
 
-    // // Debug: log parts of HTML that contain the variables
-    // console.log(' HTML DEBUG ');
-    // const userIdSection = embedHtml.match(/.{0,500}userId.{0,500}/);
-    // const vSection = embedHtml.match(/.{0,500}var v.{0,500}/);
-    // console.log(
-    //     'userId section:',
-    //     userIdSection ? userIdSection[0] : 'NOT FOUND'
-    // );
-    // console.log('v section:', vSection ? vSection[0] : 'NOT FOUND');
+    // extract cloudflare tokens if present
+    const cfTokens = extractCFTokens(embedHtml);
+    if (cfTokens.cfKey) {
+        dbg('cloudflare protection detected, key:', cfTokens.cfKey);
+    } else {
+        dbg('no cloudflare tokens found in embed page');
+    }
 
     // Extract userId and v value from the HTML
     const userIdMatch = embedHtml.match(/userId\s*=\s*["']([^"']+)["']/);
@@ -55,7 +57,11 @@ export async function getVidSrcCC(media) {
     const userId = userIdMatch[1];
     const v = vMatch[1];
 
+    dbg('extracted userId:', userId, 'v:', v);
+
     let vrfToken = await generateVRF(media.tmdb, userId);
+
+    dbg('vrf token generated:', vrfToken.substring(0, 20) + '...');
 
     let origin;
     let firstUrl;
@@ -64,25 +70,42 @@ export async function getVidSrcCC(media) {
         firstUrl = `${DOMAIN}${media.tmdb}/servers?id=${media.tmdb}&type=movie&v=${v}&vrf=${vrfToken}&imdbId=${media.imdbId}`;
         origin = `${DOMAIN.replace('api/', '')}embed/movie/${media.tmdb}`;
     } else {
+        // add season and episode parameters for tv shows
         firstUrl = `${DOMAIN}${media.tmdb}/servers?id=${media.tmdb}&type=tv&v=${v}&vrf=${vrfToken}&season=${media.season}&episode=${media.episode}&imdbId=${media.imdbId}`;
         origin = `${DOMAIN.replace('api/', '')}embed/tv/${media.tmdb}/${media.season}/${media.episode}`;
     }
 
+    dbg('first api url:', firstUrl);
     const headers = {
         'User-Agent':
-            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
         Referer: origin,
         Origin: origin
     };
 
+    // add cloudflare token if it was found
+    if (cfTokens.cfKey && cfTokens.cfValue) {
+        // try adding it as a custom header (might need to be Cookie instead)
+        headers['X-CF-Token'] = cfTokens.cfValue;
+        dbg('added cf token to headers');
+    }
+
+    dbg('request headers:', Object.keys(headers));
+
     let firstResponse = await fetch(firstUrl, { headers });
 
+    dbg('first response status:', firstResponse.status);
+    dbg('first response', firstResponse);
+
     if (firstResponse.status !== 200) {
+        const errorBody = await firstResponse.text();
+        dbg('error response body:', errorBody);
+
         return new ErrorObject(
             'Failed to fetch first response',
             'VidSrcCC',
             firstResponse.status,
-            'Check the VRF token, cf_clearance cookie, or the server response.',
+            `Server returned: ${errorBody}. Check VRF token or cf_clearance cookie.`,
             true,
             true
         );
@@ -94,11 +117,17 @@ export async function getVidSrcCC(media) {
         hashes.push(server.hash);
     });
 
+    dbg('found', hashes.length, 'server hashes');
+
     let vidsrcCCSources = [];
 
     for (let hash of hashes) {
+        dbg('processing hash:', hash);
+
         let secondUrl = `${DOMAIN}source/${hash}?opensubtitles=true`;
         let secondResponse = await fetch(secondUrl, { headers });
+        dbg('source response status:', secondResponse.status);
+
         if (!secondResponse.ok) {
             return new ErrorObject(
                 'Failed to fetch second response',
@@ -113,12 +142,16 @@ export async function getVidSrcCC(media) {
         let secondData = await secondResponse.json();
 
         if (secondData.success) {
+            dbg('source data retrieved successfully');
+
             vidsrcCCSources.push(secondData.data);
         }
     }
 
     // gather all the subtitles
     let subtitles = [];
+    dbg('processing subtitles from', vidsrcCCSources.length, 'sources');
+
     // Only proceed if the source has subtitles
     for (let source of vidsrcCCSources) {
         if (source.subtitles) {
@@ -144,6 +177,8 @@ export async function getVidSrcCC(media) {
             });
         }
     }
+
+    dbg('returning', files.length, 'files and', subtitles.length, 'subtitles');
 
     return {
         files: files.map((file) => ({

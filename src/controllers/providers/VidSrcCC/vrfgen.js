@@ -1,61 +1,94 @@
-// VRF generation using Web Crypto API (matching browser implementation)
-import { webcrypto } from 'crypto';
+// simple in-memory cache for vrf tokens
+// stores: { cacheKey: { token: string, expiry: timestamp } }
+const vrfCache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+const DEBUG = true;
+const dbg = (...args) => DEBUG && console.log('[vrfgen]', ...args);
 
 /**
- * Generate VRF token using the exact browser algorithm from embed.min.js
- *
- * Algorithm:
- * 1. Hash "secret_" + userId using SHA-256 to create encryption key
- * 2. Encrypt movieId using AES-CBC with zero IV (16 bytes of zeros)
- * 3. Base64 encode and make URL-safe (+ -> -, / -> _, remove =)
+ * generates vrf token using external api endpoint
+ * implements simple cache with expiry to reduce api calls
+ * @param {string} movieId - tmdb id of the media
+ * @param {string} userId - extracted user id from embed page
+ * @returns {Promise<string>} url-safe vrf token
  */
 async function generateVRF(movieId, userId) {
+    // create cache key from movieId and userId
+    const cacheKey = `${movieId}_${userId}`;
+
+    // check cache first
+    const cached = vrfCache.get(cacheKey);
+    if (cached && Date.now() < cached.expiry) {
+        dbg('cache hit for', cacheKey);
+        return cached.token;
+    }
+
+    dbg('cache miss, fetching vrf for', cacheKey);
+
     try {
-        const textEncoder = new TextEncoder();
+        // the working code uses this format: reversed string + '_' + userId
+        // 'BxRJ3LYEj2' reversed becomes 'j2EYL3JRxB'
+        const formattedUserId =
+            'BxRJ3LYEj2'.split('').reverse().join('') + '_' + userId;
 
-        // Encode the plaintext (movieId)
-        const plaintext = textEncoder.encode(movieId);
+        const vrfApiUrl = `https://aquariumtv.app/vidsrccc?id=${movieId}&user_id=${formattedUserId}`;
 
-        // Hash "secret_" + userId to create the encryption key
-        const keyMaterial = textEncoder.encode('secret_' + userId);
-        const keyHash = await webcrypto.subtle.digest('SHA-256', keyMaterial);
+        dbg('fetching from', vrfApiUrl);
 
-        // Import the key for AES-CBC encryption
-        const key = await webcrypto.subtle.importKey(
-            'raw',
-            keyHash,
-            { name: 'AES-CBC' },
-            false,
-            ['encrypt']
+        const response = await fetch(vrfApiUrl, {
+            headers: {
+                'User-Agent':
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`vrf api returned ${response.status}`);
+        }
+
+        const vrfToken = await response.text();
+        dbg('raw vrf response:', vrfToken);
+
+        if (!vrfToken || vrfToken.trim() === '') {
+            throw new Error('empty vrf token received');
+        }
+
+        // validate vrf token format (should be URL-safe base64-like string)
+        const trimmedToken = vrfToken.trim();
+        if (!/^[A-Za-z0-9_-]+$/.test(trimmedToken)) {
+            dbg('vrf token contains unexpected characters');
+        }
+
+        dbg(
+            'vrf token obtained, length:',
+            trimmedToken.length,
+            'first 30 chars:',
+            trimmedToken.substring(0, 30)
         );
 
-        // Use zero IV (16 bytes of zeros) - this is critical!
-        const iv = new Uint8Array(16);
+        // cache the token with expiry
+        vrfCache.set(cacheKey, {
+            token: vrfToken,
+            expiry: Date.now() + CACHE_TTL
+        });
 
-        // Encrypt using AES-CBC
-        const encrypted = await webcrypto.subtle.encrypt(
-            { name: 'AES-CBC', iv: iv },
-            key,
-            plaintext
-        );
+        // clean up expired entries periodically
+        if (vrfCache.size > 100) {
+            const now = Date.now();
+            for (const [key, value] of vrfCache.entries()) {
+                if (now >= value.expiry) {
+                    vrfCache.delete(key);
+                    dbg('removed expired cache entry', key);
+                }
+            }
+        }
 
-        // Convert to base64 and make URL-safe
-        const encryptedArray = new Uint8Array(encrypted);
-        const binaryString = String.fromCharCode(...encryptedArray);
-        const base64 = Buffer.from(binaryString, 'binary').toString('base64');
-
-        // Make URL-safe: + -> -, / -> _, remove trailing =
-        const urlSafe = base64
-            .replace(/\+/g, '-')
-            .replace(/\//g, '_')
-            .replace(/=+$/, '');
-
-        return urlSafe;
+        return vrfToken;
     } catch (error) {
-        console.error('VRF generation error:', error);
+        dbg('vrf generation failed:', error.message);
         throw error;
     }
 }
 
-// Export the VRF generation function
 export { generateVRF };

@@ -15,6 +15,9 @@ import { get111Movies } from './controllers/providers/111movies/111movies.js';
 import { getCinemaOS } from './controllers/providers/CinemaOS/CinemaOS.js';
 import { getMultiembed } from './controllers/providers/MultiEmbed/MultiEmbed.js';
 
+import { getUembed } from './controllers/providers/Uembed/uembed.js';
+import { getVixSrc } from './controllers/providers/VixSrc/VixSrc.js';
+
 const shouldDebug = process.argv.includes('--debug');
 
 export async function scrapeMedia(media) {
@@ -43,6 +46,7 @@ export async function scrapeMedia(media) {
     }
     const providers = [
         // WORKING
+        { getUembed: () => getUembed(media) },
         { getTwoEmbed: () => getTwoEmbed(media) },
         { getAutoembed: () => getAutoembed(media) },
         { getVidSrcCC: () => getVidSrcCC(media) },
@@ -55,6 +59,8 @@ export async function scrapeMedia(media) {
         // #### NOTE from Inside4ndroid : i have not looked at anything below this line yet!
 
         //{ getPrimewire: () => getPrimewire(media) },
+
+        { getVixSrc: () => getVixSrc(media) },
 
         // It does need to be fixed but it acts like it is down sometimes throws 520 or 524 so,
         // You got my point right ?
@@ -111,7 +117,7 @@ export async function scrapeMedia(media) {
         .flatMap(({ data }) => data.subtitles)
         .filter(
             (sub, index, self) =>
-                sub.url && self.findIndex((s) => s.url === sub.url) === index
+                sub?.url && self.findIndex((s) => s.url === sub.url) === index
         );
     // Here comes the big boy to loook for nothing okay here you go
     // We need finalResult coz you can't cache what doesn't exist yet - lowkey just consolidating the return logic
